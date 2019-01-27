@@ -30,9 +30,9 @@ public:
         boost::numeric::ublas::vector<double> v6,
         boost::numeric::ublas::vector<double> v7,
         boost::numeric::ublas::vector<double> v8,
-        Color horiz_col,
-        Color vert_col,
-        Color depth_col);
+        const Color* horiz_col,
+        const Color* vert_col,
+        const Color* depth_col);
 
     static std::vector<Square> split(std::vector<Cube>& cubes);
 };

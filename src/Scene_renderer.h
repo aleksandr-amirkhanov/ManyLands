@@ -17,7 +17,7 @@ public:
     void set_state(std::shared_ptr<Scene_state> state);
     void render();
 
-    void set_line_thickness(float thickness);
+    void set_line_thickness(float t_thickness, float c_thickness);
     void set_sphere_diameter(float diameter);
 
 private:
@@ -30,8 +30,9 @@ private:
     void draw_curve(Curve& c, float opacity);
 
     // drawing parameters
-    float line_thickness_;
-    float sphere_diameter_;
+    float tesseract_thickness_,
+          curve_thickness_,
+          sphere_diameter_;
 
     std::shared_ptr<Scene_state> state_;
     std::vector<std::unique_ptr<Geometry_engine>> geometry_;

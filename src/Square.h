@@ -19,6 +19,6 @@ public:
         boost::numeric::ublas::vector<double> v2,
         boost::numeric::ublas::vector<double> v3,
         boost::numeric::ublas::vector<double> v4,
-        const Color& horiz_col,
-        const Color& vert_col);
+        const Color* horiz_col,
+        const Color* vert_col);
 };

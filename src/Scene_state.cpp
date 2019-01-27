@@ -11,4 +11,21 @@ Scene_state::Scene_state()
     , projection_4D(5, 5)
     , tesseract_size{1.f, 1.f, 1.f, 1.f}
 {
+    colors_[Background]       = std::make_unique<Color>();
+    colors_[X_axis]           = std::make_unique<Color>();
+    colors_[Y_axis]           = std::make_unique<Color>();
+    colors_[Z_axis]           = std::make_unique<Color>();
+    colors_[W_axis]           = std::make_unique<Color>();
+    colors_[Curve_low_speed]  = std::make_unique<Color>();
+    colors_[Curve_high_speed] = std::make_unique<Color>();
+}
+
+const Color* Scene_state::get_color(int color_id)
+{
+    return colors_[color_id].get();
+}
+
+void Scene_state::update_color(int color_id, const Color& color)
+{
+    colors_[color_id]->copy(color);
 }

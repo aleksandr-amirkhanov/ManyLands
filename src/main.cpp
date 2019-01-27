@@ -126,11 +126,37 @@ int main(int, char**)
         return ImVec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
     };
 
-    ImVec4 clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
-    ImVec4 x_axis_color = Color_to_ImVec4(Color(215, 25, 28));
-    ImVec4 y_axis_color = Color_to_ImVec4(Color(253, 174, 97));
-    ImVec4 z_axis_color = Color_to_ImVec4(Color(171, 217, 233));
-    ImVec4 w_axis_color = Color_to_ImVec4(Color(44, 123, 182));
+    ImVec4 clear_color,
+           x_axis_color,
+           y_axis_color,
+           z_axis_color,
+           w_axis_color,
+           low_speed_color,
+           high_speed_color;
+
+    auto set_bright_theme = [&]()
+    {
+        clear_color      = Color_to_ImVec4(Color(255, 255, 255));
+        x_axis_color     = Color_to_ImVec4(Color(215,  25,  28));
+        y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
+        z_axis_color     = Color_to_ImVec4(Color(171, 217, 233));
+        w_axis_color     = Color_to_ImVec4(Color( 44, 123, 182));
+        low_speed_color  = Color_to_ImVec4(Color(  0,   0,   0));
+        high_speed_color = Color_to_ImVec4(Color(220, 220, 220));
+    };
+
+    auto set_dark_theme = [&]()
+    {
+        clear_color      = Color_to_ImVec4(Color(  0,   0,   0));
+        x_axis_color     = Color_to_ImVec4(Color(215,  25,  28));
+        y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
+        z_axis_color     = Color_to_ImVec4(Color(171, 217, 233));
+        w_axis_color     = Color_to_ImVec4(Color( 44, 123, 182));
+        low_speed_color  = Color_to_ImVec4(Color(255, 255, 255));
+        high_speed_color = Color_to_ImVec4(Color( 35,  35,  35));
+    };
+
+    set_bright_theme();
 
     GLuint programID = 
         LoadShaders("shaders\\Diffuse.vert", "shaders\\Diffuse.frag");
@@ -179,9 +205,10 @@ int main(int, char**)
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            static float tesseract_size[4] = { 200.f, 200.f, 200.f, 200.f };
-            static float line_thickness = 3.f;
-            static float sphere_diameter = 3.f;
+            static float tesseract_size[4] = { 200.f, 200.f, 200.f, 200.f },
+                         tesseract_thickness = 3.f,
+                         curve_thickness = 3.f,
+                         sphere_diameter = 3.f;
             
             static float camera_3D_dist = 3.f;
 
@@ -239,66 +266,95 @@ int main(int, char**)
             if (ImGui::CollapsingHeader("Rendering",
                 ImGuiTreeNodeFlags_DefaultOpen))
             {
-                ImGui::Checkbox("show tesseract", &show_tesseract);
+                ImGui::Text("Scene:");
+                ImGui::Checkbox("Tesseract", &show_tesseract);
                 ImGui::SameLine();
-                ImGui::Checkbox("show curve", &show_curve);
+                ImGui::Checkbox("Curve", &show_curve);
+
                 ImGui::SliderFloat4(
-                    "tesseract size", tesseract_size, 1.f, 500.f);
+                    "Tesseract size", tesseract_size, 1.f, 500.f);
+
+                ImGui::Separator();            
+
+                ImGui::Text("Style:");
+                ImGui::Text("Set theme");
+                ImGui::SameLine();
+                if(ImGui::Button("Bright"))
+                    set_bright_theme();
+                ImGui::SameLine();
+                if(ImGui::Button("Dark"))
+                    set_dark_theme();
                 ImGui::SliderFloat(
-                    "line thickness", &line_thickness, 0.1f, 10.0f);
+                    "Tesseract", &tesseract_thickness, 0.1f, 10.0f);
                 ImGui::SliderFloat(
-                    "sphere diameter", &sphere_diameter, 0.1f, 10.0f);
-                ImGui::ColorEdit3("background", (float*)&clear_color);
-                ImGui::ColorEdit3("x-axis color", (float*)&x_axis_color);
-                ImGui::ColorEdit3("y-axis color", (float*)&y_axis_color);
-                ImGui::ColorEdit3("z-axis color", (float*)&z_axis_color);
-                ImGui::ColorEdit3("w-axis color", (float*)&w_axis_color);
+                    "Curve", &curve_thickness, 0.1f, 10.0f);
+                ImGui::SliderFloat(
+                    "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
+
+                ImGui::ColorEdit3("Background", (float*)&clear_color);
+                ImGui::ColorEdit3("X-axis", (float*)&x_axis_color);
+                ImGui::ColorEdit3("Y-axis", (float*)&y_axis_color);
+                ImGui::ColorEdit3("Z-axis", (float*)&z_axis_color);
+                ImGui::ColorEdit3("W-axis", (float*)&w_axis_color);
+
+                ImGui::ColorEdit3(
+                    "Curve slow", (float*)&low_speed_color
+                );
+                ImGui::ColorEdit3(
+                    "Curve fast", (float*)&high_speed_color
+                );
             }
 
             if (ImGui::CollapsingHeader("4D projection",
                 ImGuiTreeNodeFlags_DefaultOpen))
             {
-                ImGui::SliderAngle("4D FOV (height)", &fov_4d[0], 1.f, 180.f);
-                ImGui::SliderAngle("4D FOV (width)", &fov_4d[1], 1.f, 180.f);
-                ImGui::SliderAngle("4D FOV (depth)", &fov_4d[2], 1.f, 180.f);
+                ImGui::Text("Field of view:");
+                ImGui::SliderAngle("Height", &fov_4d[0], 1.f, 180.f);
+                ImGui::SliderAngle("Width", &fov_4d[1], 1.f, 180.f);
+                ImGui::SliderAngle("Depth", &fov_4d[2], 1.f, 180.f);
 
+                ImGui::Separator();
+                ImGui::Text("Rotations (Euler angles):");
+                ImGui::SliderAngle("XY", &xy_rot, -180.f, 180.f);
+                ImGui::SliderAngle("YZ", &yz_rot, -180.f, 180.f);
+                ImGui::SliderAngle("ZX", &zx_rot, -180.f, 180.f);
+                ImGui::SliderAngle("XW", &xw_rot, -180.f, 180.f);
+                ImGui::SliderAngle("YW", &yw_rot, -180.f, 180.f);
+                ImGui::SliderAngle("ZW", &zw_rot, -180.f, 180.f);
                 if(ImGui::Button("Reset##4D"))
                 {
                     xy_rot = yz_rot = zx_rot = xw_rot = yw_rot = zw_rot = 0.f;
                 }
-                ImGui::SliderAngle("XY-plane", &xy_rot, -180.f, 180.f);
-                ImGui::SliderAngle("YZ-plane", &yz_rot, -180.f, 180.f);
-                ImGui::SliderAngle("ZX-plane", &zx_rot, -180.f, 180.f);
-                ImGui::SliderAngle("XW-plane", &xw_rot, -180.f, 180.f);
-                ImGui::SliderAngle("YW-plane", &yw_rot, -180.f, 180.f);
-                ImGui::SliderAngle("ZW-plane", &zw_rot, -180.f, 180.f);
             }
 
             if (ImGui::CollapsingHeader("Cameras",
                 ImGuiTreeNodeFlags_DefaultOpen))
             {
+                ImGui::Text("Basics:");
                 const float dist_min = 1.f, dist_max = 20.f;
                 camera_3D_dist = std::clamp((float)(-state->camera_3D.z), dist_min, dist_max);
-                ImGui::SliderFloat("3D camera distance", &camera_3D_dist, dist_min, dist_max);
-                ImGui::SliderAngle("3D FOV", &fov_y, 1.f, 180.f);
+                ImGui::SliderFloat("Distance", &camera_3D_dist, dist_min, dist_max);
+                ImGui::SliderAngle("Field of view", &fov_y, 1.f, 180.f);
                
                 static float euler[3];
                 static bool active = false;
                 if(!active)
                     glm::extractEulerAngleXYZ(glm::toMat4(state->rotation_3D), euler[0], euler[1], euler[2]);
                 
+                ImGui::Separator();
+                ImGui::Text("Rotations (Euler angles):");
                 active = false;
+                ImGui::SliderAngle("X", &euler[0], -180.f, 180.f);
+                active |= ImGui::IsItemActive();
+                ImGui::SliderAngle("Y", &euler[1], -180.f, 180.f);
+                active |= ImGui::IsItemActive();
+                ImGui::SliderAngle("Z", &euler[2], -180.f, 180.f);
+                active |= ImGui::IsItemActive();
                 if(ImGui::Button("Reset##3D"))
                 {
                     for(int i = 0; i < 3; ++i)
                         euler[i] = 0.f;
                 }
-                ImGui::SliderAngle("euler x", &euler[0], -180.f, 180.f);
-                active |= ImGui::IsItemActive();
-                ImGui::SliderAngle("euler y", &euler[1], -180.f, 180.f);
-                active |= ImGui::IsItemActive();
-                ImGui::SliderAngle("euler z", &euler[2], -180.f, 180.f);
-                active |= ImGui::IsItemActive();
 
                 state->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
             }
@@ -344,13 +400,16 @@ int main(int, char**)
                 return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
             };
 
-            state->clear_color = ImVec4_to_Color(clear_color);
-            state->x_axis_color = ImVec4_to_Color(x_axis_color);
-            state->y_axis_color = ImVec4_to_Color(y_axis_color);
-            state->z_axis_color = ImVec4_to_Color(z_axis_color);
-            state->w_axis_color = ImVec4_to_Color(w_axis_color);
+            state->update_color(Background,       ImVec4_to_Color(clear_color));
+            state->update_color(X_axis,           ImVec4_to_Color(x_axis_color));
+            state->update_color(Y_axis,           ImVec4_to_Color(y_axis_color));
+            state->update_color(Z_axis,           ImVec4_to_Color(z_axis_color));
+            state->update_color(W_axis,           ImVec4_to_Color(w_axis_color));
+            state->update_color(Curve_low_speed,  ImVec4_to_Color(low_speed_color));
+            state->update_color(Curve_high_speed, ImVec4_to_Color(high_speed_color));
+ 
 
-            renderer->set_line_thickness(line_thickness);
+            renderer->set_line_thickness(tesseract_thickness, curve_thickness);
             renderer->set_sphere_diameter(sphere_diameter);
         }
 
@@ -360,10 +419,10 @@ int main(int, char**)
         glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor( state->clear_color.r / 255.f,
-                      state->clear_color.g / 255.f,
-                      state->clear_color.b / 255.f,
-                      state->clear_color.a / 255.f );
+        glClearColor( state->get_color(Background)->r / 255.f,
+                      state->get_color(Background)->g / 255.f,
+                      state->get_color(Background)->b / 255.f,
+                      state->get_color(Background)->a / 255.f );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(programID);

@@ -19,6 +19,13 @@ struct Color
         this->b = b;
         this->a = a;
     }
+    void copy(const Color& other)
+    {
+        this->r = other.r;
+        this->g = other.g;
+        this->b = other.b;
+        this->a = other.a;
+    }
 
     int r, g, b, a;
 };
@@ -27,7 +34,7 @@ struct Wireframe_edge
 {
     size_t vert1;
     size_t vert2;
-    Color color;
+    const Color* color;
 };
 
 class Wireframe_object
@@ -45,11 +52,13 @@ public:
 
     virtual void add_vertex(const boost::numeric::ublas::vector<double>& vert);
     virtual void add_edge(size_t vert1, size_t vert2);
-    virtual void add_edge(size_t vert1, size_t vert2, Color color);
+    virtual void add_edge(size_t vert1, size_t vert2, const Color* color);
 
     void translate_vertices(boost::numeric::ublas::vector<double> translate);
     void scale_vertices(double scale_factor);
     void scale_vertices(boost::numeric::ublas::vector<double> scale_factor);
+
+    const static Color default_color;
 
 protected:
     std::vector<boost::numeric::ublas::vector<double>> vertices_;

@@ -1,5 +1,7 @@
 #include "Wireframe_object.h"
 
+const Color Wireframe_object::default_color = Color(0, 0, 0, 255);
+
 Wireframe_object::Wireframe_object()
 {
 }
@@ -60,10 +62,10 @@ void Wireframe_object::add_vertex(
 
 void Wireframe_object::add_edge(size_t vert1, size_t vert2)
 {
-    add_edge(vert1, vert2, Color());
+    add_edge(vert1, vert2, &default_color);
 }
 
-void Wireframe_object::add_edge(size_t vert1, size_t vert2, Color color)
+void Wireframe_object::add_edge(size_t vert1, size_t vert2, const Color* color)
 {
     std::unique_ptr<Wireframe_edge> e = std::make_unique<Wireframe_edge>();
     e->vert1 = vert1;

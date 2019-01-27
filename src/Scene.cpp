@@ -141,8 +141,8 @@ void Scene::create_tesseract(
     state_->tesseract = std::make_unique<Tesseract>(
         origin,
         size,
-        state_->x_axis_color,
-        state_->y_axis_color,
-        state_->z_axis_color,
-        state_->w_axis_color );
+        state_->get_color(X_axis),
+        state_->get_color(Y_axis),
+        state_->get_color(Z_axis),
+        state_->get_color(W_axis) );
 }

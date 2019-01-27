@@ -3,7 +3,8 @@
 #include "Mesh_generator.h"
 
 Scene_renderer::Scene_renderer()
-    : line_thickness_(1.f)
+    : tesseract_thickness_(1.f)
+    , curve_thickness_(1.f)
     , sphere_diameter_(1.f)
 {
 }
@@ -83,15 +84,15 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
         auto& next = t.get_vertices().at(e->vert2);
         //QColor col(e->color.r, e->color.g, e->color.b);
         glm::vec4 col(
-            (float)e->color.r / 255,
-            (float)e->color.g / 255,
-            (float)e->color.b / 255,
+            (float)e->color->r / 255,
+            (float)e->color->g / 255,
+            (float)e->color->b / 255,
             1.f);
 
         Mesh_generator::cylinder(
             5,
-            line_thickness_ / current(3),
-            line_thickness_ / next(3),
+            tesseract_thickness_ / current(3),
+            tesseract_thickness_ / next(3),
             glm::vec3(current(0), current(1), current(2)),
             glm::vec3(next(0), next(1), next(2)),
             col,
@@ -131,19 +132,22 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
 {
-    const double curve_thickness = 3.f; //gui_.curveThickness->value();
     const double marker_size = 3.f; //gui_.markerSize->value();
 
     auto log_speed = [](float speed) {
         return std::log2(3 * speed + 1) / 2;
     };
 
-    auto get_speed_color = [&opacity, &log_speed](float normalized_speed) {
+    auto get_speed_color =
+        [&opacity, &log_speed, this](float normalized_speed) {
         float speed = log_speed(normalized_speed);
         return glm::vec4(
-            (float)(30 + speed * 190) / 255,
-            (float)(30 + speed * 190) / 255,
-            (float)(30 + speed * 190) / 255,
+            (float)((1 - speed) * state_->get_color(Curve_low_speed)->r +
+                    speed * state_->get_color(Curve_high_speed)->r) / 255,
+            (float)((1 - speed) * state_->get_color(Curve_low_speed)->g +
+                    speed * state_->get_color(Curve_high_speed)->r) / 255,
+            (float)((1 - speed) * state_->get_color(Curve_low_speed)->b +
+                    speed * state_->get_color(Curve_high_speed)->r) / 255,
             opacity);
     };
 
@@ -173,8 +177,8 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
 
         Mesh_generator::cylinder(
             5,
-            curve_thickness / current(3),
-            curve_thickness / next(3),
+            curve_thickness_ / current(3),
+            curve_thickness_ / next(3),
             glm::vec3(current(0), current(1), current(2)),
             glm::vec3(next(0), next(1), next(2)),
             get_speed_color(speed_coeff),
@@ -198,9 +202,10 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     geometry_.push_back(std::make_unique<Geometry_engine>(marker_mesh));*/
 }
 
-void Scene_renderer::set_line_thickness(float thickness)
+void Scene_renderer::set_line_thickness(float t_thickness, float c_thickness)
 {
-    line_thickness_ = thickness;
+    tesseract_thickness_ = t_thickness;
+    curve_thickness_ = c_thickness;
 }
 
 void Scene_renderer::set_sphere_diameter(float diameter)

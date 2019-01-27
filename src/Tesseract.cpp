@@ -9,10 +9,10 @@ using namespace boost::numeric::ublas;
 Tesseract::Tesseract(
     vector<double> origin,
     vector<double> size,
-    const Color& x_color,
-    const Color& y_color,
-    const Color& z_color,
-    const Color& w_color)
+    const Color* x_color,
+    const Color* y_color,
+    const Color* z_color,
+    const Color* w_color)
 {
     vertices_.resize(16);
     edges_.resize(32);
