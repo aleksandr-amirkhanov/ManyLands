@@ -1,6 +1,9 @@
-// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
-// If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
-// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define NOMINMAX
+#include <windows.h>
+#include <commdlg.h>
+#endif
 
 // imgui
 #include "imgui.h"
@@ -13,36 +16,24 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
 // Local
 #include "Mesh_generator.h"
 #include "Geometry_engine.h"
 #include "Shader.h"
+#include "Scene.h"
+#include "Scene_state.h"
+#include "Scene_renderer.h"
 #include "Consts.h"
 #include "Controls.h"
 #include "Matrix_lib.h"
 #include "Tesseract.h"
-
-// About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually. 
-// Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
-// You may use another loader/header of your choice (glext, glLoadGen, etc.), or chose to manually implement your own.
-#if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
-#include <GL/gl3w.h>    // Initialize with gl3wInit()
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
-#include <GL/glew.h>    // Initialize with glewInit()
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-#include <glad/glad.h>  // Initialize with gladLoadGL()
-#else
-#include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
-#endif
-
-// Include glfw3.h after our OpenGL definitions
-#include <GLFW/glfw3.h> 
-
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
-// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma. 
-// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
+// OpenGL
+#include <GL/gl3w.h>
+#include <GLFW/glfw3.h>
+#ifdef _WIN32
+#include <GLFW/glfw3native.h>
 #endif
 
 static void glfw_error_callback(int error, const char* description)
@@ -50,98 +41,12 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-void project_to_3D(
-    boost::numeric::ublas::vector<double>& point,
-    const boost::numeric::ublas::matrix<double>& rot_mat,
-    const boost::numeric::ublas::matrix<double>& proj_mat,
-    const boost::numeric::ublas::vector<double>& camera)
-{
-    boost::numeric::ublas::vector<double> tmp_vert = prod(point, rot_mat);
-    tmp_vert = tmp_vert - camera;
-    tmp_vert = prod(tmp_vert, proj_mat);
-
-    //if(tmp_vert(3) < 0)
-    //    gui_.distanceWarning->show();
-    assert(tmp_vert(3) > 0);
-
-    tmp_vert(0) /= tmp_vert(4);
-    tmp_vert(1) /= tmp_vert(4);
-    tmp_vert(2) /= tmp_vert(4);
-    // Important!
-    // Original coordinates in tmp_vert(3) and tmp_vert(4) are kept!
-    // It is required for the 4D perspective.
-
-    point = tmp_vert;
-}
-
-void project_to_3D(
-    std::vector<boost::numeric::ublas::vector<double>>& verts,
-    const boost::numeric::ublas::matrix<double>& rot_mat,
-    const boost::numeric::ublas::matrix<double>& proj_mat,
-    const boost::numeric::ublas::vector<double>& camera)
-{
-    for(auto& v : verts)
-        project_to_3D(v, rot_mat, proj_mat, camera);
-}
-
-void draw_tesseract(Wireframe_object& t, std::vector<std::unique_ptr<Geometry_engine>>& geoms)
-{
-    //const double tesseract_thickness = gui_.tesseractThickness->value();
-    //const double sphere_size = gui_.sphereSize->value();
-    const float tesseract_thickness = 3;
-    const float sphere_size = 3;
-
-    for(auto const& e : t.get_edges())
-    {
-        Mesh t_mesh;
-        auto& current = t.get_vertices().at(e->vert1);
-        auto& next = t.get_vertices().at(e->vert2);
-        //QColor col(e->color.r, e->color.g, e->color.b);
-        glm::vec4 col((float)e->color.r / 255, (float)e->color.g / 255, (float)e->color.b / 255, 1.f);
-
-        Mesh_generator::cylinder(
-            5,
-            tesseract_thickness / current(3),
-            tesseract_thickness / next(3),
-            glm::vec3(current(0), current(1), current(2)),
-            glm::vec3(next(0), next(1), next(2)),
-            col,
-            t_mesh);
-
-       geoms.push_back(std::make_unique<Geometry_engine>(t_mesh));
-    }
-
-    for(unsigned int i = 0; i < t.get_vertices().size(); ++i)
-    {
-        double size_coef = 1.0f;
-
-        auto const& v = t.get_vertices()[i];
-        glm::vec3 pos(v(0), v(1), v(2));
-        Mesh s_mesh;
-
-        if(i == 0)
-            Mesh_generator::sphere(
-                16,
-                16,
-                size_coef * sphere_size / v(3),
-                pos,
-                glm::vec4(1.f, 0.f, 0.f, 1.f),
-                s_mesh);
-        else
-            Mesh_generator::sphere(
-                16,
-                16,
-                size_coef * sphere_size / v(3),
-                pos,
-                glm::vec4(0.59f, 0.59f, 0.59f, 1.f),
-                s_mesh);
-
-        geoms.push_back(std::make_unique<Geometry_engine>(s_mesh));
-    }
-}
-
 int main(int, char**)
 {
+    const bool enable_keyboard = false;
+    const bool enable_gamepad = false;
+    int panel_size = 300;
+
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -168,7 +73,12 @@ int main(int, char**)
     auto monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     glfwWindowHint(GLFW_SAMPLES, 16);
-    GLFWwindow* window = glfwCreateWindow(mode->width * 0.9, mode->height * 0.9, "ManyLands", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(
+        mode->width * 0.9,
+        mode->height * 0.9,
+        "ManyLands",
+        NULL,
+        NULL);
     glfwSetWindowPos(window, mode->width * 0.05, mode->height * 0.05);
     if (window == NULL)
         return 1;
@@ -176,17 +86,10 @@ int main(int, char**)
     glfwSwapInterval(1); // Enable vsync
 
     glfwSetMouseButtonCallback(window, Controls::mouse_button_callback);
+    glfwSetScrollCallback(window, Controls::scroll_callback);
 
     // Initialize OpenGL loader
-#if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
     bool err = gl3wInit() != 0;
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
-    bool err = glewInit() != GLEW_OK;
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-    bool err = gladLoadGL() == 0;
-#else
-    bool err = false; // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader is likely to requires some form of initialization.
-#endif
     if (err)
     {
         fprintf(stderr, "Failed to initialize OpenGL loader!\n");
@@ -197,8 +100,10 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+    if(enable_keyboard)
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    if(enable_gamepad)
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -206,31 +111,29 @@ int main(int, char**)
 
     // Setup Style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-    const float app_scale = 1.25f;
+
+    // Font
+    const float app_scale = 1.f;
     ImGui::GetStyle().ScaleAllSizes(app_scale);
-    io.Fonts->AddFontFromFileTTF("fonts\\Roboto-Medium.ttf", 16.f * app_scale);
+    ImGui::GetStyle().WindowRounding = 0.f;
+    io.Fonts->AddFontFromFileTTF("fonts\\Roboto-Regular.ttf", 14.f * app_scale);
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'misc/fonts/README.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
-
-    bool show_tesseract = false;
+    bool show_tesseract = true;
     bool show_curve = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    GLuint programID = LoadShaders("shaders\\Diffuse.vert", "shaders\\Diffuse.frag");
+    auto Color_to_ImVec4 = [](Color c)
+    {
+        return ImVec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
+    };
+
+    ImVec4 clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
+    ImVec4 x_axis_color = Color_to_ImVec4(Color(215, 25, 28));
+    ImVec4 y_axis_color = Color_to_ImVec4(Color(253, 174, 97));
+    ImVec4 z_axis_color = Color_to_ImVec4(Color(171, 217, 233));
+    ImVec4 w_axis_color = Color_to_ImVec4(Color(44, 123, 182));
+
+    GLuint programID = 
+        LoadShaders("shaders\\Diffuse.vert", "shaders\\Diffuse.frag");
     GLuint proj_mat_id = glGetUniformLocation(programID, "projMatrix");
     GLuint mv_mat_id = glGetUniformLocation(programID, "mvMatrix");
     GLuint normal_mat_id = glGetUniformLocation(programID, "normalMatrix");
@@ -243,27 +146,29 @@ int main(int, char**)
     glm::vec3 pos(0.f, 0.f, 0.f);
     glm::vec4 col(1, 0.f, 0.f, 1.f);
     auto m = Mesh_generator::sphere(8, 8, 0.5f, pos, col);
-    auto geom = Geometry_engine(m);
-    float fov_y = 45.f;
+    float fov_y = 45.f * DEG_TO_RAD;
 
-    boost::numeric::ublas::matrix<double> proj_m_;
-    boost::numeric::ublas::matrix<double> rot_m_;
-    boost::numeric::ublas::vector<double> cam_4D_(5);
+    std::shared_ptr<Scene_state> state =
+        std::make_shared<Scene_state>();
+    std::unique_ptr<Scene_renderer> renderer =
+        std::make_unique<Scene_renderer>(state);
+    std::unique_ptr<Scene> scene =
+        std::make_unique<Scene>(state);
 
-    cam_4D_(0) = 0;
-    cam_4D_(1) = 0;
-    cam_4D_(2) = 0;
-    cam_4D_(3) = 550.;
-    cam_4D_(4) = 0;
+    Controls::set_scene_state(state);
+
+    state->camera_4D(0) = 0;
+    state->camera_4D(1) = 0;
+    state->camera_4D(2) = 0;
+    state->camera_4D(3) = 550.;
+    state->camera_4D(4) = 0;
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         glfwPollEvents();
 
         // Start the Dear ImGui frame
@@ -271,14 +176,19 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            static float f = 3.0f;
+            static float tesseract_size[4] = { 200.f, 200.f, 200.f, 200.f };
+            static float line_thickness = 3.f;
+            static float sphere_diameter = 3.f;
+            
+            static float camera_3D_dist = 3.f;
 
-            static float fov_4d_h = 0.5f;
-            static float fov_4d_w = 0.5f;
-            static float fov_4d_d = 0.5f;
-
+            static float fov_4d[3] = {
+                30.f * DEG_TO_RAD,
+                30.f * DEG_TO_RAD,
+                30.f * DEG_TO_RAD };
 
             static float xy_rot = 0.f;
             static float yz_rot = 0.f;
@@ -287,39 +197,161 @@ int main(int, char**)
             static float yw_rot = 0.f;
             static float zw_rot = 0.f;
 
-            ImGui::Begin("Settings");
+            int width, height;
+            glfwGetWindowSize(window, &width, &height);
+            ImGui::SetNextWindowSize(ImVec2(panel_size, height));
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSizeConstraints(
+                ImVec2(0, height), ImVec2(FLT_MAX, height));
 
-            ImGui::Text("Rendering");
-            ImGui::Checkbox("show tesseract", &show_tesseract);
-            ImGui::SameLine();
-            ImGui::Checkbox("show curve", &show_curve);
-            ImGui::SliderFloat("line thickness", &f, 0.1f, 10.0f);
-            ImGui::ColorEdit3("clear color", (float*)&clear_color);
-            ImGui::SliderFloat("field of view", &fov_y, 0.001f, 180.f);
+            ImGui::Begin(
+                "Control panel",
+                0,
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
+            if(ImGui::Button("Load ODE"))
+            {
+                std::string filename;
+#ifdef _WIN32
+                char fn[MAX_PATH];
 
-            ImGui::Text("Cameras");
-            ImGui::SliderFloat("4D FOV (h)", &fov_4d_h, 0.001f, 2.0f);
-            ImGui::SliderFloat("4D FOV (w)", &fov_4d_w, 0.001f, 2.0f);
-            ImGui::SliderFloat("4D FOV (d)", &fov_4d_d, 0.001f, 2.0f);
+                OPENFILENAMEA ofn;
+                ZeroMemory( &fn, sizeof( fn ) );
+                ZeroMemory( &ofn, sizeof( ofn ) );
+                ofn.lStructSize  = sizeof(ofn);
+                ofn.hwndOwner    = glfwGetWin32Window(window);
+                ofn.lpstrFilter  = "Text Files\0*.txt\0Any File\0*.*\0";
+                ofn.lpstrFile    = fn;
+                ofn.nMaxFile     = MAX_PATH;
+                ofn.lpstrTitle   = "Select an ODE";
+                ofn.Flags        = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
 
-            ImGui::Text("4D rotations");
-            ImGui::SliderFloat("XY-plane", &xy_rot, -180.f, 180.f);
-            ImGui::SliderFloat("YZ-plane", &yz_rot, -180.f, 180.f);
-            ImGui::SliderFloat("ZX-plane", &zx_rot, -180.f, 180.f);
-            ImGui::SliderFloat("XW-plane", &xw_rot, -180.f, 180.f);
-            ImGui::SliderFloat("YW-plane", &yw_rot, -180.f, 180.f);
-            ImGui::SliderFloat("ZW-plane", &zw_rot, -180.f, 180.f);
+                GetOpenFileNameA(&ofn);
 
-            proj_m_ = Matrix_lib::get4DProjectionMatrix(fov_4d_h, fov_4d_w, fov_4d_d, 1, 10);
-            rot_m_ = Matrix_lib::getXYRotationMatrix(xy_rot * DEG_TO_RAD);
-            rot_m_ = prod(rot_m_, Matrix_lib::getYZRotationMatrix(yz_rot * DEG_TO_RAD));
-            rot_m_ = prod(rot_m_, Matrix_lib::getZXRotationMatrix(zx_rot * DEG_TO_RAD));
-            rot_m_ = prod(rot_m_, Matrix_lib::getXWRotationMatrix(xw_rot * DEG_TO_RAD));
-            rot_m_ = prod(rot_m_, Matrix_lib::getYWRotationMatrix(yw_rot * DEG_TO_RAD));
-            rot_m_ = prod(rot_m_, Matrix_lib::getZWRotationMatrix(zw_rot * DEG_TO_RAD));
+                filename = std::string(fn);
+#else
+                # Error: file open dialog has to implemented for this platform
+#endif
+                if(!filename.empty())
+                    scene->load_ode(filename);
+            }
 
+            if (ImGui::CollapsingHeader("Rendering",
+                ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Checkbox("show tesseract", &show_tesseract);
+                ImGui::SameLine();
+                ImGui::Checkbox("show curve", &show_curve);
+                ImGui::SliderFloat4(
+                    "tesseract size", tesseract_size, 1.f, 500.f);
+                ImGui::SliderFloat(
+                    "line thickness", &line_thickness, 0.1f, 10.0f);
+                ImGui::SliderFloat(
+                    "sphere diameter", &sphere_diameter, 0.1f, 10.0f);
+                ImGui::ColorEdit3("background", (float*)&clear_color);
+                ImGui::ColorEdit3("x-axis color", (float*)&x_axis_color);
+                ImGui::ColorEdit3("y-axis color", (float*)&y_axis_color);
+                ImGui::ColorEdit3("z-axis color", (float*)&z_axis_color);
+                ImGui::ColorEdit3("w-axis color", (float*)&w_axis_color);
+            }
+
+            if (ImGui::CollapsingHeader("4D projection",
+                ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::SliderAngle("4D FOV (height)", &fov_4d[0], 1.f, 180.f);
+                ImGui::SliderAngle("4D FOV (width)", &fov_4d[1], 1.f, 180.f);
+                ImGui::SliderAngle("4D FOV (depth)", &fov_4d[2], 1.f, 180.f);
+
+                if(ImGui::Button("Reset##4D"))
+                {
+                    xy_rot = yz_rot = zx_rot = xw_rot = yw_rot = zw_rot = 0.f;
+                }
+                ImGui::SliderAngle("XY-plane", &xy_rot, -180.f, 180.f);
+                ImGui::SliderAngle("YZ-plane", &yz_rot, -180.f, 180.f);
+                ImGui::SliderAngle("ZX-plane", &zx_rot, -180.f, 180.f);
+                ImGui::SliderAngle("XW-plane", &xw_rot, -180.f, 180.f);
+                ImGui::SliderAngle("YW-plane", &yw_rot, -180.f, 180.f);
+                ImGui::SliderAngle("ZW-plane", &zw_rot, -180.f, 180.f);
+            }
+
+            if (ImGui::CollapsingHeader("Cameras",
+                ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                const float dist_min = 1.f, dist_max = 20.f;
+                camera_3D_dist = std::clamp((float)(-state->camera_3D.z), dist_min, dist_max);
+                ImGui::SliderFloat("3D camera distance", &camera_3D_dist, dist_min, dist_max);
+                ImGui::SliderAngle("3D FOV", &fov_y, 1.f, 180.f);
+               
+                static float euler[3];
+                static bool active = false;
+                if(!active)
+                    glm::extractEulerAngleXYZ(glm::toMat4(state->rotation_3D), euler[0], euler[1], euler[2]);
+                
+                active = false;
+                if(ImGui::Button("Reset##3D"))
+                {
+                    for(int i = 0; i < 3; ++i)
+                        euler[i] = 0.f;
+                }
+                ImGui::SliderAngle("euler x", &euler[0], -180.f, 180.f);
+                active |= ImGui::IsItemActive();
+                ImGui::SliderAngle("euler y", &euler[1], -180.f, 180.f);
+                active |= ImGui::IsItemActive();
+                ImGui::SliderAngle("euler z", &euler[2], -180.f, 180.f);
+                active |= ImGui::IsItemActive();
+
+                state->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
+            }
+
+            panel_size = ImGui::GetWindowSize().x;
             ImGui::End();
+
+            ImGui::SetNextWindowSize(ImVec2(width - panel_size, 40));
+            ImGui::SetNextWindowPos(ImVec2(panel_size, height - 40));
+            float val;
+            ImGui::Begin(
+                "##animation",
+                0,
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoResize);
+            ImGui::PushItemWidth(-1);
+            ImGui::SliderFloat("##label", &val, 0.f, 1.f);
+            ImGui::End();
+
+            state->camera_3D.z = -camera_3D_dist;
+
+            state->projection_4D = Matrix_lib::get4DProjectionMatrix(
+                fov_4d[0], fov_4d[1], fov_4d[2], 1, 10);
+
+            state->rotation_4D = Matrix_lib::getXYRotationMatrix(xy_rot);
+            state->rotation_4D = prod(
+                state->rotation_4D,
+                Matrix_lib::getYZRotationMatrix(yz_rot));
+            state->rotation_4D = prod(
+                state->rotation_4D,
+                Matrix_lib::getZXRotationMatrix(zx_rot));
+            state->rotation_4D = prod(
+                state->rotation_4D,
+                Matrix_lib::getXWRotationMatrix(xw_rot));
+            state->rotation_4D = prod(
+                state->rotation_4D,
+                Matrix_lib::getYWRotationMatrix(yw_rot));
+            state->rotation_4D = prod(
+                state->rotation_4D,
+                Matrix_lib::getZWRotationMatrix(zw_rot));
+
+            auto ImVec4_to_Color = [](ImVec4 v) {
+                return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
+            };
+
+            state->clear_color = ImVec4_to_Color(clear_color);
+            state->x_axis_color = ImVec4_to_Color(x_axis_color);
+            state->y_axis_color = ImVec4_to_Color(y_axis_color);
+            state->z_axis_color = ImVec4_to_Color(z_axis_color);
+            state->w_axis_color = ImVec4_to_Color(w_axis_color);
+
+            renderer->set_line_thickness(line_thickness);
+            renderer->set_sphere_diameter(sphere_diameter);
         }
 
         // Rendering
@@ -328,26 +360,11 @@ int main(int, char**)
         glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClearColor( state->clear_color.r / 255.f,
+                      state->clear_color.g / 255.f,
+                      state->clear_color.b / 255.f,
+                      state->clear_color.a / 255.f );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-
-        boost::numeric::ublas::vector<double> origin(4);
-        boost::numeric::ublas::vector<double> size(4);
-        origin(0) = -100;
-        origin(1) = -100;
-        origin(2) = -100;
-        origin(3) = -100;
-        size(0) = 200;
-        size(1) = 200;
-        size(2) = 200;
-        size(3) = 200;
-        Tesseract t(origin, size);
-        project_to_3D(t.get_vertices(), rot_m_, proj_m_, cam_4D_);
-        std::vector<std::unique_ptr<Geometry_engine>> geoms;
-        draw_tesseract(t, geoms);
 
         glUseProgram(programID);
         if(!io.WantCaptureMouse)
@@ -355,25 +372,33 @@ int main(int, char**)
         int width, height;
         glfwGetWindowSize(window, &width, &height);
 
-		glm::mat4 proj_mat = glm::perspective(fov_y * (float)DEG_TO_RAD, (float)width / height, 0.1f, 100.f);
+		glm::mat4 proj_mat = glm::perspective(
+            fov_y,
+            (float)(width - panel_size) / height,
+            0.1f,
+            100.f);
 		
-        glm::vec3 camera_pos(0.f, 0.f, -3.f);
-        glm::mat4 camera_mat = glm::mat4(1.f);
-        camera_mat = glm::translate(camera_mat, camera_pos);
+        auto camera_mat = glm::translate(glm::mat4(1.f), state->camera_3D);
 
         glm::vec3 light_pos(0.f, 0.f, 70.f);
 
-		auto world_mat = glm::toMat4(Controls::get_rotation_quat());
+		auto world_mat = glm::toMat4(state->rotation_3D);
         auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
         glUniformMatrix4fv(proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_mat));
-        glUniformMatrix4fv(mv_mat_id, 1, GL_FALSE, glm::value_ptr(camera_mat * world_mat));
-        glUniformMatrix3fv(normal_mat_id, 1, GL_FALSE, glm::value_ptr(norm_mat));
+        glUniformMatrix4fv(
+            mv_mat_id, 1, GL_FALSE, glm::value_ptr(camera_mat * world_mat));
+        glUniformMatrix3fv(
+            normal_mat_id, 1, GL_FALSE, glm::value_ptr(norm_mat));
         glUniform3fv(light_pos_id, 1, glm::value_ptr(light_pos));
 
-        //geom.draw_object();
-        for(auto& g : geoms)
-            g->draw_object();
+
+
+        
+        glViewport(panel_size, 0, width - panel_size, height);
+        renderer->render();
+        glViewport(0, 0, width, height);
+
 
 
 

@@ -13,7 +13,11 @@ class Tesseract : public Wireframe_object
 public:
     Tesseract(
         boost::numeric::ublas::vector<double> origin,
-        boost::numeric::ublas::vector<double> size);
+        boost::numeric::ublas::vector<double> size,
+        const Color& x_color,
+        const Color& y_color,
+        const Color& z_color,
+        const Color& w_color);
 
     boost::numeric::ublas::vector<double> get_size();
 

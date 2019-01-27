@@ -5,7 +5,12 @@
 double Controls::last_x_pos_ = 0.;
 double Controls::last_y_pos_ = 0.;
 bool Controls::is_dragged_ = false;
-glm::quat Controls::rot_ = glm::quat(glm::mat4(1.f));
+std::shared_ptr<Scene_state> Controls::state_;
+
+void Controls::set_scene_state(std::shared_ptr<Scene_state> state)
+{
+    state_ = state;
+}
 
 void Controls::mouse_button_callback(GLFWwindow* window,
     int button,
@@ -18,8 +23,21 @@ void Controls::mouse_button_callback(GLFWwindow* window,
         is_dragged_ = false;
 }
 
+void Controls::scroll_callback(GLFWwindow* window,
+    double xoffset,
+    double yoffset)
+{
+    if(!state_)
+        return;
+
+    state_->camera_3D.z += yoffset * 0.3f;
+}
+
 void Controls::update(GLFWwindow* window)
 {
+    if(!state_)
+        return;
+
     double x_pos, y_pos;
 	glfwGetCursorPos(window, &x_pos, &y_pos);
 
@@ -29,15 +47,14 @@ void Controls::update(GLFWwindow* window)
         float length = glm::length(axis);
         if(length != 0)
         {
-            rot_ = glm::angleAxis(glm::radians(0.25f * length), glm::normalize(axis)) * rot_;
+            state_->rotation_3D = 
+                glm::angleAxis(
+                    glm::radians(0.25f * length),
+                    glm::normalize(axis)) *
+                state_->rotation_3D;
         }
     }
 
     last_x_pos_ = x_pos;
     last_y_pos_ = y_pos; 
-}
-
-glm::quat Controls::get_rotation_quat()
-{
-    return rot_;
 }

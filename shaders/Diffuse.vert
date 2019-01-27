@@ -11,8 +11,8 @@ uniform mat3 normalMatrix;
 
 void main()
 {
-  vert = vertex.xyz;
-  vertNormal = normalMatrix * normal;
-  col = color;
-  gl_Position = projMatrix * mvMatrix * vertex;
+    vert = vertex.xyz;
+    vertNormal = normalMatrix * normal;
+    col = color;
+    gl_Position = projMatrix * mvMatrix * vertex;
 }

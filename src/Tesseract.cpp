@@ -6,7 +6,13 @@
 
 using namespace boost::numeric::ublas;
 
-Tesseract::Tesseract(vector<double> origin, vector<double> size)
+Tesseract::Tesseract(
+    vector<double> origin,
+    vector<double> size,
+    const Color& x_color,
+    const Color& y_color,
+    const Color& z_color,
+    const Color& w_color)
 {
     vertices_.resize(16);
     edges_.resize(32);
@@ -41,7 +47,7 @@ Tesseract::Tesseract(vector<double> origin, vector<double> size)
                             std::make_unique<Wireframe_edge>();
                         ids->vert1 = index(0, y, z, w);
                         ids->vert2 = index(1, y, z, w);
-                        ids->color = Color(215, 25, 28); // #d7191c
+                        ids->color = x_color;
 
                         edges_.at(li++) = std::move(ids);
                     }
@@ -51,7 +57,7 @@ Tesseract::Tesseract(vector<double> origin, vector<double> size)
                             std::make_unique<Wireframe_edge>();
                         ids->vert1 = index(x, 0, z, w);
                         ids->vert2 = index(x, 1, z, w);
-                        ids->color = Color(253, 174, 97); // #fdae61
+                        ids->color = y_color;
 
                         edges_.at(li++) = std::move(ids);
                     }
@@ -61,7 +67,7 @@ Tesseract::Tesseract(vector<double> origin, vector<double> size)
                             std::make_unique<Wireframe_edge>();
                         ids->vert1 = index(x, y, 0, w);
                         ids->vert2 = index(x, y, 1, w);
-                        ids->color = Color(171, 217, 233); // #abd9e9
+                        ids->color = z_color;
 
                         edges_.at(li++) = std::move(ids);
                     }
@@ -71,7 +77,7 @@ Tesseract::Tesseract(vector<double> origin, vector<double> size)
                             std::make_unique<Wireframe_edge>();
                         ids->vert1 = index(x, y, z, 0);
                         ids->vert2 = index(x, y, z, 1);
-                        ids->color = Color(44, 123, 182); // #2c7bb6
+                        ids->color = w_color;
 
                         edges_.at(li++) = std::move(ids);
                     }

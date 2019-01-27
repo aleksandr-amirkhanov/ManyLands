@@ -10,18 +10,17 @@ struct Color
 {
     Color()
     {
-        r = 0;
-        g = 0;
-        b = 0;
+        r = g = b = a = 0;
     }
-    Color(int r, int g, int b)
+    Color(int r, int g, int b, int a = 255)
     {
         this->r = r;
         this->g = g;
         this->b = b;
+        this->a = a;
     }
 
-    int r, g, b;
+    int r, g, b, a;
 };
 
 struct Wireframe_edge
