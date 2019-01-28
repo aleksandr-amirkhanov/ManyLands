@@ -55,8 +55,8 @@ private:
           sphere_diameter_;
 
     std::shared_ptr<Scene_state> state_;
-    std::vector<std::unique_ptr<Geometry_engine>> back_geometry_;
-    std::vector<std::unique_ptr<Geometry_engine>> front_geometry_;
+    std::vector<std::unique_ptr<Geometry_engine>> back_geometry_,
+                                                  front_geometry_;
 
     bool optimize_performance_;
     int visibility_mask_;

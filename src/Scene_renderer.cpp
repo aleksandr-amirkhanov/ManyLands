@@ -5,8 +5,6 @@
 #include "Matrix_lib.h"
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
-// std
-#include <algorithm>
 
 //using namespace boost::numeric::odeint;
 using namespace boost::numeric::ublas;
@@ -336,7 +334,6 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
 
     // Curve
     Mesh curve_mesh;
-
     for(size_t i = 0; i < c.get_edges().size(); ++i)
     {
         const auto& e = c.get_edges()[i];
@@ -347,14 +344,10 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
         // We are interested only in some interval of the curve
         if(state_->curve_selection &&
            !state_->curve_selection->in_range(c.get_time_stamp().at(e->vert1)))
-
         {
             continue;
         }
 
-        /*QColor col = get_speed_color(
-            (stats.speed[i] - stats.min_speed) /
-            (stats.max_speed - stats.min_speed));*/
         auto& stats = c.get_stats();
         double speed_coeff = (stats.speed[i] - stats.min_speed) /
                              (stats.max_speed - stats.min_speed);
@@ -368,6 +361,7 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
             get_speed_color(speed_coeff),
             curve_mesh);
     }
+    // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
     back_geometry_.push_back(std::make_unique<Geometry_engine>(curve_mesh));
 

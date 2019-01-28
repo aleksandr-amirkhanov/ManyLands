@@ -119,7 +119,7 @@ int main(int, char**)
     io.Fonts->AddFontFromFileTTF("fonts\\Roboto-Regular.ttf", 14.f * app_scale);
 
     bool show_tesseract = true;
-    bool show_curve = false;
+    bool show_curve = true;
 
     auto Color_to_ImVec4 = [](Color c)
     {
@@ -269,7 +269,7 @@ int main(int, char**)
                 ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::Text("Scene:");
-                ImGui::Checkbox("Tesseract", &show_tesseract);
+                ImGui::Checkbox("Tesseract##visibility", &show_tesseract);
                 ImGui::SameLine();
                 ImGui::Checkbox("Curve", &show_curve);
 
@@ -287,7 +287,7 @@ int main(int, char**)
                 if(ImGui::Button("Dark"))
                     set_dark_theme();
                 ImGui::SliderFloat(
-                    "Tesseract", &tesseract_thickness, 0.1f, 10.0f);
+                    "Tesseract##thickness", &tesseract_thickness, 0.1f, 10.0f);
                 ImGui::SliderFloat(
                     "Curve", &curve_thickness, 0.1f, 10.0f);
                 ImGui::SliderFloat(
@@ -405,6 +405,8 @@ int main(int, char**)
                 std::end(tesseract_size),
                 std::begin(state->tesseract_size));
             state->unfolding_anim_ = animation;
+            state->show_tesseract = show_tesseract;
+            state->show_curve = show_curve;
 
             renderer->set_line_thickness(tesseract_thickness, curve_thickness);
             renderer->set_sphere_diameter(sphere_diameter);
