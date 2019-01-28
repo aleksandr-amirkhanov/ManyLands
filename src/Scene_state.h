@@ -33,19 +33,23 @@ public:
     glm::vec3 camera_3D;
 
     boost::numeric::ublas::matrix<double> projection_4D;
-    boost::numeric::ublas::matrix<double> rotation_4D;
     boost::numeric::ublas::vector<double> camera_4D;
 
-    std::shared_ptr<Curve>           curve;
-    std::shared_ptr<Curve>           simple_curve;
+    float xy_rot, yz_rot, zx_rot, xw_rot, yw_rot, zw_rot;
+
+    std::shared_ptr<Curve> curve, simple_curve;
     std::shared_ptr<Curve_selection> curve_selection;
 
     std::shared_ptr<Tesseract> tesseract;
 
-    float tesseract_size[4];
-
     const Color* get_color(int color_id);
     void update_color(int color_id, const Color& color);
+
+    float unfolding_anim_;
+    bool show_tesseract,
+         show_curve,
+         use_simple_dali_cross;
+    std::array<float, 4> tesseract_size;
 
 private:
     std::map<std::int32_t, std::unique_ptr<Color>> colors_;

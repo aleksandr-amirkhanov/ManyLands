@@ -236,6 +236,8 @@ int main(int, char**)
                 0,
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
+            ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+
             if(ImGui::Button("Load ODE"))
             {
                 std::string filename;
@@ -364,14 +366,14 @@ int main(int, char**)
 
             ImGui::SetNextWindowSize(ImVec2(width - panel_size, 40));
             ImGui::SetNextWindowPos(ImVec2(panel_size, height - 40));
-            float val;
+            static float animation = 0.f;
             ImGui::Begin(
                 "##animation",
                 0,
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
                 ImGuiWindowFlags_NoResize);
             ImGui::PushItemWidth(-1);
-            ImGui::SliderFloat("##label", &val, 0.f, 1.f);
+            ImGui::SliderFloat("##label", &animation, 0.f, 1.f);
             ImGui::End();
 
             state->camera_3D.z = -camera_3D_dist;
@@ -379,22 +381,12 @@ int main(int, char**)
             state->projection_4D = Matrix_lib::get4DProjectionMatrix(
                 fov_4d[0], fov_4d[1], fov_4d[2], 1, 10);
 
-            state->rotation_4D = Matrix_lib::getXYRotationMatrix(xy_rot);
-            state->rotation_4D = prod(
-                state->rotation_4D,
-                Matrix_lib::getYZRotationMatrix(yz_rot));
-            state->rotation_4D = prod(
-                state->rotation_4D,
-                Matrix_lib::getZXRotationMatrix(zx_rot));
-            state->rotation_4D = prod(
-                state->rotation_4D,
-                Matrix_lib::getXWRotationMatrix(xw_rot));
-            state->rotation_4D = prod(
-                state->rotation_4D,
-                Matrix_lib::getYWRotationMatrix(yw_rot));
-            state->rotation_4D = prod(
-                state->rotation_4D,
-                Matrix_lib::getZWRotationMatrix(zw_rot));
+            state->xy_rot = xy_rot;
+            state->yz_rot = yz_rot;
+            state->zx_rot = zx_rot;
+            state->xw_rot = xw_rot;
+            state->yw_rot = yw_rot;
+            state->zw_rot = zw_rot;
 
             auto ImVec4_to_Color = [](ImVec4 v) {
                 return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
@@ -407,7 +399,12 @@ int main(int, char**)
             state->update_color(W_axis,           ImVec4_to_Color(w_axis_color));
             state->update_color(Curve_low_speed,  ImVec4_to_Color(low_speed_color));
             state->update_color(Curve_high_speed, ImVec4_to_Color(high_speed_color));
- 
+
+            std::copy(std::begin(
+                tesseract_size),
+                std::end(tesseract_size),
+                std::begin(state->tesseract_size));
+            state->unfolding_anim_ = animation;
 
             renderer->set_line_thickness(tesseract_thickness, curve_thickness);
             renderer->set_sphere_diameter(sphere_diameter);
