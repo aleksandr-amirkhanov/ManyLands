@@ -43,9 +43,17 @@ static void glfw_error_callback(int error, const char* description)
 
 int main(int, char**)
 {
-    const bool enable_keyboard = false;
-    const bool enable_gamepad = false;
-    int panel_size = 300;
+    // UI settings
+    
+    const bool enable_keyboard = false,   // Controllers
+               enable_gamepad  = false,
+               win_maximized   = true;
+    const float app_scale = 2.f,          // Global app scale
+                width_scale = 0.9f,       // Window size
+                height_scale = 0.9f;
+    // Panel sizes
+    const int left_panel_size   = 300 * app_scale,
+              bottom_panel_size = 36 * app_scale;
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -73,15 +81,34 @@ int main(int, char**)
     auto monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     glfwWindowHint(GLFW_SAMPLES, 16);
-    GLFWwindow* window = glfwCreateWindow(
-        mode->width * 0.9,
-        mode->height * 0.9,
-        "ManyLands",
-        NULL,
-        NULL);
-    glfwSetWindowPos(window, mode->width * 0.05, mode->height * 0.05);
-    if (window == NULL)
+
+    GLFWwindow* window = nullptr;
+    if(win_maximized)
+    {
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+        window = glfwCreateWindow(
+            mode->width,
+            mode->height,
+            "ManyLands",
+            NULL,
+            NULL);
+    }
+    else
+    {
+        window = glfwCreateWindow(
+            mode->width * width_scale,
+            mode->height * height_scale,
+            "ManyLands",
+            NULL,
+            NULL);
+        glfwSetWindowPos(window,
+                         mode->width  * 0.5 * (1 - width_scale),
+                         mode->height * 0.5 * (1 - height_scale));
+    }
+
+    if (!window)
         return 1;
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
@@ -100,10 +127,8 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    if(enable_keyboard)
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    if(enable_gamepad)
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    if(enable_keyboard) io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    if(enable_gamepad) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -113,7 +138,6 @@ int main(int, char**)
     ImGui::StyleColorsDark();
 
     // Font
-    const float app_scale = 1.f;
     ImGui::GetStyle().ScaleAllSizes(app_scale);
     ImGui::GetStyle().WindowRounding = 0.f;
     io.Fonts->AddFontFromFileTTF("fonts\\Roboto-Regular.ttf", 14.f * app_scale);
@@ -134,8 +158,7 @@ int main(int, char**)
            low_speed_color,
            high_speed_color;
 
-    auto set_bright_theme = [&]()
-    {
+    auto set_bright_theme = [&]() {
         clear_color      = Color_to_ImVec4(Color(255, 255, 255));
         x_axis_color     = Color_to_ImVec4(Color(215,  25,  28));
         y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
@@ -145,8 +168,7 @@ int main(int, char**)
         high_speed_color = Color_to_ImVec4(Color(220, 220, 220));
     };
 
-    auto set_dark_theme = [&]()
-    {
+    auto set_dark_theme = [&]() {
         clear_color      = Color_to_ImVec4(Color(  0,   0,   0));
         x_axis_color     = Color_to_ImVec4(Color(215,  25,  28));
         y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
@@ -192,41 +214,33 @@ int main(int, char**)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    // Main loop
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             static float tesseract_size[4] = { 200.f, 200.f, 200.f, 200.f },
                          tesseract_thickness = 3.f,
                          curve_thickness = 3.f,
-                         sphere_diameter = 3.f;
-            
-            static float camera_3D_dist = 3.f;
-
-            static float fov_4d[3] = {
-                30.f * DEG_TO_RAD,
-                30.f * DEG_TO_RAD,
-                30.f * DEG_TO_RAD };
-
-            static float xy_rot = 0.f;
-            static float yz_rot = 0.f;
-            static float zx_rot = 0.f;
-            static float xw_rot = 0.f;
-            static float yw_rot = 0.f;
-            static float zw_rot = 0.f;
+                         sphere_diameter = 3.f,
+                         camera_3D_dist = 3.f,
+                         xy_rot = 0.f,
+                         yz_rot = 0.f,
+                         zx_rot = 0.f,
+                         xw_rot = 0.f,
+                         yw_rot = 0.f,
+                         zw_rot = 0.f,
+                         fov_4d[3] = { 30.f * DEG_TO_RAD,
+                                       30.f * DEG_TO_RAD,
+                                       30.f * DEG_TO_RAD };
 
             int width, height;
             glfwGetWindowSize(window, &width, &height);
-            ImGui::SetNextWindowSize(ImVec2(panel_size, height));
+            ImGui::SetNextWindowSize(ImVec2(left_panel_size, height));
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSizeConstraints(
                 ImVec2(0, height), ImVec2(FLT_MAX, height));
@@ -361,11 +375,10 @@ int main(int, char**)
                 state->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
             }
 
-            panel_size = ImGui::GetWindowSize().x;
             ImGui::End();
 
-            ImGui::SetNextWindowSize(ImVec2(width - panel_size, 40));
-            ImGui::SetNextWindowPos(ImVec2(panel_size, height - 40));
+            ImGui::SetNextWindowSize(ImVec2(width - left_panel_size, bottom_panel_size));
+            ImGui::SetNextWindowPos(ImVec2(left_panel_size, height - bottom_panel_size));
             static float animation = 0.f;
             ImGui::Begin(
                 "##animation",
@@ -432,7 +445,7 @@ int main(int, char**)
 
 		glm::mat4 proj_mat = glm::perspective(
             fov_y,
-            (float)(width - panel_size) / height,
+            (float)(width - left_panel_size) / height,
             0.1f,
             100.f);
 		
@@ -453,7 +466,7 @@ int main(int, char**)
 
 
         
-        glViewport(panel_size, 0, width - panel_size, height);
+        glViewport(left_panel_size, 0, width - left_panel_size, height);
         renderer->render();
         glViewport(0, 0, width, height);
 
