@@ -58,7 +58,7 @@ int main(int, char**)
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
-        return 1;
+        return EXIT_FAILURE;
 
     // Decide GL+GLSL versions
 #if __APPLE__
@@ -142,11 +142,7 @@ int main(int, char**)
     ImGui::GetStyle().WindowRounding = 0.f;
     io.Fonts->AddFontFromFileTTF("fonts\\Roboto-Regular.ttf", 14.f * app_scale);
 
-    bool show_tesseract = true;
-    bool show_curve = true;
-
-    auto Color_to_ImVec4 = [](Color c)
-    {
+    auto Color_to_ImVec4 = [](Color c) {
         return ImVec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
     };
 
@@ -180,36 +176,32 @@ int main(int, char**)
 
     set_bright_theme();
 
-    GLuint programID = 
-        LoadShaders("shaders\\Diffuse.vert", "shaders\\Diffuse.frag");
-    GLuint proj_mat_id = glGetUniformLocation(programID, "projMatrix");
-    GLuint mv_mat_id = glGetUniformLocation(programID, "mvMatrix");
-    GLuint normal_mat_id = glGetUniformLocation(programID, "normalMatrix");
-    GLuint light_pos_id = glGetUniformLocation(programID, "lightPos");
+    GLuint program_id = 
+        load_shaders("shaders\\Diffuse.vert", "shaders\\Diffuse.frag");
 
-    int vertex_pos = glGetAttribLocation(programID, "vertex");
-    int normal_pos = glGetAttribLocation(programID, "normal");
-    int color_pos = glGetAttribLocation(programID, "color");
+    GLuint proj_mat_id   = glGetUniformLocation(program_id,   "projMatrix"),
+           mv_mat_id     = glGetUniformLocation(program_id,     "mvMatrix"),
+           normal_mat_id = glGetUniformLocation(program_id, "normalMatrix"),
+           light_pos_id  = glGetUniformLocation(program_id,     "lightPos");
 
-    glm::vec3 pos(0.f, 0.f, 0.f);
-    glm::vec4 col(1, 0.f, 0.f, 1.f);
-    auto m = Mesh_generator::sphere(8, 8, 0.5f, pos, col);
-    float fov_y = 45.f * DEG_TO_RAD;
-
-    std::shared_ptr<Scene_state> state =
-        std::make_shared<Scene_state>();
-    std::unique_ptr<Scene_renderer> renderer =
-        std::make_unique<Scene_renderer>(state);
-    std::unique_ptr<Scene> scene =
-        std::make_unique<Scene>(state);
+    std::shared_ptr<Scene_state>
+        state = std::make_shared<Scene_state>();
+    std::unique_ptr<Scene_renderer>
+        renderer = std::make_unique<Scene_renderer>(state);
+    std::unique_ptr<Scene>
+        scene = std::make_unique<Scene>(state);
 
     Controls::set_scene_state(state);
 
-    state->camera_4D(0) = 0;
-    state->camera_4D(1) = 0;
-    state->camera_4D(2) = 0;
+    state->camera_4D(0) =   0.;
+    state->camera_4D(1) =   0.;
+    state->camera_4D(2) =   0.;
     state->camera_4D(3) = 550.;
-    state->camera_4D(4) = 0;
+    state->camera_4D(4) =   0.;
+
+    bool show_tesseract = true,
+         show_curve = true;
+    float fov_y = 45.f * DEG_TO_RAD;
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -401,6 +393,7 @@ int main(int, char**)
             state->yw_rot = yw_rot;
             state->zw_rot = zw_rot;
 
+            // Helper lambda expression
             auto ImVec4_to_Color = [](ImVec4 v) {
                 return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
             };
@@ -418,8 +411,8 @@ int main(int, char**)
                 std::end(tesseract_size),
                 std::begin(state->tesseract_size));
             state->unfolding_anim_ = animation;
-            state->show_tesseract = show_tesseract;
-            state->show_curve = show_curve;
+            state->show_tesseract  = show_tesseract;
+            state->show_curve      = show_curve;
 
             renderer->set_line_thickness(tesseract_thickness, curve_thickness);
             renderer->set_sphere_diameter(sphere_diameter);
@@ -431,13 +424,13 @@ int main(int, char**)
         glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor( state->get_color(Background)->r / 255.f,
-                      state->get_color(Background)->g / 255.f,
-                      state->get_color(Background)->b / 255.f,
-                      state->get_color(Background)->a / 255.f );
+        glClearColor(state->get_color(Background)->r / 255.f,
+                     state->get_color(Background)->g / 255.f,
+                     state->get_color(Background)->b / 255.f,
+                     state->get_color(Background)->a / 255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(programID);
+        glUseProgram(program_id);
         if(!io.WantCaptureMouse)
             Controls::update(window);
         int width, height;
@@ -487,5 +480,5 @@ int main(int, char**)
     glfwDestroyWindow(window);
     glfwTerminate();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
