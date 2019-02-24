@@ -48,12 +48,12 @@ int main(int, char**)
     const bool enable_keyboard = false,   // Controllers
                enable_gamepad  = false,
                win_maximized   = true;
-    const float app_scale = 2.f,          // Global app scale
+    const float app_scale = 1.f,          // Global app scale
                 width_scale = 0.9f,       // Window size
                 height_scale = 0.9f;
     // Panel sizes
-    const int left_panel_size   = 300 * app_scale,
-              bottom_panel_size = 36 * app_scale;
+    int left_panel_size         = 300 * app_scale;
+    const int bottom_panel_size = 36 * app_scale;
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -367,6 +367,7 @@ int main(int, char**)
                 state->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
             }
 
+            left_panel_size = ImGui::GetWindowSize().x;
             ImGui::End();
 
             ImGui::SetNextWindowSize(ImVec2(width - left_panel_size, bottom_panel_size));
@@ -436,9 +437,13 @@ int main(int, char**)
         int width, height;
         glfwGetWindowSize(window, &width, &height);
 
+        glm::ivec2 scene_pos(left_panel_size, bottom_panel_size),
+                   scene_size(width - left_panel_size,
+                              height - bottom_panel_size);
+
 		glm::mat4 proj_mat = glm::perspective(
             fov_y,
-            (float)(width - left_panel_size) / height,
+            (float)scene_size[0] / scene_size[1],
             0.1f,
             100.f);
 		
@@ -459,7 +464,7 @@ int main(int, char**)
 
 
         
-        glViewport(left_panel_size, 0, width - left_panel_size, height);
+        glViewport(scene_pos[0], scene_pos[1], scene_size[0], scene_size[1]);
         renderer->render();
         glViewport(0, 0, width, height);
 
