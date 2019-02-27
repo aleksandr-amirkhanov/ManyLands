@@ -358,7 +358,12 @@ void mainloop()
     // Rendering
     ImGui::Render();
     SDL_GL_MakeCurrent(window, gl_context);
-    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+    glViewport(0,
+               0,
+               ImGui::GetIO().DisplayFramebufferScale.x *
+               (int)ImGui::GetIO().DisplaySize.x,
+               ImGui::GetIO().DisplayFramebufferScale.y *
+               (int)ImGui::GetIO().DisplaySize.y);
     glClearColor(state->get_color(Background)->r / 255.f,
                     state->get_color(Background)->g / 255.f,
                     state->get_color(Background)->b / 255.f,
@@ -374,8 +379,8 @@ void mainloop()
     height = (int)ImGui::GetIO().DisplaySize.y;
 
     glm::ivec2 scene_pos(left_panel_size, bottom_panel_size),
-                scene_size(width - left_panel_size,
-                            height - bottom_panel_size);
+               scene_size(width - left_panel_size,
+                          height - bottom_panel_size);
 
 	glm::mat4 proj_mat = glm::perspective(
         fov_y,
@@ -400,9 +405,15 @@ void mainloop()
 
 
         
-    glViewport(scene_pos[0], scene_pos[1], scene_size[0], scene_size[1]);
+    glViewport(ImGui::GetIO().DisplayFramebufferScale.x * scene_pos[0],
+               ImGui::GetIO().DisplayFramebufferScale.y * scene_pos[1],
+               ImGui::GetIO().DisplayFramebufferScale.x * scene_size[0],
+               ImGui::GetIO().DisplayFramebufferScale.y * scene_size[1]);
     renderer->render();
-    glViewport(0, 0, width, height);
+    glViewport(0,
+               0,
+               ImGui::GetIO().DisplayFramebufferScale.x * width,
+               ImGui::GetIO().DisplayFramebufferScale.y * height);
 
 
 
@@ -451,6 +462,7 @@ int main(int, char**)
 #endif
 
     // Create window with graphics context
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -486,29 +498,15 @@ int main(int, char**)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(NULL);
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'misc/fonts/README.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
-
-
- 
+    // Font
+    ImGui::GetStyle().ScaleAllSizes(app_scale);
+    ImGui::GetStyle().WindowRounding = 0.f;
+    io.Fonts->AddFontFromFileTTF("assets/Roboto-Regular.ttf", 14.f * app_scale); 
 
     set_bright_theme();
 
