@@ -5,7 +5,6 @@
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
-#define USE_GL_ES3
 #endif
 
 #ifdef _WIN32
@@ -18,7 +17,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // std
 #include <stdio.h>
@@ -42,7 +41,7 @@
 #include "Matrix_lib.h"
 #include "Tesseract.h"
 
-#ifdef USE_GL_ES3
+#if defined(USE_GL_ES3)
 #include <GLES3/gl3.h>  // Use GL ES 3
 #else
 // Regular OpenGL
@@ -460,7 +459,7 @@ int main(int, char**)
     gl_context = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
-#ifndef __EMSCRIPTEN__
+#if !defined(WIN32) || defined(__EMSCRIPTEN__)
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
     bool err = gl3wInit() != 0;

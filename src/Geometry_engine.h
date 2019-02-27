@@ -3,7 +3,7 @@
 // glm
 #include <glm/glm.hpp>
 // gl3w
-#ifdef __EMSCRIPTEN__
+#if !defined(WIN32) || defined(__EMSCRIPTEN__)
 #include <GLES3/gl3.h>  // Use GL ES 3
 #else
 #include <GL/gl3w.h>
