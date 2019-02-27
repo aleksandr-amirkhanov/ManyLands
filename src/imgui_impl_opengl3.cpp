@@ -150,7 +150,9 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
     GLint last_program; glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
     GLint last_texture; glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
 #ifdef GL_SAMPLER_BINDING
+#ifndef __EMSCRIPTEN__
     GLint last_sampler; glGetIntegerv(GL_SAMPLER_BINDING, &last_sampler);
+#endif
 #endif
     GLint last_array_buffer; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
     GLint last_vertex_array; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
@@ -205,7 +207,9 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
     glUniform1i(g_AttribLocationTex, 0);
     glUniformMatrix4fv(g_AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
 #ifdef GL_SAMPLER_BINDING
+#ifndef __EMSCRIPTEN__
     glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 may set that otherwise.
+#endif
 #endif
     // Recreate the VAO every time
     // (This is to easily allow multiple GL contexts. VAO are not shared among GL contexts, and we don't track creation/deletion of windows so we don't have an obvious key to use to cache them.)
@@ -275,7 +279,9 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
     glUseProgram(last_program);
     glBindTexture(GL_TEXTURE_2D, last_texture);
 #ifdef GL_SAMPLER_BINDING
+#ifndef __EMSCRIPTEN__
     glBindSampler(0, last_sampler);
+#endif
 #endif
     glActiveTexture(last_active_texture);
     glBindVertexArray(last_vertex_array);

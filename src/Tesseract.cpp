@@ -107,6 +107,7 @@ std::vector<Cube> Tesseract::split()
                 return e->color;
             }
         }
+        return static_cast<const Color*>(nullptr);
     };
 
     auto add_cube =
