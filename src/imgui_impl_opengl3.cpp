@@ -70,9 +70,9 @@
 
 // iOS, Android and Emscripten can use GL ES 3
 // Call ImGui_ImplOpenGL3_Init() with "#version 300 es"
-#if (defined(__APPLE__) && TARGET_OS_IOS) || (defined(__ANDROID__)) || (defined(__EMSCRIPTEN__))
-#define USE_GL_ES3
-#endif
+//#if (defined(__APPLE__) && TARGET_OS_IOS) || (defined(__ANDROID__)) || (defined(__EMSCRIPTEN__))
+//#define USE_GL_ES3
+//#endif
 
 #ifdef USE_GL_ES3
 // OpenGL ES 3

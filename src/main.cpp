@@ -17,7 +17,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 // std
 #include <stdio.h>
@@ -471,7 +471,7 @@ int main(int, char**)
     gl_context = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
-#if !defined(WIN32) || defined(__EMSCRIPTEN__)
+#if defined(WIN32)
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
     bool err = gl3wInit() != 0;

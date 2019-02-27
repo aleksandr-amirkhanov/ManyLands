@@ -4,7 +4,7 @@
 
 #pragma once
 
-#if !defined(WIN32) || defined(__EMSCRIPTEN__)
+#if defined(USE_GL_ES3)
 #include <GLES3/gl3.h>  // Use GL ES 3
 #else
 #include <GL/gl3w.h>
