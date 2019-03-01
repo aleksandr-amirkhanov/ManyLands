@@ -67,39 +67,39 @@ namespace
 
 bool done = false;
 
-SDL_DisplayMode current;
-SDL_WindowFlags window_flags;
-SDL_Window* window;
-SDL_GLContext gl_context;
+SDL_DisplayMode Current;
+SDL_WindowFlags Window_flags;
+SDL_Window* Window;
+SDL_GLContext Gl_context;
 
-bool show_tesseract = true,
-     show_curve     = true;
+bool Show_tesseract = true,
+     Show_curve     = true;
 
-ImVec4 clear_color,
-       x_axis_color,
-       y_axis_color,
-       z_axis_color,
-       w_axis_color,
-       low_speed_color,
-       high_speed_color;
+ImVec4 Clear_color,
+       X_axis_color,
+       Y_axis_color,
+       Z_axis_color,
+       W_axis_color,
+       Low_speed_color,
+       High_speed_color;
 
-GLuint program_id,
-       proj_mat_id,
-       mv_mat_id,
-       normal_mat_id,
-       light_pos_id;
+GLuint Program_id,
+       Proj_mat_id,
+       Mv_mat_id,
+       Normal_mat_id,
+       Light_pos_id;
 
-const bool enable_keyboard = false,   // Controllers
-           enable_gamepad  = false;
+const bool Enable_keyboard = false,   // Controllers
+           Enable_gamepad  = false;
 
-const float app_scale = 1.f;          // Global app scale
+const float App_scale = 1.f;          // Global app scale
 
-const int bottom_panel_size = 36 * app_scale;
-int left_panel_size = 300 * app_scale;
+const int Bottom_panel_size = 36 * App_scale;
+int Left_panel_size = 300 * App_scale;
 
-std::shared_ptr<Scene_state> state;
-std::unique_ptr<Scene_renderer> renderer;
-std::unique_ptr<Scene> scene;
+std::shared_ptr<Scene_state> State;
+std::unique_ptr<Scene_renderer> Renderer;
+std::unique_ptr<Scene> Scene_objs;
 
 //******************************************************************************
 // Color_to_ImVec4
@@ -116,13 +116,13 @@ ImVec4 Color_to_ImVec4(Color c)
 
 void set_bright_theme()
 {
-    clear_color      = Color_to_ImVec4(Color(255, 255, 255));
-    x_axis_color     = Color_to_ImVec4(Color(215, 25,   28));
-    y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
-    z_axis_color     = Color_to_ImVec4(Color(171, 217, 233));
-    w_axis_color     = Color_to_ImVec4(Color( 44, 123, 182));
-    low_speed_color  = Color_to_ImVec4(Color( 0,    0,   0));
-    high_speed_color = Color_to_ImVec4(Color(220, 220, 220));
+    Clear_color      = Color_to_ImVec4(Color(255, 255, 255));
+    X_axis_color     = Color_to_ImVec4(Color(215, 25,   28));
+    Y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
+    Z_axis_color     = Color_to_ImVec4(Color(171, 217, 233));
+    W_axis_color     = Color_to_ImVec4(Color( 44, 123, 182));
+    Low_speed_color  = Color_to_ImVec4(Color( 0,    0,   0));
+    High_speed_color = Color_to_ImVec4(Color(220, 220, 220));
 }
 
 //******************************************************************************
@@ -131,13 +131,13 @@ void set_bright_theme()
 
 void set_dark_theme()
 {
-    clear_color      = Color_to_ImVec4(Color(  0,   0,   0));
-    x_axis_color     = Color_to_ImVec4(Color(215,  25,  28));
-    y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
-    z_axis_color     = Color_to_ImVec4(Color(171, 217, 233));
-    w_axis_color     = Color_to_ImVec4(Color( 44, 123, 182));
-    low_speed_color  = Color_to_ImVec4(Color(255, 255, 255));
-    high_speed_color = Color_to_ImVec4(Color( 35,  35,  35));
+    Clear_color      = Color_to_ImVec4(Color(  0,   0,   0));
+    X_axis_color     = Color_to_ImVec4(Color(215,  25,  28));
+    Y_axis_color     = Color_to_ImVec4(Color(253, 174,  97));
+    Z_axis_color     = Color_to_ImVec4(Color(171, 217, 233));
+    W_axis_color     = Color_to_ImVec4(Color( 44, 123, 182));
+    Low_speed_color  = Color_to_ImVec4(Color(255, 255, 255));
+    High_speed_color = Color_to_ImVec4(Color( 35,  35,  35));
 }
 
 //******************************************************************************
@@ -158,7 +158,7 @@ void mainloop()
         }
         if (   event.type == SDL_WINDOWEVENT
             && event.window.event == SDL_WINDOWEVENT_CLOSE
-            && event.window.windowID == SDL_GetWindowID(window))
+            && event.window.windowID == SDL_GetWindowID(Window))
         {
             done = true;
         }
@@ -171,23 +171,23 @@ void mainloop()
                 //event.motion.xrel
                 glm::vec3 axis(event.motion.yrel, event.motion.xrel, 0.f);
                 float length = glm::length(axis);
-                state->rotation_3D =
+                State->rotation_3D =
                     glm::angleAxis(
                         glm::radians(0.25f * length),
                         glm::normalize(axis)) *
-                    state->rotation_3D;
+                    State->rotation_3D;
             }
 
             if(event.type == SDL_MOUSEWHEEL)
             {
-                state->camera_3D.z += event.wheel.y * 0.3f;
+                State->camera_3D.z += event.wheel.y * 0.3f;
             }
         }
     }
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(window);
+    ImGui_ImplSDL2_NewFrame(Window);
     ImGui::NewFrame();
 
     static float fov_y = 45.f * DEG_TO_RAD;
@@ -212,7 +212,7 @@ void mainloop()
                                    30.f * DEG_TO_RAD,
                                    30.f * DEG_TO_RAD };
 
-        ImGui::SetNextWindowSize(ImVec2(left_panel_size, height));
+        ImGui::SetNextWindowSize(ImVec2(Left_panel_size, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(0, height), ImVec2(FLT_MAX, height));
@@ -248,16 +248,16 @@ void mainloop()
             filename = "assets/model1-default.txt";
 #endif
             if(!filename.empty())
-                scene->load_ode(filename);
+                Scene_objs->load_ode(filename);
         }
 
         if (ImGui::CollapsingHeader("Rendering",
             ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Scene:");
-            ImGui::Checkbox("Tesseract##visibility", &show_tesseract);
+            ImGui::Checkbox("Tesseract##visibility", &Show_tesseract);
             ImGui::SameLine();
-            ImGui::Checkbox("Curve", &show_curve);
+            ImGui::Checkbox("Curve", &Show_curve);
 
             ImGui::SliderFloat4(
                 "Tesseract size", tesseract_size, 1.f, 500.f);
@@ -279,17 +279,17 @@ void mainloop()
             ImGui::SliderFloat(
                 "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
 
-            ImGui::ColorEdit3("Background", (float*)&clear_color);
-            ImGui::ColorEdit3("X-axis", (float*)&x_axis_color);
-            ImGui::ColorEdit3("Y-axis", (float*)&y_axis_color);
-            ImGui::ColorEdit3("Z-axis", (float*)&z_axis_color);
-            ImGui::ColorEdit3("W-axis", (float*)&w_axis_color);
+            ImGui::ColorEdit3("Background", (float*)&Clear_color);
+            ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
+            ImGui::ColorEdit3("Y-axis", (float*)&Y_axis_color);
+            ImGui::ColorEdit3("Z-axis", (float*)&Z_axis_color);
+            ImGui::ColorEdit3("W-axis", (float*)&W_axis_color);
 
             ImGui::ColorEdit3(
-                "Curve slow", (float*)&low_speed_color
+                "Curve slow", (float*)&Low_speed_color
             );
             ImGui::ColorEdit3(
-                "Curve fast", (float*)&high_speed_color
+                "Curve fast", (float*)&High_speed_color
             );
         }
 
@@ -320,14 +320,14 @@ void mainloop()
         {
             ImGui::Text("Basics:");
             const float dist_min = 1.f, dist_max = 20.f;
-            camera_3D_dist = std::clamp((float)(-state->camera_3D.z), dist_min, dist_max);
+            camera_3D_dist = std::clamp((float)(-State->camera_3D.z), dist_min, dist_max);
             ImGui::SliderFloat("Distance", &camera_3D_dist, dist_min, dist_max);
             ImGui::SliderAngle("Field of view", &fov_y, 1.f, 180.f);
                
             static float euler[3];
             static bool active = false;
             if(!active)
-                glm::extractEulerAngleXYZ(glm::toMat4(state->rotation_3D), euler[0], euler[1], euler[2]);
+                glm::extractEulerAngleXYZ(glm::toMat4(State->rotation_3D), euler[0], euler[1], euler[2]);
                 
             ImGui::Separator();
             ImGui::Text("Rotations (Euler angles):");
@@ -344,14 +344,14 @@ void mainloop()
                     euler[i] = 0.f;
             }
 
-            state->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
+            State->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
         }
 
-        left_panel_size = ImGui::GetWindowSize().x;
+        Left_panel_size = ImGui::GetWindowSize().x;
         ImGui::End();
 
-        ImGui::SetNextWindowSize(ImVec2(width - left_panel_size, bottom_panel_size));
-        ImGui::SetNextWindowPos(ImVec2(left_panel_size, height - bottom_panel_size));
+        ImGui::SetNextWindowSize(ImVec2(width - Left_panel_size, Bottom_panel_size));
+        ImGui::SetNextWindowPos(ImVec2(Left_panel_size, height - Bottom_panel_size));
         static float animation = 0.f;
         ImGui::Begin(
             "##animation",
@@ -362,62 +362,62 @@ void mainloop()
         ImGui::SliderFloat("##label", &animation, 0.f, 1.f);
         ImGui::End();
 
-        state->camera_3D.z = -camera_3D_dist;
+        State->camera_3D.z = -camera_3D_dist;
 
-        state->projection_4D = Matrix_lib::get4DProjectionMatrix(
+        State->projection_4D = Matrix_lib::get4DProjectionMatrix(
             fov_4d[0], fov_4d[1], fov_4d[2], 1, 10);
 
-        state->xy_rot = xy_rot;
-        state->yz_rot = yz_rot;
-        state->zx_rot = zx_rot;
-        state->xw_rot = xw_rot;
-        state->yw_rot = yw_rot;
-        state->zw_rot = zw_rot;
+        State->xy_rot = xy_rot;
+        State->yz_rot = yz_rot;
+        State->zx_rot = zx_rot;
+        State->xw_rot = xw_rot;
+        State->yw_rot = yw_rot;
+        State->zw_rot = zw_rot;
 
         // Helper lambda expression
         auto ImVec4_to_Color = [](ImVec4 v) {
             return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
         };
 
-        state->update_color(Background,       ImVec4_to_Color(clear_color));
-        state->update_color(X_axis,           ImVec4_to_Color(x_axis_color));
-        state->update_color(Y_axis,           ImVec4_to_Color(y_axis_color));
-        state->update_color(Z_axis,           ImVec4_to_Color(z_axis_color));
-        state->update_color(W_axis,           ImVec4_to_Color(w_axis_color));
-        state->update_color(Curve_low_speed,  ImVec4_to_Color(low_speed_color));
-        state->update_color(Curve_high_speed, ImVec4_to_Color(high_speed_color));
+        State->update_color(Background,       ImVec4_to_Color(Clear_color));
+        State->update_color(X_axis,           ImVec4_to_Color(X_axis_color));
+        State->update_color(Y_axis,           ImVec4_to_Color(Y_axis_color));
+        State->update_color(Z_axis,           ImVec4_to_Color(Z_axis_color));
+        State->update_color(W_axis,           ImVec4_to_Color(W_axis_color));
+        State->update_color(Curve_low_speed,  ImVec4_to_Color(Low_speed_color));
+        State->update_color(Curve_high_speed, ImVec4_to_Color(High_speed_color));
 
         std::copy(std::begin(
                   tesseract_size),
                   std::end(tesseract_size),
-                  std::begin(state->tesseract_size));
-        state->unfolding_anim_ = animation;
-        state->show_tesseract  = show_tesseract;
-        state->show_curve      = show_curve;
+                  std::begin(State->tesseract_size));
+        State->unfolding_anim_ = animation;
+        State->show_tesseract  = Show_tesseract;
+        State->show_curve      = Show_curve;
 
-        renderer->set_line_thickness(tesseract_thickness, curve_thickness);
-        renderer->set_sphere_diameter(sphere_diameter);
+        Renderer->set_line_thickness(tesseract_thickness, curve_thickness);
+        Renderer->set_sphere_diameter(sphere_diameter);
     } // ImGui windows end
 
     // Rendering
     ImGui::Render();
-    SDL_GL_MakeCurrent(window, gl_context);
+    SDL_GL_MakeCurrent(Window, Gl_context);
     glViewport(
         0,
         0,
         static_cast<int>(io.DisplayFramebufferScale.x * io.DisplaySize.x),
         static_cast<int>(io.DisplayFramebufferScale.y * io.DisplaySize.y));
-    glClearColor(state->get_color(Background)->r / 255.f,
-                 state->get_color(Background)->g / 255.f,
-                 state->get_color(Background)->b / 255.f,
-                 state->get_color(Background)->a / 255.f);
+    glClearColor(State->get_color(Background)->r / 255.f,
+                 State->get_color(Background)->g / 255.f,
+                 State->get_color(Background)->b / 255.f,
+                 State->get_color(Background)->a / 255.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(program_id);
+    glUseProgram(Program_id);
 
-    glm::ivec2 scene_pos(left_panel_size, bottom_panel_size),
-               scene_size(width - left_panel_size,
-                          height - bottom_panel_size);
+    glm::ivec2 scene_pos(Left_panel_size, Bottom_panel_size),
+               scene_size(width - Left_panel_size,
+                          height - Bottom_panel_size);
 
 	glm::mat4 proj_mat = glm::perspective(
         fov_y,
@@ -425,32 +425,32 @@ void mainloop()
         0.1f,
         100.f);
 		
-    auto camera_mat = glm::translate(glm::mat4(1.f), state->camera_3D);
+    auto camera_mat = glm::translate(glm::mat4(1.f), State->camera_3D);
 
     glm::vec3 light_pos(0.f, 0.f, 70.f);
 
-	auto world_mat = glm::toMat4(state->rotation_3D);
+	auto world_mat = glm::toMat4(State->rotation_3D);
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
-    glUniformMatrix4fv(proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_mat));
+    glUniformMatrix4fv(Proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_mat));
     glUniformMatrix4fv(
-        mv_mat_id, 1, GL_FALSE, glm::value_ptr(camera_mat * world_mat));
+        Mv_mat_id, 1, GL_FALSE, glm::value_ptr(camera_mat * world_mat));
     glUniformMatrix3fv(
-        normal_mat_id, 1, GL_FALSE, glm::value_ptr(norm_mat));
-    glUniform3fv(light_pos_id, 1, glm::value_ptr(light_pos));
+        Normal_mat_id, 1, GL_FALSE, glm::value_ptr(norm_mat));
+    glUniform3fv(Light_pos_id, 1, glm::value_ptr(light_pos));
         
     glViewport(io.DisplayFramebufferScale.x * scene_pos[0],
                io.DisplayFramebufferScale.y * scene_pos[1],
                io.DisplayFramebufferScale.x * scene_size[0],
                io.DisplayFramebufferScale.y * scene_size[1]);
-    renderer->render();
+    Renderer->render();
     glViewport(0,
                0,
                io.DisplayFramebufferScale.x * width,
                io.DisplayFramebufferScale.y * height);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(window);
+    SDL_GL_SwapWindow(Window);
 }
 } // namespace end
 
@@ -491,10 +491,10 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GetCurrentDisplayMode(0, &current);
-    window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    gl_context = SDL_GL_CreateContext(window);
+    SDL_GetCurrentDisplayMode(0, &Current);
+    Window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    Window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, Window_flags);
+    Gl_context = SDL_GL_CreateContext(Window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
 #if defined(WIN32)
@@ -519,44 +519,44 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    if(enable_keyboard) io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    if(enable_gamepad) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    if(Enable_keyboard) io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    if(Enable_gamepad) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer bindings
-    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+    ImGui_ImplSDL2_InitForOpenGL(Window, Gl_context);
     //ImGui_ImplOpenGL3_Init(glsl_version);
     ImGui_ImplOpenGL3_Init(NULL);
 
     // Font
-    ImGui::GetStyle().ScaleAllSizes(app_scale);
+    ImGui::GetStyle().ScaleAllSizes(App_scale);
     ImGui::GetStyle().WindowRounding = 0.f;
-    io.Fonts->AddFontFromFileTTF("assets/Roboto-Regular.ttf", 14.f * app_scale); 
+    io.Fonts->AddFontFromFileTTF("assets/Roboto-Regular.ttf", 14.f * App_scale); 
 
     set_bright_theme();
 
 #ifdef __EMSCRIPTEN__
     program_id = load_shaders("assets/Diffuse_ES.vert", "assets/Diffuse_ES.frag");
 #else
-    program_id = load_shaders("assets/Diffuse.vert", "assets/Diffuse.frag");
+    Program_id = load_shaders("assets/Diffuse.vert", "assets/Diffuse.frag");
 #endif
 
-    proj_mat_id   = glGetUniformLocation(program_id,   "projMatrix");
-    mv_mat_id     = glGetUniformLocation(program_id,     "mvMatrix");
-    normal_mat_id = glGetUniformLocation(program_id, "normalMatrix");
-    light_pos_id  = glGetUniformLocation(program_id,     "lightPos");
+    Proj_mat_id   = glGetUniformLocation(Program_id,   "projMatrix");
+    Mv_mat_id     = glGetUniformLocation(Program_id,     "mvMatrix");
+    Normal_mat_id = glGetUniformLocation(Program_id, "normalMatrix");
+    Light_pos_id  = glGetUniformLocation(Program_id,     "lightPos");
     
-    state    = std::make_shared<Scene_state>();
-    renderer = std::make_unique<Scene_renderer>(state);
-    scene    = std::make_unique<Scene>(state);
+    State      = std::make_shared<Scene_state>();
+    Renderer   = std::make_unique<Scene_renderer>(State);
+    Scene_objs = std::make_unique<Scene>(State);
 
-    state->camera_4D(0) =   0.;
-    state->camera_4D(1) =   0.;
-    state->camera_4D(2) =   0.;
-    state->camera_4D(3) = 550.;
-    state->camera_4D(4) =   0.;
+    State->camera_4D(0) =   0.;
+    State->camera_4D(1) =   0.;
+    State->camera_4D(2) =   0.;
+    State->camera_4D(3) = 550.;
+    State->camera_4D(4) =   0.;
 	
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);
@@ -572,8 +572,8 @@ int main(int, char**)
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    SDL_GL_DeleteContext(gl_context);
-    SDL_DestroyWindow(window);
+    SDL_GL_DeleteContext(Gl_context);
+    SDL_DestroyWindow(Window);
     SDL_Quit();
 #endif
 
