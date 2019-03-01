@@ -14,7 +14,7 @@ Scene_renderer::Scene_renderer()
     , curve_thickness_(1.f)
     , sphere_diameter_(1.f)
     , number_of_animations_(6)
-    , optimize_performance_(false)
+    , optimize_performance_(true)
     , visibility_mask_(0)
 {
 }
@@ -254,8 +254,11 @@ void Scene_renderer::project_to_3D(
     std::vector<boost::numeric::ublas::vector<double>>& verts,
     const boost::numeric::ublas::matrix<double>& rot_mat)
 {
-    for(auto& v : verts)
+    auto project = [&](boost::numeric::ublas::vector<double>& v)
+    {
         project_to_3D(v, rot_mat);
+    };
+    std::for_each(verts.begin(), verts.end(), project);
 }
 
 void Scene_renderer::draw_tesseract(Wireframe_object& t)

@@ -1,8 +1,3 @@
-// dear imgui: standalone example application for SDL2 + OpenGL
-// If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
-// (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
-// (GL3W is a helper library to access OpenGL functions since there is no standard header to access modern OpenGL functions easily. Alternatives are GLEW, Glad, etc.)
-
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
 #endif
@@ -18,6 +13,7 @@
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include <SDL.h>
+#include <SDL_syswm.h>
 
 // std
 #include <stdio.h>
@@ -44,10 +40,6 @@
 #if defined(USE_GL_ES3)
 #include <GLES3/gl3.h>  // Use GL ES 3
 #else
-// Regular OpenGL
-// About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
-// Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
-// You may use another loader/header of your choice (glext, glLoadGen, etc.), or chose to manually implement your own.
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
@@ -230,11 +222,15 @@ void mainloop()
 #ifdef _WIN32
             char fn[MAX_PATH];
 
+            SDL_SysWMinfo wm_info;
+            SDL_VERSION(&wm_info.version);
+            SDL_GetWindowWMInfo(Window, &wm_info);
+
             OPENFILENAMEA ofn;
             ZeroMemory( &fn, sizeof( fn ) );
             ZeroMemory( &ofn, sizeof( ofn ) );
             ofn.lStructSize  = sizeof(ofn);
-            ofn.hwndOwner    = NULL; //glfwGetWin32Window(window);
+            ofn.hwndOwner    = wm_info.info.win.window;
             ofn.lpstrFilter  = "Text Files\0*.txt\0Any File\0*.*\0";
             ofn.lpstrFile    = fn;
             ofn.nMaxFile     = MAX_PATH;
@@ -257,7 +253,7 @@ void mainloop()
             ImGui::Text("Scene:");
             ImGui::Checkbox("Tesseract##visibility", &Show_tesseract);
             ImGui::SameLine();
-            ImGui::Checkbox("Curve", &Show_curve);
+            ImGui::Checkbox("Curve##visibility", &Show_curve);
 
             ImGui::SliderFloat4(
                 "Tesseract size", tesseract_size, 1.f, 500.f);
@@ -275,7 +271,7 @@ void mainloop()
             ImGui::SliderFloat(
                 "Tesseract##thickness", &tesseract_thickness, 0.1f, 10.0f);
             ImGui::SliderFloat(
-                "Curve", &curve_thickness, 0.1f, 10.0f);
+                "Curve##thickness", &curve_thickness, 0.1f, 10.0f);
             ImGui::SliderFloat(
                 "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
 
@@ -320,14 +316,19 @@ void mainloop()
         {
             ImGui::Text("Basics:");
             const float dist_min = 1.f, dist_max = 20.f;
-            camera_3D_dist = std::clamp((float)(-State->camera_3D.z), dist_min, dist_max);
+            camera_3D_dist = std::clamp((float)(-State->camera_3D.z),
+                                        dist_min,
+                                        dist_max);
             ImGui::SliderFloat("Distance", &camera_3D_dist, dist_min, dist_max);
             ImGui::SliderAngle("Field of view", &fov_y, 1.f, 180.f);
                
             static float euler[3];
             static bool active = false;
             if(!active)
-                glm::extractEulerAngleXYZ(glm::toMat4(State->rotation_3D), euler[0], euler[1], euler[2]);
+                glm::extractEulerAngleXYZ(glm::toMat4(State->rotation_3D),
+                                          euler[0],
+                                          euler[1],
+                                          euler[2]);
                 
             ImGui::Separator();
             ImGui::Text("Rotations (Euler angles):");
@@ -344,14 +345,18 @@ void mainloop()
                     euler[i] = 0.f;
             }
 
-            State->rotation_3D = glm::eulerAngleXYZ(euler[0], euler[1], euler[2]);
+            State->rotation_3D = glm::eulerAngleXYZ(euler[0],
+                                                    euler[1],
+                                                    euler[2]);
         }
 
         Left_panel_size = ImGui::GetWindowSize().x;
         ImGui::End();
 
-        ImGui::SetNextWindowSize(ImVec2(width - Left_panel_size, Bottom_panel_size));
-        ImGui::SetNextWindowPos(ImVec2(Left_panel_size, height - Bottom_panel_size));
+        ImGui::SetNextWindowSize(ImVec2(width - Left_panel_size,
+                                 Bottom_panel_size));
+        ImGui::SetNextWindowPos(ImVec2(Left_panel_size,
+                                height - Bottom_panel_size));
         static float animation = 0.f;
         ImGui::Begin(
             "##animation",
@@ -385,7 +390,8 @@ void mainloop()
         State->update_color(Z_axis,           ImVec4_to_Color(Z_axis_color));
         State->update_color(W_axis,           ImVec4_to_Color(W_axis_color));
         State->update_color(Curve_low_speed,  ImVec4_to_Color(Low_speed_color));
-        State->update_color(Curve_high_speed, ImVec4_to_Color(High_speed_color));
+        State->update_color(
+            Curve_high_speed, ImVec4_to_Color(High_speed_color));
 
         std::copy(std::begin(
                   tesseract_size),
@@ -471,17 +477,26 @@ int main(int, char**)
 #if __APPLE__
     // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,
+                        SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #elif __EMSCRIPTEN__
     // Nothing
+    const char* glsl_version = "#version 300 es";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #else
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
@@ -492,8 +507,16 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GetCurrentDisplayMode(0, &Current);
-    Window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    Window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, Window_flags);
+    Window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL |
+                                     SDL_WINDOW_RESIZABLE |
+                                     SDL_WINDOW_ALLOW_HIGHDPI);
+    Window = SDL_CreateWindow(
+        "Dear ImGui SDL2+OpenGL3 example",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        1280,
+        720,
+        Window_flags);
     Gl_context = SDL_GL_CreateContext(Window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
@@ -506,7 +529,9 @@ int main(int, char**)
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
     bool err = gladLoadGL() == 0;
 #else
-    bool err = false; // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader is likely to requires some form of initialization.
+    // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader is likely to
+    // requires some form of initialization.
+    bool err = false;
 #endif
     if (err)
     {
@@ -527,8 +552,8 @@ int main(int, char**)
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(Window, Gl_context);
-    //ImGui_ImplOpenGL3_Init(glsl_version);
-    ImGui_ImplOpenGL3_Init(NULL);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+    //ImGui_ImplOpenGL3_Init(NULL);
 
     // Font
     ImGui::GetStyle().ScaleAllSizes(App_scale);
@@ -538,9 +563,11 @@ int main(int, char**)
     set_bright_theme();
 
 #ifdef __EMSCRIPTEN__
-    program_id = load_shaders("assets/Diffuse_ES.vert", "assets/Diffuse_ES.frag");
+    Program_id = load_shaders("assets/Diffuse_ES.vert",
+                              "assets/Diffuse_ES.frag");
 #else
-    Program_id = load_shaders("assets/Diffuse.vert", "assets/Diffuse.frag");
+    Program_id = load_shaders("assets/Diffuse.vert",
+                              "assets/Diffuse.frag");
 #endif
 
     Proj_mat_id   = glGetUniformLocation(Program_id,   "projMatrix");

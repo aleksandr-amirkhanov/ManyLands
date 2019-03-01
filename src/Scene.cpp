@@ -27,7 +27,7 @@ void Scene::load_ode(std::string filename)
 
     // Simplify the curve and calculate statistics for the simplified curve
     state_->simple_curve = std::shared_ptr<Curve>(
-        new Curve(state_->curve->get_simpified_curve(20.))
+        new Curve(state_->curve->get_simpified_curve(10.))
         );
     state_->simple_curve->update_stats();
 

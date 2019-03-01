@@ -105,7 +105,8 @@ Curve Curve::get_simpified_curve(const double spacing)
         auto get_distance = [](boost::numeric::ublas::vector<double> v1,
                                boost::numeric::ublas::vector<double> v2) {
             auto d = v2 - v1;
-            return (d(0) * d(0) + d(1) * d(1) + d(2) * d(2) + d(3) * d(3));
+            return std::sqrt(
+                d(0) * d(0) + d(1) * d(1) + d(2) * d(2) + d(3) * d(3));
         };
 
         dist += get_distance(get_vertices()[i - 1], get_vertices()[i]);
