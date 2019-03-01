@@ -140,6 +140,26 @@ void mainloop()
             done = true;
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
             done = true;
+
+        if(!ImGui::GetIO().WantCaptureMouse)
+        {
+            if(   event.type == SDL_MOUSEMOTION
+               && event.button.button == SDL_BUTTON_LEFT)
+            {
+                //event.motion.xrel
+                glm::vec3 axis(event.motion.yrel, event.motion.xrel, 0.f);
+                float length = glm::length(axis);
+                state->rotation_3D =
+                    glm::angleAxis(
+                        glm::radians(0.25f * length),
+                        glm::normalize(axis)) *
+                    state->rotation_3D;
+            }
+            if(event.type == SDL_MOUSEWHEEL)
+            {
+                state->camera_3D.z += event.wheel.y * 0.3f;
+            }
+        }
     }
 
     // Start the Dear ImGui frame

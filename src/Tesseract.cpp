@@ -107,6 +107,7 @@ std::vector<Cube> Tesseract::split()
                 return e->color;
             }
         }
+        throw std::logic_error("The color always shold be found!");
         return static_cast<const Color*>(nullptr);
     };
 
