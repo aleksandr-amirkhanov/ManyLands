@@ -2,19 +2,20 @@
 #include "emscripten.h"
 #endif
 
+// Win
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define NOMINMAX
 #include <windows.h>
 #include <commdlg.h>
 #endif
-
+// ImGui
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
+// SDL
 #include <SDL.h>
 #include <SDL_syswm.h>
-
 // std
 #include <stdio.h>
 #include <memory.h>
@@ -33,9 +34,10 @@
 #include "Scene_state.h"
 #include "Scene_renderer.h"
 #include "Consts.h"
-//#include "Controls.h"
 #include "Matrix_lib.h"
 #include "Tesseract.h"
+// Boost
+#include <boost/numeric/ublas/assignment.hpp>
 
 #if defined(USE_GL_ES3)
 #include <GLES3/gl3.h>  // Use GL ES 3
@@ -511,11 +513,11 @@ int main(int, char**)
                                      SDL_WINDOW_RESIZABLE |
                                      SDL_WINDOW_ALLOW_HIGHDPI);
     Window = SDL_CreateWindow(
-        "Dear ImGui SDL2+OpenGL3 example",
+        "ManyLands",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        1280,
-        720,
+        1600,
+        900,
         Window_flags);
     Gl_context = SDL_GL_CreateContext(Window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -545,7 +547,7 @@ int main(int, char**)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     if(Enable_keyboard) io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    if(Enable_gamepad) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    if(Enable_gamepad ) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -553,7 +555,6 @@ int main(int, char**)
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(Window, Gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
-    //ImGui_ImplOpenGL3_Init(NULL);
 
     // Font
     ImGui::GetStyle().ScaleAllSizes(App_scale);
@@ -579,11 +580,7 @@ int main(int, char**)
     Renderer   = std::make_unique<Scene_renderer>(State);
     Scene_objs = std::make_unique<Scene>(State);
 
-    State->camera_4D(0) =   0.;
-    State->camera_4D(1) =   0.;
-    State->camera_4D(2) =   0.;
-    State->camera_4D(3) = 550.;
-    State->camera_4D(4) =   0.;
+    State->camera_4D <<= 0., 0., 0., 550., 0.;
 	
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);
