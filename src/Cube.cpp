@@ -14,11 +14,10 @@ Cube::Cube(
     boost::numeric::ublas::vector<double> v7,
     boost::numeric::ublas::vector<double> v8)
     : Cube(v1, v2, v3, v4, v5, v6, v7, v8,
-        &default_color,
-        &default_color,
-        &default_color)
-{
-}
+        default_color,
+        default_color,
+        default_color)
+{}
 
 Cube::Cube(
     boost::numeric::ublas::vector<double> v1,
@@ -29,9 +28,9 @@ Cube::Cube(
     boost::numeric::ublas::vector<double> v6,
     boost::numeric::ublas::vector<double> v7,
     boost::numeric::ublas::vector<double> v8,
-    const Color* horiz_col,
-    const Color* vert_col,
-    const Color* depth_col)
+    const Color& horiz_col,
+    const Color& vert_col,
+    const Color& depth_col)
 {
     vertices_.push_back(v1);
     vertices_.push_back(v2);
@@ -63,29 +62,25 @@ std::vector<Square> Cube::split(std::vector<Cube>& cubes)
     std::vector<Square> squares;
 
     auto get_color = [&](size_t cube_ind, size_t v1, size_t v2) {
-        for(const auto& e : cubes[cube_ind].get_edges())
+        for(const auto& e : cubes[cube_ind].edges())
         {
-            if((e->vert1 == v1 && e->vert2 == v2) ||
-               (e->vert1 == v2 && e->vert2 == v1))
+            if((e.vert1 == v1 && e.vert2 == v2) ||
+               (e.vert1 == v2 && e.vert2 == v1))
             {
-                return e->color;
+                return e.color;
             }
         }
-
-        return &default_color;
+        return default_color;
     };
 
     auto create_square = [&](int cube_ind, int v1, int v2, int v3, int v4) {
-        const Color* horiz_col = get_color(cube_ind, v1, v2);
-        const Color* vert_col = get_color(cube_ind, v1, v4);
-        assert(horiz_col);
-        assert(vert_col);
-
+        const Color& horiz_col = get_color(cube_ind, v1, v2);
+        const Color& vert_col = get_color(cube_ind, v1, v4);
         return Square(
-            cubes[cube_ind].get_vertices()[v1],
-            cubes[cube_ind].get_vertices()[v2],
-            cubes[cube_ind].get_vertices()[v3],
-            cubes[cube_ind].get_vertices()[v4],
+            cubes[cube_ind].vertices()[v1],
+            cubes[cube_ind].vertices()[v2],
+            cubes[cube_ind].vertices()[v3],
+            cubes[cube_ind].vertices()[v4],
             horiz_col,
             vert_col);
     };

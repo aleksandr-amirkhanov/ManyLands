@@ -163,13 +163,13 @@ void Curve::calculate_general_stats()
     // Calculate speed
     for(const auto& e : edges_)
     {
-        auto diff = vertices_[e->vert1] - vertices_[e->vert2];
+        auto diff = vertices_[e.vert1] - vertices_[e.vert2];
 
         double s = 0.;
         for(int j = 0; j < 4; ++j)
             s += diff(j) * diff(j);
         s = std::sqrt(s) /
-            std::abs(time_stamp_[e->vert2] - time_stamp_[e->vert1]);
+            std::abs(time_stamp_[e.vert2] - time_stamp_[e.vert1]);
 
         min_speed = std::min(s, min_speed);
         max_speed = std::max(s, max_speed);

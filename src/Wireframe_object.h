@@ -32,9 +32,15 @@ struct Color
 
 struct Wireframe_edge
 {
+    static Wireframe_edge
+    make(const size_t vert1, const size_t vert2, const Color& color)
+    {
+        const Wireframe_edge out = {vert1, vert2, color};
+        return out;
+    }
     size_t vert1;
     size_t vert2;
-    const Color* color;
+    Color color;
 };
 
 class Wireframe_object
@@ -47,12 +53,11 @@ public:
     std::vector<boost::numeric::ublas::vector<double>>& get_vertices();
     const std::vector<boost::numeric::ublas::vector<double>>& vertices() const;
 
-    std::vector<std::unique_ptr<Wireframe_edge>>& get_edges();
-    const std::vector<std::unique_ptr<Wireframe_edge>>& edges() const;
+    const std::vector<Wireframe_edge>& edges() const;
 
     virtual void add_vertex(const boost::numeric::ublas::vector<double>& vert);
     virtual void add_edge(size_t vert1, size_t vert2);
-    virtual void add_edge(size_t vert1, size_t vert2, const Color* color);
+    virtual void add_edge(size_t vert1, size_t vert2, const Color &color);
 
     void translate_vertices(boost::numeric::ublas::vector<double> translate);
     void scale_vertices(double scale_factor);
@@ -62,5 +67,5 @@ public:
 
 protected:
     std::vector<boost::numeric::ublas::vector<double>> vertices_;
-    std::vector<std::unique_ptr<Wireframe_edge>> edges_;
+    std::vector<Wireframe_edge> edges_;
 };

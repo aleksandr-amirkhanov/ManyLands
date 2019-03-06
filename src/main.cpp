@@ -415,10 +415,10 @@ void mainloop()
         0,
         static_cast<int>(io.DisplayFramebufferScale.x * io.DisplaySize.x),
         static_cast<int>(io.DisplayFramebufferScale.y * io.DisplaySize.y));
-    glClearColor(State->get_color(Background)->r / 255.f,
-                 State->get_color(Background)->g / 255.f,
-                 State->get_color(Background)->b / 255.f,
-                 State->get_color(Background)->a / 255.f);
+    glClearColor(State->get_color(Background).r / 255.f,
+                 State->get_color(Background).g / 255.f,
+                 State->get_color(Background).b / 255.f,
+                 State->get_color(Background).a / 255.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(Program_id);
