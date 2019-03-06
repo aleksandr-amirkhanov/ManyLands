@@ -335,10 +335,10 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
                  speed * state_->get_color(Curve_high_speed).r) /
                     255.f,
                 ((1 - speed) * state_->get_color(Curve_low_speed).g +
-                 speed * state_->get_color(Curve_high_speed).r) /
+                 speed * state_->get_color(Curve_high_speed).g) /
                     255.f,
                 ((1 - speed) * state_->get_color(Curve_low_speed).b +
-                 speed * state_->get_color(Curve_high_speed).r) /
+                 speed * state_->get_color(Curve_high_speed).b) /
                     255.f,
                 opacity);
         };
