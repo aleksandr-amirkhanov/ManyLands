@@ -46,9 +46,9 @@ Geometry_engine::Geometry_engine(const Geometry_engine& other)
 Geometry_engine::Geometry_engine(Geometry_engine&& other) noexcept
     : vnc_vector_(std::exchange(other.vnc_vector_, std::vector<Array_data>()))
     , indices_(std::exchange(other.indices_, std::vector<GLuint>()))
-{
-    init_buffers();
-}
+    , array_buff_id_(std::exchange(other.array_buff_id_, GLuint(0)))
+    , index_buff_id_(std::exchange(other.index_buff_id_, GLuint(0)))
+{}
 
 Geometry_engine& Geometry_engine::operator=(const Geometry_engine& other)
 {
