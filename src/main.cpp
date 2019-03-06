@@ -91,9 +91,9 @@ const float App_scale = 1.f;          // Global app scale
 const int Bottom_panel_size = 36 * App_scale;
 int Left_panel_size = 300 * App_scale;
 
-std::shared_ptr<Scene_state> State;
-std::unique_ptr<Scene_renderer> Renderer;
-std::unique_ptr<Scene> Scene_objs;
+const std::shared_ptr<Scene_state> State = std::make_shared<Scene_state>();
+Scene_renderer Renderer(State);
+Scene Scene_objs(State);
 
 //******************************************************************************
 // Color_to_ImVec4
@@ -246,7 +246,7 @@ void mainloop()
             filename = "assets/model1-default.txt";
 #endif
             if(!filename.empty())
-                Scene_objs->load_ode(filename);
+                Scene_objs.load_ode(filename);
         }
 
         if (ImGui::CollapsingHeader("Rendering",
@@ -403,8 +403,8 @@ void mainloop()
         State->show_tesseract  = Show_tesseract;
         State->show_curve      = Show_curve;
 
-        Renderer->set_line_thickness(tesseract_thickness, curve_thickness);
-        Renderer->set_sphere_diameter(sphere_diameter);
+        Renderer.set_line_thickness(tesseract_thickness, curve_thickness);
+        Renderer.set_sphere_diameter(sphere_diameter);
     } // ImGui windows end
 
     // Rendering
@@ -427,17 +427,17 @@ void mainloop()
                scene_size(width - Left_panel_size,
                           height - Bottom_panel_size);
 
-	glm::mat4 proj_mat = glm::perspective(
+    glm::mat4 proj_mat = glm::perspective(
         fov_y,
         (float)scene_size[0] / scene_size[1],
         0.1f,
         100.f);
-		
+
     auto camera_mat = glm::translate(glm::mat4(1.f), State->camera_3D);
 
     glm::vec3 light_pos(0.f, 0.f, 70.f);
 
-	auto world_mat = glm::toMat4(State->rotation_3D);
+    auto world_mat = glm::toMat4(State->rotation_3D);
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
     glUniformMatrix4fv(Proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_mat));
@@ -451,7 +451,7 @@ void mainloop()
                io.DisplayFramebufferScale.y * scene_pos[1],
                io.DisplayFramebufferScale.x * scene_size[0],
                io.DisplayFramebufferScale.y * scene_size[1]);
-    Renderer->render();
+    Renderer.render();
     glViewport(0,
                0,
                io.DisplayFramebufferScale.x * width,
@@ -575,16 +575,12 @@ int main(int, char**)
     Mv_mat_id     = glGetUniformLocation(Program_id,     "mvMatrix");
     Normal_mat_id = glGetUniformLocation(Program_id, "normalMatrix");
     Light_pos_id  = glGetUniformLocation(Program_id,     "lightPos");
-    
-    State      = std::make_shared<Scene_state>();
-    Renderer   = std::make_unique<Scene_renderer>(State);
-    Scene_objs = std::make_unique<Scene>(State);
 
     State->camera_4D <<= 0., 0., 0., 550., 0.;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);
 #else
