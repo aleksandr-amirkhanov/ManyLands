@@ -5,6 +5,8 @@
 #include "Matrix_lib.h"
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
+// std
+#include <stdexcept>
 
 //using namespace boost::numeric::odeint;
 using namespace boost::numeric::ublas;
@@ -32,11 +34,11 @@ void Scene_renderer::set_state(std::shared_ptr<Scene_state> state)
 
 void Scene_renderer::render()
 {
-    assert(state_);
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
        state_->curve     == nullptr)
     {
+        std::logic_error("The scene is incomplete");
         return;
     }
 

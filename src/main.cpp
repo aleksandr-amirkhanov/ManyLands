@@ -581,6 +581,9 @@ int main(int, char**)
     Scene_objs = std::make_unique<Scene>(State);
 
     State->camera_4D <<= 0., 0., 0., 550., 0.;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);

@@ -2,6 +2,8 @@
 // WTFPL public licence (2004). The original code was slighly modified for the
 // current project
 
+#include "Shader.h"
+// std
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -9,12 +11,10 @@
 #include <fstream>
 #include <algorithm>
 #include <sstream>
-using namespace std;
-
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 
-#include "Shader.h"
+using namespace std;
 
 GLuint load_shaders(const char* vertex_file_path,
                     const char* fragment_file_path)
@@ -35,20 +35,25 @@ GLuint load_shaders(const char* vertex_file_path,
 	}
     else
     {
-		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
-		getchar();
+		printf("Impossible to open %s.\n", vertex_file_path);
 		return 0;
 	}
 
 	// Read the Fragment Shader code from the file
 	std::string fragment_shader_code;
 	std::ifstream fragment_shader_stream(fragment_file_path, std::ios::in);
-	if(fragment_shader_stream.is_open()){
+	if(fragment_shader_stream.is_open())
+    {
 		std::stringstream sstr;
 		sstr << fragment_shader_stream.rdbuf();
 		fragment_shader_code = sstr.str();
 		fragment_shader_stream.close();
 	}
+    else
+    {
+        printf("Impossible to open %s.\n", fragment_file_path);
+		return 0;
+    }
 
 	GLint result = GL_FALSE;
 	int info_log_length;
@@ -71,7 +76,6 @@ GLuint load_shaders(const char* vertex_file_path,
 	}
 
 
-
 	// Compile Fragment Shader
 	printf("Compiling shader: %s\n", fragment_file_path);
 	char const* fragment_source_pointer = fragment_shader_code.c_str();
@@ -87,7 +91,6 @@ GLuint load_shaders(const char* vertex_file_path,
 		glGetShaderInfoLog(fragment_shader_id, info_log_length, NULL, &fragment_shader_error_message[0]);
 		printf("%s\n", &fragment_shader_error_message[0]);
 	}
-
 
 
 	// Link the program
