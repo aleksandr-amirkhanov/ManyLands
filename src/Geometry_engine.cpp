@@ -2,9 +2,7 @@
 // Local
 #include "Mesh.h"
 
-Geometry_engine::Geometry_engine()
-{
-}
+#include <utility>
 
 Geometry_engine::~Geometry_engine()
 {
@@ -12,21 +10,65 @@ Geometry_engine::~Geometry_engine()
     glDeleteBuffers(1, &index_buff_id_);
 }
 
-Geometry_engine::Geometry_engine(const Mesh& m)
-    : Geometry_engine()
-{
-    create(m);
-}
-
-void Geometry_engine::create(const Mesh& m)
+void Geometry_engine::init_buffers()
 {
     // Generating buffers
     glGenBuffers(1, &array_buff_id_);
     glGenBuffers(1, &index_buff_id_);
+    // Allocating buffers
+    glBindBuffer(GL_ARRAY_BUFFER, array_buff_id_);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        vnc_vector_.size() * sizeof(Array_data),
+        &vnc_vector_[0],
+        GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buff_id_);
+    glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        indices_.size() * sizeof(GLuint),
+        &indices_[0],
+        GL_STATIC_DRAW);
+}
 
-    vnc_vector.clear();
-    indices.clear();
-    GLuint ind = 0;    
+Geometry_engine::Geometry_engine(const Mesh& m)
+{
+    create(m);
+    init_buffers();
+}
+
+Geometry_engine::Geometry_engine(const Geometry_engine& other)
+    : vnc_vector_(other.vnc_vector_)
+    , indices_(other.indices_)
+{
+    init_buffers();
+}
+
+Geometry_engine::Geometry_engine(Geometry_engine&& other) noexcept
+    : vnc_vector_(std::exchange(other.vnc_vector_, std::vector<Array_data>()))
+    , indices_(std::exchange(other.indices_, std::vector<GLuint>()))
+{
+    init_buffers();
+}
+
+Geometry_engine& Geometry_engine::operator=(const Geometry_engine& other)
+{
+    return *this = Geometry_engine(other);
+}
+
+Geometry_engine& Geometry_engine::operator=(Geometry_engine&& other) noexcept
+{
+    std::swap(vnc_vector_, other.vnc_vector_);
+    std::swap(indices_, other.indices_);
+    std::swap(array_buff_id_, other.array_buff_id_);
+    std::swap(index_buff_id_, other.index_buff_id_);
+    return *this;
+}
+
+void Geometry_engine::create(const Mesh& m)
+{
+    vnc_vector_.clear();
+    indices_.clear();
+    GLuint ind = 0;
 
     for(size_t i = 0; i < m.objects.size(); ++i)
     {
@@ -51,7 +93,7 @@ void Geometry_engine::create(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[0].vertex_id], 1);
                         vnc.norm = m.normals[f[0].normal_id];
                         vnc.color = c;
-                        vnc_vector.push_back(vnc);
+                        vnc_vector_.push_back(vnc);
                     }
                     // Vertex 2
                     {
@@ -59,7 +101,7 @@ void Geometry_engine::create(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[i + 1].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 1].normal_id];
                         vnc.color = c;
-                        vnc_vector.push_back(vnc);
+                        vnc_vector_.push_back(vnc);
                     }
                     // Vertex 3
                     {
@@ -67,7 +109,7 @@ void Geometry_engine::create(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 2].normal_id];
                         vnc.color = c;
-                        vnc_vector.push_back(vnc);
+                        vnc_vector_.push_back(vnc);
                     }
                 }
                 else
@@ -82,25 +124,18 @@ void Geometry_engine::create(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 2].normal_id];
                         vnc.color = c;
-                        vnc_vector.push_back(vnc);
+                        vnc_vector_.push_back(vnc);
                     }
                 }
 
-                indices.push_back(ind);         // Vertex 1
-                indices.push_back(ind + i + 1); // Vertex 2
-                indices.push_back(ind + i + 2); // Vertex 3
+                indices_.push_back(ind);         // Vertex 1
+                indices_.push_back(ind + i + 1); // Vertex 2
+                indices_.push_back(ind + i + 2); // Vertex 3
             }
 
             ind += num_verts;
         }
     }
-
-    // Allocating buffers
-    glBindBuffer(GL_ARRAY_BUFFER, array_buff_id_);
-	glBufferData(GL_ARRAY_BUFFER, vnc_vector.size() * sizeof(Array_data), &vnc_vector[0], GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buff_id_);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
 }
 
 void Geometry_engine::draw_object()
@@ -119,7 +154,7 @@ void Geometry_engine::draw_object()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, ptr1);
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, stride, ptr2);
 
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);

@@ -23,17 +23,23 @@ private:
         glm::vec3 norm;
         glm::vec4 color;
     };
+    Geometry_engine() = delete;
+    void init_buffers();
 
 public:
-    Geometry_engine();
-    ~Geometry_engine();
     Geometry_engine(const Mesh& m);
+    Geometry_engine(const Geometry_engine& other);
+    Geometry_engine(Geometry_engine&& other) noexcept;
+    Geometry_engine& operator=(const Geometry_engine& other);
+    Geometry_engine& operator=(Geometry_engine&& other) noexcept;
+
+    ~Geometry_engine();
     void create(const Mesh& m);
     void draw_object();
 
 private:
-    std::vector<Array_data> vnc_vector; // vertices + normals + colors
-    std::vector<GLuint> indices;
+    std::vector<Array_data> vnc_vector_; // vertices + normals + colors
+    std::vector<GLuint> indices_;
 
     GLuint array_buff_id_;
     GLuint index_buff_id_;

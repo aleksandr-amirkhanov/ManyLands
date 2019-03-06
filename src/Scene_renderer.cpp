@@ -223,10 +223,10 @@ void Scene_renderer::render()
     }
 
     for(auto& g : front_geometry_)
-        g->draw_object();
+        g.draw_object();
 
     for(auto& g : back_geometry_)
-        g->draw_object();
+        g.draw_object();
 }
 
 void Scene_renderer::project_to_3D(
@@ -316,7 +316,7 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
                 t_mesh);
 
     }
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+    back_geometry_.emplace_back(t_mesh);
 }
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
@@ -374,7 +374,7 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(curve_mesh));
+    back_geometry_.emplace_back(curve_mesh);
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
 
@@ -635,10 +635,8 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
             col,
             t_mesh);
 
-        if(opacity < 1.)
-            front_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
-        else
-            back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+        opacity < 1.0 ? front_geometry_.emplace_back(t_mesh)
+                      : back_geometry_.emplace_back(t_mesh);
     }
 }
 
@@ -661,8 +659,7 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
             col,
             t_mesh);
 
-        //gui_.Renderer->add_mesh(t_mesh);
-        back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+        back_geometry_.emplace_back(t_mesh);
     }
 }
 
