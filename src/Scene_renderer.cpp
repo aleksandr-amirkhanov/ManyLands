@@ -48,14 +48,14 @@ void Scene_renderer::render()
     glLineWidth(5.f);
     line_ren.draw_object();
 
+    glUseProgram(mesh_p);*/
+
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
        state_->curve     == nullptr)
     {
         return;
     }
-
-    glUseProgram(mesh_p);*/
 
     back_geometry_.clear(); front_geometry_.clear();
 
