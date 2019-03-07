@@ -42,7 +42,7 @@ public:
 
     std::shared_ptr<Tesseract> tesseract;
 
-    const Color* get_color(int color_id);
+    const Color& get_color(int color_id);
     void update_color(int color_id, const Color& color);
 
     float unfolding_anim_;
@@ -52,5 +52,5 @@ public:
     std::array<float, 4> tesseract_size;
 
 private:
-    std::map<std::int32_t, std::unique_ptr<Color>> colors_;
+    std::map<std::int32_t, Color> colors_;
 };

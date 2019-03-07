@@ -21,8 +21,7 @@ public:
         boost::numeric::ublas::vector<double> v7,
         boost::numeric::ublas::vector<double> v8);
 
-    Cube(
-        boost::numeric::ublas::vector<double> v1,
+    Cube(boost::numeric::ublas::vector<double> v1,
         boost::numeric::ublas::vector<double> v2,
         boost::numeric::ublas::vector<double> v3,
         boost::numeric::ublas::vector<double> v4,
@@ -30,9 +29,9 @@ public:
         boost::numeric::ublas::vector<double> v6,
         boost::numeric::ublas::vector<double> v7,
         boost::numeric::ublas::vector<double> v8,
-        const Color* horiz_col,
-        const Color* vert_col,
-        const Color* depth_col);
+        const Color &horiz_col,
+        const Color &vert_col,
+        const Color &depth_col);
 
     static std::vector<Square> split(std::vector<Cube>& cubes);
 };

@@ -14,19 +14,11 @@ Wireframe_object::Wireframe_object(const Wireframe_object& w)
 Wireframe_object& Wireframe_object::operator=(const Wireframe_object& other)
 {
     // Copy the vertex array
-    this->vertices_ = other.vertices_;
+    vertices_ = other.vertices_;
 
     // Copy the edge array
-    for(auto& e : other.edges_)
-    {
-        std::unique_ptr<Wireframe_edge> new_edge =
-            std::make_unique<Wireframe_edge>();
-        new_edge->vert1 = e->vert1;
-        new_edge->vert2 = e->vert2;
-        new_edge->color = e->color;
-
-        this->edges_.push_back(std::move(new_edge));
-    }
+    for(const auto& e : other.edges_)
+        edges_.push_back(Wireframe_edge::make(e.vert1, e.vert2, e.color));
 
     return *this;
 }
@@ -43,13 +35,7 @@ Wireframe_object::vertices() const
     return vertices_;
 }
 
-std::vector<std::unique_ptr<Wireframe_edge>>& Wireframe_object::get_edges()
-{
-    return edges_;
-}
-
-const std::vector<std::unique_ptr<Wireframe_edge>>&
-Wireframe_object::edges() const
+const std::vector<Wireframe_edge>& Wireframe_object::edges() const
 {
     return edges_;
 }
@@ -62,17 +48,12 @@ void Wireframe_object::add_vertex(
 
 void Wireframe_object::add_edge(size_t vert1, size_t vert2)
 {
-    add_edge(vert1, vert2, &default_color);
+    add_edge(vert1, vert2, default_color);
 }
 
-void Wireframe_object::add_edge(size_t vert1, size_t vert2, const Color* color)
+void Wireframe_object::add_edge(size_t vert1, size_t vert2, const Color& color)
 {
-    std::unique_ptr<Wireframe_edge> e = std::make_unique<Wireframe_edge>();
-    e->vert1 = vert1;
-    e->vert2 = vert2;
-    e->color = color;
-
-    edges_.push_back(std::move(e));
+    edges_.push_back(Wireframe_edge::make(vert1, vert2, color));
 }
 
 void Wireframe_object::translate_vertices(

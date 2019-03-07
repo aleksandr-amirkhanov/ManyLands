@@ -20,24 +20,16 @@ Scene_state::Scene_state()
     , yw_rot(0.f)
     , zw_rot(0.f)
 {
-    colors_[Background]       = std::make_unique<Color>();
-    colors_[X_axis]           = std::make_unique<Color>();
-    colors_[Y_axis]           = std::make_unique<Color>();
-    colors_[Z_axis]           = std::make_unique<Color>();
-    colors_[W_axis]           = std::make_unique<Color>();
-    colors_[Curve_low_speed]  = std::make_unique<Color>();
-    colors_[Curve_high_speed] = std::make_unique<Color>();
-
     tesseract_size[0] = tesseract_size[1] = tesseract_size[2] =
         tesseract_size[3] = 1;
 }
 
-const Color* Scene_state::get_color(int color_id)
+const Color &Scene_state::get_color(int color_id)
 {
-    return colors_[color_id].get();
+    return colors_[color_id];
 }
 
 void Scene_state::update_color(int color_id, const Color& color)
 {
-    colors_[color_id]->copy(color);
+    colors_[color_id] = color;
 }

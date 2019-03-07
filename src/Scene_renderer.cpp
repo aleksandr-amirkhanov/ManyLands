@@ -238,10 +238,10 @@ void Scene_renderer::render()
     }
 
     for(auto& g : front_geometry_)
-        g->draw_object();
+        g.draw_object();
 
     for(auto& g : back_geometry_)
-        g->draw_object();
+        g.draw_object();
 }
 
 void Scene_renderer::project_to_3D(
@@ -278,19 +278,22 @@ void Scene_renderer::project_to_3D(
     std::for_each(verts.begin(), verts.end(), project);
 }
 
+namespace
+{
+glm::vec4 ColorToGlm(const Color& c, const float alpha)
+{
+    return glm::vec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, alpha);
+}
+} // namespace
+
 void Scene_renderer::draw_tesseract(Wireframe_object& t)
 {
     Mesh t_mesh;
-    for(auto const& e : t.get_edges())
+    for(auto const& e : t.edges())
     {
-        auto& current = t.get_vertices().at(e->vert1);
-        auto& next = t.get_vertices().at(e->vert2);
-        //QColor col(e->color.rot, e->color.g, e->color.b);
-        glm::vec4 col(
-            (float)e->color->r / 255,
-            (float)e->color->g / 255,
-            (float)e->color->b / 255,
-            1.f);
+        auto& current = t.get_vertices()[e.vert1];
+        auto& next = t.get_vertices()[e.vert2];
+        const glm::vec4 col = ColorToGlm(e.color, 1.f);
 
         Mesh_generator::cylinder(
             5,
@@ -328,7 +331,7 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
                 t_mesh);
 
     }
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+    back_geometry_.emplace_back(t_mesh);
 }
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
@@ -341,29 +344,32 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
 
     auto get_speed_color =
         [&opacity, &log_speed, this](float normalized_speed) {
-        float speed = log_speed(normalized_speed);
-        return glm::vec4(
-            (float)((1 - speed) * state_->get_color(Curve_low_speed)->r +
-                    speed * state_->get_color(Curve_high_speed)->r) / 255,
-            (float)((1 - speed) * state_->get_color(Curve_low_speed)->g +
-                    speed * state_->get_color(Curve_high_speed)->r) / 255,
-            (float)((1 - speed) * state_->get_color(Curve_low_speed)->b +
-                    speed * state_->get_color(Curve_high_speed)->r) / 255,
-            opacity);
-    };
+            float speed = log_speed(normalized_speed);
+            return glm::vec4(
+                ((1 - speed) * state_->get_color(Curve_low_speed).r +
+                 speed * state_->get_color(Curve_high_speed).r) /
+                    255.f,
+                ((1 - speed) * state_->get_color(Curve_low_speed).g +
+                 speed * state_->get_color(Curve_high_speed).g) /
+                    255.f,
+                ((1 - speed) * state_->get_color(Curve_low_speed).b +
+                 speed * state_->get_color(Curve_high_speed).b) /
+                    255.f,
+                opacity);
+        };
 
     // Curve
     Mesh curve_mesh;
-    for(size_t i = 0; i < c.get_edges().size(); ++i)
+    for(size_t i = 0; i < c.edges().size(); ++i)
     {
-        const auto& e = c.get_edges()[i];
+        const auto& e = c.edges()[i];
 
-        auto& current = c.get_vertices().at(e->vert1);
-        auto& next = c.get_vertices().at(e->vert2);
+        auto& current = c.get_vertices()[e.vert1];
+        auto& next = c.get_vertices()[e.vert2];
 
         // We are interested only in some interval of the curve
         if(state_->curve_selection &&
-           !state_->curve_selection->in_range(c.get_time_stamp().at(e->vert1)))
+           !state_->curve_selection->in_range(c.get_time_stamp()[e.vert1]))
         {
             continue;
         }
@@ -383,7 +389,7 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(curve_mesh));
+    back_geometry_.emplace_back(curve_mesh);
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
 
@@ -625,20 +631,15 @@ Scene_renderer::get_rotation_matrix(double view_straightening)
 
 void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
 {
-    for(size_t i = 0; i < cube.get_edges().size(); ++i)
+    for(size_t i = 0; i < cube.edges().size(); ++i)
     {
-        auto const& e = cube.get_edges()[i];
+        auto const& e = cube.edges()[i];
 
         Mesh t_mesh;
 
-        auto& current = cube.get_vertices().at(e->vert1);
-        auto& next = cube.get_vertices().at(e->vert2);
-        //QColor col(e->color.rot, e->color.g, e->color.b, opacity * 255);
-        glm::vec4 col(
-            (float)e->color->r / 255,
-            (float)e->color->g / 255,
-            (float)e->color->b / 255,
-            opacity);
+        auto& current = cube.get_vertices()[e.vert1];
+        auto& next = cube.get_vertices()[e.vert2];
+        const glm::vec4 col = ColorToGlm(e.color, opacity);
 
         Mesh_generator::cylinder(
             5,
@@ -649,27 +650,20 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
             col,
             t_mesh);
 
-        if(opacity < 1.)
-            front_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
-        else
-            back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+        opacity < 1.0 ? front_geometry_.emplace_back(t_mesh)
+                      : back_geometry_.emplace_back(t_mesh);
     }
 }
 
 void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
 {
-    for(auto const& e : plot.get_edges())
+    for(auto const& e : plot.edges())
     {
         Mesh t_mesh;
 
-        auto& current = plot.get_vertices().at(e->vert1);
-        auto& next = plot.get_vertices().at(e->vert2);
-        //QColor col(e->color.rot, e->color.g, e->color.b);
-        glm::vec4 col(
-            (float)e->color->r / 255,
-            (float)e->color->g / 255,
-            (float)e->color->b / 255,
-            1.f);
+        auto& current = plot.get_vertices()[e.vert1];
+        auto& next = plot.get_vertices()[e.vert2];
+        const glm::vec4 col = ColorToGlm(e.color, 1.f);
 
         Mesh_generator::cylinder(
             5,
@@ -680,8 +674,7 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
             col,
             t_mesh);
 
-        //gui_.Renderer->add_mesh(t_mesh);
-        back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+        back_geometry_.emplace_back(t_mesh);
     }
 }
 
