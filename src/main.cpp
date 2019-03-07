@@ -77,11 +77,13 @@ ImVec4 Clear_color,
        Low_speed_color,
        High_speed_color;
 
-GLuint Program_id,
+GLuint Mesh_program_id,
        Proj_mat_id,
        Mv_mat_id,
        Normal_mat_id,
        Light_pos_id;
+
+GLuint Screen_program_id, Screen_proj_mat_id;
 
 const bool Enable_keyboard = false,   // Controllers
            Enable_gamepad  = false;
@@ -421,7 +423,8 @@ void mainloop()
                  State->get_color(Background)->a / 255.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(Program_id);
+    // Mesh rendering
+    glUseProgram(Mesh_program_id);
 
     glm::ivec2 scene_pos(Left_panel_size, Bottom_panel_size),
                scene_size(width - Left_panel_size,
@@ -432,7 +435,7 @@ void mainloop()
         (float)scene_size[0] / scene_size[1],
         0.1f,
         100.f);
-		
+
     auto camera_mat = glm::translate(glm::mat4(1.f), State->camera_3D);
 
     glm::vec3 light_pos(0.f, 0.f, 70.f);
@@ -443,6 +446,15 @@ void mainloop()
     glUniformMatrix4fv(Proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_mat));
     glUniformMatrix4fv(
         Mv_mat_id, 1, GL_FALSE, glm::value_ptr(camera_mat * world_mat));
+
+
+    // On-screen rendering
+    glUseProgram(Screen_program_id);
+    glm::mat4 proj_ortho = glm::ortho(-1.f, 1.f, -1.f, 1.f);
+    glUniformMatrix4fv(Screen_proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_ortho));
+    glUseProgram(Mesh_program_id);
+
+
     glUniformMatrix3fv(
         Normal_mat_id, 1, GL_FALSE, glm::value_ptr(norm_mat));
     glUniform3fv(Light_pos_id, 1, glm::value_ptr(light_pos));
@@ -564,18 +576,24 @@ int main(int, char**)
     set_bright_theme();
 
 #ifdef __EMSCRIPTEN__
-    Program_id = load_shaders("assets/Diffuse_ES.vert",
-                              "assets/Diffuse_ES.frag");
+    Mesh_program_id = load_shaders("assets/Diffuse_ES.vert",
+                                   "assets/Diffuse_ES.frag");
 #else
-    Program_id = load_shaders("assets/Diffuse.vert",
-                              "assets/Diffuse.frag");
+    Mesh_program_id = load_shaders("assets/Diffuse.vert",
+                                   "assets/Diffuse.frag");
 #endif
+    Screen_program_id = load_shaders("assets/Diffuse_paint.vert",
+                                     "assets/Diffuse_paint.frag");
 
-    Proj_mat_id   = glGetUniformLocation(Program_id,   "projMatrix");
-    Mv_mat_id     = glGetUniformLocation(Program_id,     "mvMatrix");
-    Normal_mat_id = glGetUniformLocation(Program_id, "normalMatrix");
-    Light_pos_id  = glGetUniformLocation(Program_id,     "lightPos");
+    glUseProgram(Mesh_program_id);
+    Proj_mat_id   = glGetUniformLocation(Mesh_program_id,   "projMatrix");
+    Mv_mat_id     = glGetUniformLocation(Mesh_program_id,     "mvMatrix");
+    Normal_mat_id = glGetUniformLocation(Mesh_program_id, "normalMatrix");
+    Light_pos_id  = glGetUniformLocation(Mesh_program_id,     "lightPos");
     
+    glUseProgram(Screen_program_id);
+    Screen_proj_mat_id = glGetUniformLocation(Screen_program_id, "projMatrix");
+
     State      = std::make_shared<Scene_state>();
     Renderer   = std::make_unique<Scene_renderer>(State);
     Scene_objs = std::make_unique<Scene>(State);

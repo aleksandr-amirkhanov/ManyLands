@@ -3,6 +3,7 @@
 #include "Consts.h"
 #include "Mesh_generator.h"
 #include "Matrix_lib.h"
+#include "Line_2D_renderer.h"
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
 // std
@@ -34,13 +35,27 @@ void Scene_renderer::set_state(std::shared_ptr<Scene_state> state)
 
 void Scene_renderer::render()
 {
+    /*glUseProgram(screen_p);
+    Line_2D_renderer line_ren;
+
+    Line_2D line;
+    line.start_pos = glm::vec2(0.f, 0.f);
+    line.end_pos   = glm::vec2(1.f, 1.f);
+    line.width     = 1.;
+    line.color     = glm::vec4(1.f, 0.f, 0.f, 1.f);
+
+    line_ren.add_line(line);
+    glLineWidth(5.f);
+    line_ren.draw_object();
+
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
        state_->curve     == nullptr)
     {
-        std::logic_error("The scene is incomplete");
         return;
     }
+
+    glUseProgram(mesh_p);*/
 
     back_geometry_.clear(); front_geometry_.clear();
 
