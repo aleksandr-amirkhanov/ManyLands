@@ -10,28 +10,29 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-struct Mesh_shader_ids
-{
-    GLuint program_id,
-            Proj_mat_id,
-            Mv_mat_id,
-            Normal_mat_id,
-            Light_pos_id,
-            vertex_attrib_id,
-            normal_attrib_id,
-            color_attrib_id;
-};
-struct Screen_shader_ids
-{
-    GLuint program_id,
-            proj_mat_id,
-            vertex_attrib_id,
-            color_attrib_id;
-};
-
 class Scene_renderer
 {
 private:
+    struct Mesh_shader_ids
+    {
+        GLuint program_id,
+               proj_mat_id,
+               mv_mat_id,
+               normal_mat_id,
+               light_pos_id,
+               vertex_attrib_id,
+               normal_attrib_id,
+               color_attrib_id;
+    };
+
+    struct Screen_shader_ids
+    {
+        GLuint program_id,
+               proj_mat_id,
+               vertex_attrib_id,
+               color_attrib_id;
+    };
+
     struct Mesh_array
     {
         glm::vec4 vert;

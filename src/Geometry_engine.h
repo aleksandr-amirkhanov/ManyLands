@@ -26,61 +26,60 @@ public:
 
     void init_buffers();
 
-public:
-    std::vector<TArray_data> vnc_vector_; // vertices + normals + colors
-    std::vector<GLuint> indices_;
+    std::vector<TArray_data> data_array; // vertices + normals + colors
+    std::vector<GLuint> indices;
 
-    GLuint array_buff_id_;
-    GLuint index_buff_id_;
+    GLuint array_buff_id;
+    GLuint index_buff_id;
 };
 
 template<class TArray_data>
 Geometry_engine<TArray_data>::Geometry_engine()
 {
     // Generating buffers
-    glGenBuffers(1, &array_buff_id_);
-    glGenBuffers(1, &index_buff_id_);
+    glGenBuffers(1, &array_buff_id);
+    glGenBuffers(1, &index_buff_id);
 }
 
 template<class TArray_data>
 Geometry_engine<TArray_data>::~Geometry_engine()
 {
-    glDeleteBuffers(1, &array_buff_id_);
-    glDeleteBuffers(1, &index_buff_id_);
+    glDeleteBuffers(1, &array_buff_id);
+    glDeleteBuffers(1, &index_buff_id);
 }
 
 template<class TArray_data>
 void Geometry_engine<TArray_data>::init_buffers()
 {
     // Allocating buffers
-    glBindBuffer(GL_ARRAY_BUFFER, array_buff_id_);
+    glBindBuffer(GL_ARRAY_BUFFER, array_buff_id);
     glBufferData(
         GL_ARRAY_BUFFER,
-        vnc_vector_.size() * sizeof(TArray_data),
-        &vnc_vector_[0],
+        data_array.size() * sizeof(TArray_data),
+        &data_array[0],
         GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buff_id_);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buff_id);
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        indices_.size() * sizeof(GLuint),
-        &indices_[0],
+        indices.size() * sizeof(GLuint),
+        &indices[0],
         GL_STATIC_DRAW);
 }
 
 template<class TArray_data>
 Geometry_engine<TArray_data>::Geometry_engine(const Geometry_engine& other)
-    : vnc_vector_(other.vnc_vector_)
-    , indices_(other.indices_)
+    : data_array(other.data_array)
+    , indices(other.indices)
 {
     init_buffers();
 }
 
 template<class TArray_data>
 Geometry_engine<TArray_data>::Geometry_engine(Geometry_engine&& other) noexcept
-    : vnc_vector_(std::exchange(other.vnc_vector_, std::vector<TArray_data>()))
-    , indices_(std::exchange(other.indices_, std::vector<GLuint>()))
-    , array_buff_id_(std::exchange(other.array_buff_id_, GLuint(0)))
-    , index_buff_id_(std::exchange(other.index_buff_id_, GLuint(0)))
+    : data_array(std::exchange(other.data_array, std::vector<TArray_data>()))
+    , indices(std::exchange(other.indices, std::vector<GLuint>()))
+    , array_buff_id(std::exchange(other.array_buff_id, GLuint(0)))
+    , index_buff_id(std::exchange(other.index_buff_id, GLuint(0)))
 {}
 
 template<class TArray_data>
@@ -94,9 +93,9 @@ template<class TArray_data>
 Geometry_engine<TArray_data>& Geometry_engine<TArray_data>::operator=(
     Geometry_engine&& other) noexcept
 {
-    std::swap(vnc_vector_, other.vnc_vector_);
-    std::swap(indices_, other.indices_);
-    std::swap(array_buff_id_, other.array_buff_id_);
-    std::swap(index_buff_id_, other.index_buff_id_);
+    std::swap(data_array, other.data_array);
+    std::swap(indices, other.indices);
+    std::swap(array_buff_id, other.array_buff_id);
+    std::swap(index_buff_id, other.index_buff_id);
     return *this;
 }

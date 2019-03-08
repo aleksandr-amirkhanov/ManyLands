@@ -57,13 +57,13 @@ void Scene_renderer::load_shaders()
 #endif    
 
     glUseProgram(mesh_shader_ids.program_id);
-    mesh_shader_ids.Proj_mat_id =
+    mesh_shader_ids.proj_mat_id =
         glGetUniformLocation(mesh_shader_ids.program_id, "projMatrix");
-    mesh_shader_ids.Mv_mat_id =
+    mesh_shader_ids.mv_mat_id =
         glGetUniformLocation(mesh_shader_ids.program_id, "mvMatrix");
-    mesh_shader_ids.Normal_mat_id =
+    mesh_shader_ids.normal_mat_id =
         glGetUniformLocation(mesh_shader_ids.program_id,"normalMatrix");
-    mesh_shader_ids.Light_pos_id =
+    mesh_shader_ids.light_pos_id =
         glGetUniformLocation(mesh_shader_ids.program_id, "lightPos");
 
     mesh_shader_ids.vertex_attrib_id =
@@ -118,19 +118,12 @@ void Scene_renderer::render()
     glLineWidth(5.f);
     draw_line_geometry(create_line_geometry(line));*/
 
-
-
-
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
        state_->curve     == nullptr)
     {
         return;
     }
-
-    
-
-
 
     glUseProgram(mesh_shader_ids.program_id);
 
@@ -144,19 +137,19 @@ void Scene_renderer::render()
     auto world_mat = glm::toMat4(state_->rotation_3D);
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
-    glUniformMatrix4fv(mesh_shader_ids.Proj_mat_id,
+    glUniformMatrix4fv(mesh_shader_ids.proj_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(proj_mat));
-    glUniformMatrix4fv(mesh_shader_ids.Mv_mat_id,
+    glUniformMatrix4fv(mesh_shader_ids.mv_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(camera_mat * world_mat));
-    glUniformMatrix3fv(mesh_shader_ids.Normal_mat_id,
+    glUniformMatrix3fv(mesh_shader_ids.normal_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(norm_mat));
-    glUniform3fv(mesh_shader_ids.Light_pos_id,
+    glUniform3fv(mesh_shader_ids.light_pos_id,
                  1,
                  glm::value_ptr(light_pos));
 
@@ -530,8 +523,8 @@ std::unique_ptr<Scene_renderer::Mesh_geometry>
 Scene_renderer::create_mesh_geometry(const Mesh& m)
 {
     std::unique_ptr<Mesh_geometry> geom = std::make_unique<Mesh_geometry>();
-    geom->vnc_vector_.clear();
-    geom->indices_.clear();
+    geom->data_array.clear();
+    geom->indices.clear();
     GLuint ind = 0;
 
     for(size_t i = 0; i < m.objects.size(); ++i)
@@ -557,7 +550,7 @@ Scene_renderer::create_mesh_geometry(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[0].vertex_id], 1);
                         vnc.norm = m.normals[f[0].normal_id];
                         vnc.color = c;
-                        geom->vnc_vector_.push_back(vnc);
+                        geom->data_array.push_back(vnc);
                     }
                     // Vertex 2
                     {
@@ -565,7 +558,7 @@ Scene_renderer::create_mesh_geometry(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[i + 1].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 1].normal_id];
                         vnc.color = c;
-                        geom->vnc_vector_.push_back(vnc);
+                        geom->data_array.push_back(vnc);
                     }
                     // Vertex 3
                     {
@@ -573,7 +566,7 @@ Scene_renderer::create_mesh_geometry(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 2].normal_id];
                         vnc.color = c;
-                        geom->vnc_vector_.push_back(vnc);
+                        geom->data_array.push_back(vnc);
                     }
                 }
                 else
@@ -588,13 +581,13 @@ Scene_renderer::create_mesh_geometry(const Mesh& m)
                         vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 2].normal_id];
                         vnc.color = c;
-                        geom->vnc_vector_.push_back(vnc);
+                        geom->data_array.push_back(vnc);
                     }
                 }
 
-                geom->indices_.push_back(ind);         // Vertex 1
-                geom->indices_.push_back(ind + i + 1); // Vertex 2
-                geom->indices_.push_back(ind + i + 2); // Vertex 3
+                geom->indices.push_back(ind);         // Vertex 1
+                geom->indices.push_back(ind + i + 1); // Vertex 2
+                geom->indices.push_back(ind + i + 2); // Vertex 3
             }
 
             ind += num_verts;
@@ -605,10 +598,11 @@ Scene_renderer::create_mesh_geometry(const Mesh& m)
     return geom;
 }
 
-void Scene_renderer::draw_mesh_geometry(const std::unique_ptr<Mesh_geometry>& geom)
+void Scene_renderer::draw_mesh_geometry(
+    const std::unique_ptr<Mesh_geometry>& geom)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id_);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id_);
+    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
 
     glEnableVertexAttribArray(mesh_shader_ids.vertex_attrib_id);
     glEnableVertexAttribArray(mesh_shader_ids.normal_attrib_id);
@@ -634,7 +628,7 @@ void Scene_renderer::draw_mesh_geometry(const std::unique_ptr<Mesh_geometry>& ge
                           stride,
                           ptr2);
 
-    glDrawElements(GL_TRIANGLES, geom->indices_.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, geom->indices.size(), GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(mesh_shader_ids.vertex_attrib_id);
     glDisableVertexAttribArray(mesh_shader_ids.normal_attrib_id);
@@ -646,8 +640,8 @@ Scene_renderer::create_line_geometry(const Line_2D& line)
 {
     std::unique_ptr<Line_geometry> geom = std::make_unique<Line_geometry>();
 
-    geom->vnc_vector_.clear();
-    geom->indices_.clear();
+    geom->data_array.clear();
+    geom->indices.clear();
 
     Line_array d1, d2;
 
@@ -657,23 +651,23 @@ Scene_renderer::create_line_geometry(const Line_2D& line)
     d2.vert = line.end_pos;
     d2.color = line.color;
 
-    geom->vnc_vector_.push_back(d1);
-    geom->vnc_vector_.push_back(d2);
+    geom->data_array.push_back(d1);
+    geom->data_array.push_back(d2);
 
-    geom->indices_.push_back(0);
-    geom->indices_.push_back(1);
+    geom->indices.push_back(0);
+    geom->indices.push_back(1);
 
     // Allocating buffers
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id_);
+    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
 	glBufferData(GL_ARRAY_BUFFER,
-                 geom->vnc_vector_.size() * sizeof(Line_array),
-                 &geom->vnc_vector_[0],
+                 geom->data_array.size() * sizeof(Line_array),
+                 &geom->data_array[0],
                  GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id_);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 geom->indices_.size() * sizeof(GLuint),
-                 &geom->indices_[0],
+                 geom->indices.size() * sizeof(GLuint),
+                 &geom->indices[0],
                  GL_STATIC_DRAW);
 
     geom->init_buffers();
@@ -683,8 +677,8 @@ Scene_renderer::create_line_geometry(const Line_2D& line)
 void Scene_renderer::draw_line_geometry(
     const std::unique_ptr<Line_geometry>& geom)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id_);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id_);
+    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
 
     glEnableVertexAttribArray(screen_shader_ids.vertex_attrib_id);
     glEnableVertexAttribArray(screen_shader_ids.color_attrib_id );
@@ -704,7 +698,7 @@ void Scene_renderer::draw_line_geometry(
                           stride,
                           ptr);
 
-    glDrawElements(GL_LINES, geom->indices_.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINES, geom->indices.size(), GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(screen_shader_ids.vertex_attrib_id);
     glDisableVertexAttribArray(screen_shader_ids.color_attrib_id );
@@ -825,7 +819,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getYWRotationMatrix(-coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp1(5);
-        disp1 <<= 0, state_->tesseract_size[1] / 2, 0, state_->tesseract_size[3] / 2, 0;
+        disp1 <<= 0,
+                  state_->tesseract_size[1] / 2,
+                  0,
+                  state_->tesseract_size[3] / 2,
+                  0;
 
         transform_3D_plot(plots_3D[0], rot, disp1);
         transform_3D_plot(plots_3D[4], rot, disp1);
@@ -845,7 +843,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getZWRotationMatrix(coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= 0, 0, -state_->tesseract_size[2] / 2, state_->tesseract_size[3] / 2, 0;
+        disp <<= 0,
+                 0,
+                 -state_->tesseract_size[2] / 2,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[2], rot, disp);
 
@@ -855,7 +857,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getZWRotationMatrix(-coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= 0, 0, state_->tesseract_size[2] / 2, state_->tesseract_size[3] / 2, 0;
+        disp <<= 0,
+                 0,
+                 state_->tesseract_size[2] / 2,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[3], rot, disp);
 
@@ -865,7 +871,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getYWRotationMatrix(coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= 0, -state_->tesseract_size[1] / 2, 0, state_->tesseract_size[3] / 2, 0;
+        disp <<= 0,
+                 -state_->tesseract_size[1] / 2,
+                 0,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[5], rot, disp);
 
@@ -875,7 +885,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getXWRotationMatrix(coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= state_->tesseract_size[0] / 2, 0, 0, state_->tesseract_size[3] / 2, 0;
+        disp <<= state_->tesseract_size[0] / 2,
+                 0,
+                 0,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[6], rot, disp);
 
@@ -885,7 +899,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getXWRotationMatrix(-coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= -state_->tesseract_size[0] / 2, 0, 0, state_->tesseract_size[3] / 2, 0;
+        disp <<= -state_->tesseract_size[0] / 2,
+                  0,
+                  0,
+                  state_->tesseract_size[3] / 2,
+                  0;
 
         transform_3D_plot(plots_3D[7], rot, disp);
 
