@@ -28,13 +28,15 @@
 // Local
 #include "Mesh_generator.h"
 #include "Geometry_engine.h"
-#include "Shader.h"
 #include "Scene.h"
 #include "Scene_state.h"
 #include "Scene_renderer.h"
 #include "Consts.h"
 #include "Matrix_lib.h"
 #include "Tesseract.h"
+#include "Timeline_renderer.h"
+#include "Diffuse_shader.h"
+#include "Screen_shader.h"
 // Boost
 #include <boost/numeric/ublas/assignment.hpp>
 
@@ -86,6 +88,13 @@ int Left_panel_size = 300 * App_scale;
 
 const std::shared_ptr<Scene_state> State = std::make_shared<Scene_state>();
 Scene_renderer Renderer(State);
+Timeline_renderer Timeline(State);
+
+const std::shared_ptr<Diffuse_shader> Diffuse_shad =
+    std::make_shared<Diffuse_shader>();
+const std::shared_ptr<Screen_shader> Screen_shad =
+    std::make_shared<Screen_shader>();
+
 Scene Scene_objs(State);
 
 //******************************************************************************
@@ -421,12 +430,14 @@ void mainloop()
                           height - Bottom_panel_size);
 
     Renderer.update_redering_region(scene_pos, scene_size);
+    Timeline.update_redering_region(scene_pos, scene_size);
         
     glViewport(io.DisplayFramebufferScale.x * scene_pos[0],
                io.DisplayFramebufferScale.y * scene_pos[1],
                io.DisplayFramebufferScale.x * scene_size[0],
                io.DisplayFramebufferScale.y * scene_size[1]);
     Renderer.render();
+    //Timeline.render();
     glViewport(0,
                0,
                io.DisplayFramebufferScale.x * width,
@@ -538,7 +549,11 @@ int main(int, char**)
 
     set_bright_theme();
 
-    Renderer.load_shaders();
+    Diffuse_shad->initialize();
+    Screen_shad->initialize();
+
+    Renderer.set_shaders(Diffuse_shad, Screen_shad);
+    Timeline.set_shader(Screen_shad);
 
     State->camera_4D <<= 0., 0., 0., 550., 0.;
 

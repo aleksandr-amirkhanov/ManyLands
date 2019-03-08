@@ -3,7 +3,6 @@
 #include "Consts.h"
 #include "Mesh_generator.h"
 #include "Matrix_lib.h"
-#include "Shader.h"
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
 // std
@@ -20,104 +19,30 @@
 //using namespace boost::numeric::odeint;
 using namespace boost::numeric::ublas;
 
-Scene_renderer::Scene_renderer()
-    : tesseract_thickness_(1.f)
+Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
+    : Base_renderer()
+    , tesseract_thickness_(1.f)
     , curve_thickness_(1.f)
     , sphere_diameter_(1.f)
     , number_of_animations_(6)
     , optimize_performance_(true)
     , visibility_mask_(0)
-    , scene_pos(0, 0)
-    , scene_size(0, 0)
-{
-}
-
-Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
-    : Scene_renderer()
 {
     set_state(state);
 }
 
-void Scene_renderer::load_shaders()
+void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
+                                 std::shared_ptr<Screen_shader> screen)
 {
-#ifdef __EMSCRIPTEN__
-    mesh_shader_ids.program_id = Shader::load_shaders(
-        "assets/Diffuse_ES.vert",
-        "assets/Diffuse_ES.frag");
-    screen_shader_ids.program_id = Shader::load_shaders(
-        "assets/Diffuse_paint_ES.vert",
-        "assets/Diffuse_paint_ES.frag");
-#else
-    mesh_shader_ids.program_id = Shader::load_shaders(
-        "assets/Diffuse.vert",
-        "assets/Diffuse.frag");
-    screen_shader_ids.program_id = Shader::load_shaders(
-        "assets/Diffuse_paint.vert",
-        "assets/Diffuse_paint.frag");
-#endif    
-
-    glUseProgram(mesh_shader_ids.program_id);
-    mesh_shader_ids.proj_mat_id =
-        glGetUniformLocation(mesh_shader_ids.program_id, "projMatrix");
-    mesh_shader_ids.mv_mat_id =
-        glGetUniformLocation(mesh_shader_ids.program_id, "mvMatrix");
-    mesh_shader_ids.normal_mat_id =
-        glGetUniformLocation(mesh_shader_ids.program_id,"normalMatrix");
-    mesh_shader_ids.light_pos_id =
-        glGetUniformLocation(mesh_shader_ids.program_id, "lightPos");
-
-    mesh_shader_ids.vertex_attrib_id =
-        glGetAttribLocation(mesh_shader_ids.program_id, "vertex");
-    mesh_shader_ids.normal_attrib_id =
-        glGetAttribLocation(mesh_shader_ids.program_id, "normal");
-    mesh_shader_ids.color_attrib_id =
-        glGetAttribLocation(mesh_shader_ids.program_id, "color");
-    
-    glUseProgram(screen_shader_ids.program_id);
-    screen_shader_ids.proj_mat_id =
-        glGetUniformLocation(screen_shader_ids.program_id, "projMatrix");
-
-    screen_shader_ids.vertex_attrib_id =
-        glGetAttribLocation(screen_shader_ids.program_id, "vertex");
-    screen_shader_ids.color_attrib_id =
-        glGetAttribLocation(screen_shader_ids.program_id,  "color");
-}
-
-void Scene_renderer::set_state(std::shared_ptr<Scene_state> state)
-{
-    state_ = state;
-}
-
-void Scene_renderer::update_redering_region(glm::ivec2 pos,
-                                            glm::ivec2 size)
-{
-    scene_pos = pos;
-    scene_size = size;
+    diffuse_shader = diffuse;
+    screen_shader  = screen;
 }
 
 void Scene_renderer::render()
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    /*glUseProgram(screen_shader_ids.program_id);
-
-    // On-screen rendering
-    glm::mat4 proj_ortho = glm::ortho(-1.f, 1.f, -1.f, 1.f);
-    glUniformMatrix4fv(screen_shader_ids.proj_mat_id,
-                       1,
-                       GL_FALSE,
-                       glm::value_ptr(proj_ortho));
-
-    Line_2D line;
-    line.start_pos = glm::vec2(-1.f, -1.f);
-    line.end_pos   = glm::vec2(1.f, 1.f);
-    line.width     = 1.;
-    line.color     = glm::vec4(1.f, 0.f, 0.f, 0.2f);
-
-    glLineWidth(5.f);
-    draw_line_geometry(create_line_geometry(line));*/
-
+    
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
        state_->curve     == nullptr)
@@ -125,39 +50,7 @@ void Scene_renderer::render()
         return;
     }
 
-    glUseProgram(mesh_shader_ids.program_id);
-
-    glm::mat4 proj_mat = glm::perspective(
-        state_->fov_y,
-        (float)scene_size[0] / scene_size[1],
-        0.1f,
-        100.f);
-    auto camera_mat = glm::translate(glm::mat4(1.f), state_->camera_3D);
-    glm::vec3 light_pos(0.f, 0.f, 70.f);
-    auto world_mat = glm::toMat4(state_->rotation_3D);
-    auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
-
-    glUniformMatrix4fv(mesh_shader_ids.proj_mat_id,
-                       1,
-                       GL_FALSE,
-                       glm::value_ptr(proj_mat));
-    glUniformMatrix4fv(mesh_shader_ids.mv_mat_id,
-                       1,
-                       GL_FALSE,
-                       glm::value_ptr(camera_mat * world_mat));
-    glUniformMatrix3fv(mesh_shader_ids.normal_mat_id,
-                       1,
-                       GL_FALSE,
-                       glm::value_ptr(norm_mat));
-    glUniform3fv(mesh_shader_ids.light_pos_id,
-                 1,
-                 glm::value_ptr(light_pos));
-
-
-
-
-
-    back_geometry_.clear(); front_geometry_.clear();
+    glUseProgram(diffuse_shader->program_id);
 
     std::vector<double> anims =
         split_animation(state_->unfolding_anim, number_of_animations_);
@@ -167,6 +60,40 @@ void Scene_renderer::render()
            hide_3D = anims[3],
            project_curve_3D = anims[4],
            unfold_3D = anims[5];
+
+    glm::mat4 proj_mat = glm::perspective(
+        state_->fov_y,
+        (float)scene_size_[0] / scene_size_[1],
+        0.1f,
+        100.f);
+    auto camera_mat = glm::translate(glm::mat4(1.f), state_->camera_3D);
+    glm::vec3 light_pos(0.f, 0.f, 70.f);
+    auto world_mat = glm::toMat4(glm::lerp(state_->rotation_3D, glm::quat(), static_cast<float>(unfold_3D)));
+    auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
+
+    glUniformMatrix4fv(diffuse_shader->proj_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(proj_mat));
+    glUniformMatrix4fv(diffuse_shader->mv_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(camera_mat * world_mat));
+    glUniformMatrix3fv(diffuse_shader->normal_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(norm_mat));
+    glUniform3fv(diffuse_shader->light_pos_id,
+                 1,
+                 glm::value_ptr(light_pos));
+
+
+
+
+
+    back_geometry_.clear(); front_geometry_.clear();
+
+    
 
     //gui_.Renderer->remove_all_meshes();
     //gui_.distanceWarning->hide();
@@ -338,10 +265,10 @@ void Scene_renderer::render()
     }
 
     for(auto& g : front_geometry_)
-        draw_mesh_geometry(g);
+        diffuse_shader->draw_mesh_geometry(g);
 
     for(auto& g : back_geometry_)
-        draw_mesh_geometry(g);
+        diffuse_shader->draw_mesh_geometry(g);
 }
 
 void Scene_renderer::project_to_3D(
@@ -432,7 +359,8 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
 
     }
 
-    back_geometry_.emplace_back(std::move(create_mesh_geometry(t_mesh)));
+    back_geometry_.emplace_back(
+        std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
 }
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
@@ -490,7 +418,7 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    back_geometry_.emplace_back(std::move(create_mesh_geometry(curve_mesh)));
+    back_geometry_.emplace_back(std::move(diffuse_shader->create_mesh_geometry(curve_mesh)));
 
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
@@ -519,190 +447,9 @@ void Scene_renderer::set_sphere_diameter(float diameter)
     sphere_diameter_ = diameter;
 }
 
-std::unique_ptr<Scene_renderer::Mesh_geometry>
-Scene_renderer::create_mesh_geometry(const Mesh& m)
-{
-    std::unique_ptr<Mesh_geometry> geom = std::make_unique<Mesh_geometry>();
-    geom->data_array.clear();
-    geom->indices.clear();
-    GLuint ind = 0;
 
-    for(size_t i = 0; i < m.objects.size(); ++i)
-    {
-        const auto& obj = m.objects[i];
-        const auto& c = m.colors[i];
 
-        for(auto const& f : obj.faces)
-        {
-            size_t num_verts = f.size();
-            size_t num_triangles = num_verts - 2;
 
-            for(size_t i = 0; i < num_triangles; ++i)
-            {
-                if(i == 0)
-                {
-                    // If the current triangle is first in the face we add three
-                    // pairs of vertices and normals to the array
-
-                    // Vertex 1
-                    {
-                        Mesh_array vnc;
-                        vnc.vert = glm::vec4(m.vertices[f[0].vertex_id], 1);
-                        vnc.norm = m.normals[f[0].normal_id];
-                        vnc.color = c;
-                        geom->data_array.push_back(vnc);
-                    }
-                    // Vertex 2
-                    {
-                        Mesh_array vnc;
-                        vnc.vert = glm::vec4(m.vertices[f[i + 1].vertex_id], 1);
-                        vnc.norm = m.normals[f[i + 1].normal_id];
-                        vnc.color = c;
-                        geom->data_array.push_back(vnc);
-                    }
-                    // Vertex 3
-                    {
-                        Mesh_array vnc;
-                        vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
-                        vnc.norm = m.normals[f[i + 2].normal_id];
-                        vnc.color = c;
-                        geom->data_array.push_back(vnc);
-                    }
-                }
-                else
-                {
-                    // If the current triangle is not the first in the face it
-                    // is enough to add only the one pair of vertices and
-                    // normals to the array
-
-                    // Vertex 3
-                    {
-                        Mesh_array vnc;
-                        vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
-                        vnc.norm = m.normals[f[i + 2].normal_id];
-                        vnc.color = c;
-                        geom->data_array.push_back(vnc);
-                    }
-                }
-
-                geom->indices.push_back(ind);         // Vertex 1
-                geom->indices.push_back(ind + i + 1); // Vertex 2
-                geom->indices.push_back(ind + i + 2); // Vertex 3
-            }
-
-            ind += num_verts;
-        }
-    }
-
-    geom->init_buffers();
-    return geom;
-}
-
-void Scene_renderer::draw_mesh_geometry(
-    const std::unique_ptr<Mesh_geometry>& geom)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
-
-    glEnableVertexAttribArray(mesh_shader_ids.vertex_attrib_id);
-    glEnableVertexAttribArray(mesh_shader_ids.normal_attrib_id);
-    glEnableVertexAttribArray(mesh_shader_ids.color_attrib_id );
-
-    GLsizei stride = sizeof(Mesh_array);
-    void* ptr1 = reinterpret_cast<void*>(4 * sizeof(GLfloat));
-    void* ptr2 = reinterpret_cast<void*>(7 * sizeof(GLfloat));
-    glVertexAttribPointer(mesh_shader_ids.vertex_attrib_id,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          stride, 0);
-    glVertexAttribPointer(mesh_shader_ids.normal_attrib_id,
-                          3,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          stride, ptr1);
-    glVertexAttribPointer(mesh_shader_ids.color_attrib_id,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          stride,
-                          ptr2);
-
-    glDrawElements(GL_TRIANGLES, geom->indices.size(), GL_UNSIGNED_INT, 0);
-
-    glDisableVertexAttribArray(mesh_shader_ids.vertex_attrib_id);
-    glDisableVertexAttribArray(mesh_shader_ids.normal_attrib_id);
-    glDisableVertexAttribArray(mesh_shader_ids.color_attrib_id );
-}
-
-std::unique_ptr<Scene_renderer::Line_geometry>
-Scene_renderer::create_line_geometry(const Line_2D& line)
-{
-    std::unique_ptr<Line_geometry> geom = std::make_unique<Line_geometry>();
-
-    geom->data_array.clear();
-    geom->indices.clear();
-
-    Line_array d1, d2;
-
-    d1.vert = line.start_pos;
-    d1.color = line.color;
-
-    d2.vert = line.end_pos;
-    d2.color = line.color;
-
-    geom->data_array.push_back(d1);
-    geom->data_array.push_back(d2);
-
-    geom->indices.push_back(0);
-    geom->indices.push_back(1);
-
-    // Allocating buffers
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
-	glBufferData(GL_ARRAY_BUFFER,
-                 geom->data_array.size() * sizeof(Line_array),
-                 &geom->data_array[0],
-                 GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 geom->indices.size() * sizeof(GLuint),
-                 &geom->indices[0],
-                 GL_STATIC_DRAW);
-
-    geom->init_buffers();
-    return geom;
-}
-
-void Scene_renderer::draw_line_geometry(
-    const std::unique_ptr<Line_geometry>& geom)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
-
-    glEnableVertexAttribArray(screen_shader_ids.vertex_attrib_id);
-    glEnableVertexAttribArray(screen_shader_ids.color_attrib_id );
-
-    GLsizei stride = sizeof(Line_array);
-    void* ptr = reinterpret_cast<void*>(2 * sizeof(GLfloat));
-    glVertexAttribPointer(screen_shader_ids.vertex_attrib_id,
-                          2,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          stride,
-                          0);
-    glVertexAttribPointer(screen_shader_ids.color_attrib_id,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          stride,
-                          ptr);
-
-    glDrawElements(GL_LINES, geom->indices.size(), GL_UNSIGNED_INT, 0);
-
-    glDisableVertexAttribArray(screen_shader_ids.vertex_attrib_id);
-    glDisableVertexAttribArray(screen_shader_ids.color_attrib_id );
-}
 
 std::vector<double> Scene_renderer::split_animation(double animation,
                                                     int    sections)
@@ -961,8 +708,10 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
             col,
             t_mesh);
 
-        opacity < 1.0 ? front_geometry_.emplace_back(std::move(create_mesh_geometry(t_mesh)))
-                      : back_geometry_.emplace_back(std::move(create_mesh_geometry(t_mesh)));
+        opacity < 1.0 ? front_geometry_.emplace_back(std::move(
+                            diffuse_shader->create_mesh_geometry(t_mesh)))
+                      : back_geometry_.emplace_back(std::move(
+                            diffuse_shader->create_mesh_geometry(t_mesh)));
     }
 }
 
@@ -985,7 +734,8 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
             col,
             t_mesh);
 
-        back_geometry_.emplace_back(std::move(create_mesh_geometry(t_mesh)));
+        back_geometry_.emplace_back(
+            std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
     }
 }
 

@@ -10,7 +10,11 @@
 #include <GL/gl3w.h>
 #endif
 
-namespace Shader
+class Base_shader
 {
-GLuint load_shaders(const char * vertex_file_path, const char * fragment_file_path);
-}
+public:
+    virtual void initialize() = 0;
+protected:
+    GLuint load_shaders(const char* vertex_file_path,
+                        const char* fragment_file_path);
+};

@@ -2,7 +2,7 @@
 // WTFPL public licence (2004). The original code was slighly modified for the
 // current project
 
-#include "Shader.h"
+#include "Base_shader.h"
 // std
 #include <stdio.h>
 #include <string>
@@ -16,7 +16,7 @@
 
 using namespace std;
 
-GLuint Shader::load_shaders(const char* vertex_file_path,
+GLuint Base_shader::load_shaders(const char* vertex_file_path,
                     const char* fragment_file_path)
 {
 	// Create the shaders
