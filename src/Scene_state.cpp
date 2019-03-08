@@ -9,7 +9,7 @@ Scene_state::Scene_state()
     , camera_4D(5)
     , projection_4D(5, 5)
     , tesseract_size{1.f, 1.f, 1.f, 1.f}
-    , unfolding_anim_(0.f)
+    , unfolding_anim(0.f)
     , show_tesseract(true)
     , show_curve(true)
     , use_simple_dali_cross(false)
@@ -19,6 +19,7 @@ Scene_state::Scene_state()
     , xw_rot(0.f)
     , yw_rot(0.f)
     , zw_rot(0.f)
+    , fov_y(0.f)
 {
     tesseract_size[0] = tesseract_size[1] = tesseract_size[2] =
         tesseract_size[3] = 1;

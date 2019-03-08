@@ -10,4 +10,7 @@
 #include <GL/gl3w.h>
 #endif
 
+namespace Shader
+{
 GLuint load_shaders(const char * vertex_file_path, const char * fragment_file_path);
+}

@@ -12,17 +12,17 @@ struct Curve_stats
         typedef std::tuple<float, float> Min_and_max;
         Range()
         {
-            std::get<0>(x) = std::numeric_limits<float>().max();
-            std::get<1>(x) = std::numeric_limits<float>().min();
+            std::get<0>(x) = std::numeric_limits<float>::max();
+            std::get<1>(x) = std::numeric_limits<float>::min();
 
-            std::get<0>(y) = std::numeric_limits<float>().max();
-            std::get<1>(y) = std::numeric_limits<float>().min();
+            std::get<0>(y) = std::numeric_limits<float>::max();
+            std::get<1>(y) = std::numeric_limits<float>::min();
 
-            std::get<0>(z) = std::numeric_limits<float>().max();
-            std::get<1>(z) = std::numeric_limits<float>().min();
+            std::get<0>(z) = std::numeric_limits<float>::max();
+            std::get<1>(z) = std::numeric_limits<float>::min();
 
-            std::get<0>(w) = std::numeric_limits<float>().max();
-            std::get<1>(w) = std::numeric_limits<float>().min();
+            std::get<0>(w) = std::numeric_limits<float>::max();
+            std::get<1>(w) = std::numeric_limits<float>::min();
         }
 
         Min_and_max x;
