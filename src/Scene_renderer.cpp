@@ -52,6 +52,11 @@ void Scene_renderer::render()
 
     glUseProgram(diffuse_shader->program_id);
 
+    glViewport(display_scale_x_ * scene_pos_[0],
+               display_scale_y_ * scene_pos_[1],
+               display_scale_x_ * scene_size_[0],
+               display_scale_y_ * scene_size_[1]);
+
     std::vector<double> anims =
         split_animation(state_->unfolding_anim, number_of_animations_);
     double hide_4D = anims[0],

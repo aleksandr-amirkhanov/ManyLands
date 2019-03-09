@@ -426,22 +426,19 @@ void mainloop()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::ivec2 scene_pos(Left_panel_size, Bottom_panel_size),
-               scene_size(width - Left_panel_size,
-                          height - Bottom_panel_size);
+               scene_size(width - Left_panel_size, height - Bottom_panel_size);
 
-    Renderer.update_redering_region(scene_pos, scene_size);
-    Timeline.update_redering_region(scene_pos, scene_size);
-        
-    glViewport(io.DisplayFramebufferScale.x * scene_pos[0],
-               io.DisplayFramebufferScale.y * scene_pos[1],
-               io.DisplayFramebufferScale.x * scene_size[0],
-               io.DisplayFramebufferScale.y * scene_size[1]);
-    Renderer.render();
-    //Timeline.render();
-    glViewport(0,
-               0,
-               io.DisplayFramebufferScale.x * width,
-               io.DisplayFramebufferScale.y * height);
+    Renderer.set_redering_region(scene_pos,
+                                 scene_size,
+                                 io.DisplayFramebufferScale.x,
+                                 io.DisplayFramebufferScale.y);
+    Timeline.set_redering_region(scene_pos,
+                                 scene_size,
+                                 io.DisplayFramebufferScale.x,
+                                 io.DisplayFramebufferScale.y);
+
+    //Renderer.render();
+    Timeline.render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(Window);
@@ -502,8 +499,8 @@ int main(int, char**)
         "ManyLands",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        1600,
-        900,
+        1280,
+        720,
         Window_flags);
     Gl_context = SDL_GL_CreateContext(Window);
     SDL_GL_SetSwapInterval(1); // Enable vsync

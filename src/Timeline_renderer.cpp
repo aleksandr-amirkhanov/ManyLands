@@ -20,6 +20,11 @@ void Timeline_renderer::render()
 
     glUseProgram(screen_shader->program_id);
 
+    glViewport(display_scale_x_ * scene_pos_[0],
+               display_scale_y_ * scene_pos_[1],
+               display_scale_x_ * scene_size_[0],
+               display_scale_y_ * scene_size_[1]);
+
     // On-screen rendering
     glm::mat4 proj_ortho = glm::ortho(-1.f, 1.f, -1.f, 1.f);
     glUniformMatrix4fv(screen_shader->proj_mat_id,
@@ -31,7 +36,7 @@ void Timeline_renderer::render()
     line.start_pos = glm::vec2(-1.f, -1.f);
     line.end_pos   = glm::vec2(1.f, 1.f);
     line.width     = 1.;
-    line.color     = glm::vec4(1.f, 0.f, 0.f, 0.2f);
+    line.color     = glm::vec4(0.f, 0.f, 0.f, 1.f);
 
     glLineWidth(5.f);
     screen_shader->draw_line_geometry(
