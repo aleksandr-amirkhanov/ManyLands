@@ -23,10 +23,10 @@ void Screen_shader::initialize()
     color_attrib_id  = glGetAttribLocation(program_id,  "color");
 }
 
-std::unique_ptr<Screen_shader::Line_geometry>
+std::unique_ptr<Screen_shader::Screen_geometry>
 Screen_shader::create_geometry(const Line_strip& strip)
 {
-    std::unique_ptr<Line_geometry> geom = std::make_unique<Line_geometry>();
+    std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
 
     for(auto current = strip.begin(); current != strip.end(); ++current)
     {
@@ -94,7 +94,7 @@ Screen_shader::create_geometry(const Line_strip& strip)
 }
 
 void Screen_shader::draw_geometry(
-    const std::unique_ptr<Line_geometry>& geom)
+    const std::unique_ptr<Screen_geometry>& geom)
 {
     glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);

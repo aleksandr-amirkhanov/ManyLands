@@ -2,7 +2,6 @@
 
 // Local
 #include "Consts.h"
-#include "Line.h"
 // glm
 #include <glm/gtc/type_ptr.hpp>
 // std
