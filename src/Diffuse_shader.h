@@ -3,7 +3,6 @@
 // Local
 #include "Base_shader.h"
 #include "Geometry_engine.h"
-#include "Line_2D.h"
 #include "Mesh.h"
 // sdl
 #include <memory>

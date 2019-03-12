@@ -3,7 +3,6 @@
 #include "Base_renderer.h"
 #include "Geometry_engine.h"
 #include "Scene_state.h"
-#include "Line_2D.h"
 #include "Screen_shader.h"
 // std
 #include <memory.h>

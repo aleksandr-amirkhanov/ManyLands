@@ -3,7 +3,6 @@
 #include "Base_renderer.h"
 #include "Scene_state.h"
 #include "Mesh.h"
-#include "Line_2D.h"
 #include "Diffuse_shader.h"
 #include "Screen_shader.h"
 // std

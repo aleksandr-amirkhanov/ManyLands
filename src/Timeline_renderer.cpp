@@ -2,6 +2,7 @@
 
 // Local
 #include "Consts.h"
+#include "Line.h"
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -113,7 +114,6 @@ void Timeline_renderer::draw_axes(const Rect& region)
     draw_line(glm::vec2(region.left(),  region.bottom()),
               glm::vec2(region.left(),  region.top()));
 
-    const float sect_spacing = region.width() / num_section; // TODO: we don't need this variable?
     const float t_min = state_->curve->get_time_stamp().front();
     const float t_max = state_->curve->get_time_stamp().back();
     const float t_durr = t_max - t_min;
@@ -161,8 +161,8 @@ void Timeline_renderer::draw_curve(const Rect& region)
         size_t dim_ind,
         float t_duration,
         float scale,
-        const glm::vec4& norm_pen, // TODO: rename the variable
-        const glm::vec4& out_of_select) // TODO: rename the variable
+        const glm::vec4& norm_color,
+        const glm::vec4& dim_color)
     {
         const float width = 2.5f;
 
@@ -192,16 +192,16 @@ void Timeline_renderer::draw_curve(const Rect& region)
                     if(state_->curve_selection->t_start <= t_curr &&
                        t_curr <= state_->curve_selection->t_end)
                     {
-                        color = norm_pen;
+                        color = norm_color;
                     }
                     else
                     {
-                        color = out_of_select;
+                        color = dim_color;
                     }
                 }
                 else
                 {
-                    color = norm_pen;
+                    color = norm_color;
                 }
 
                 strip.push_back(Line_point(curr_pnt, width, color));
