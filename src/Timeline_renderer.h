@@ -6,17 +6,18 @@
 #include "Screen_shader.h"
 // std
 #include <memory.h>
+// glm
+#include <glm/glm.hpp>
 
 class Timeline_renderer : public Base_renderer
 {
 private:
-    struct Line_array
+    struct Mouse_selection
     {
-        glm::vec2 vert;
-        glm::vec4 color;
+        glm::vec2 start_pnt;
+        glm::vec2 end_pnt;
+        bool is_active;
     };
-
-    typedef Geometry_engine<Line_array> Line_geometry;
 
     Timeline_renderer() = delete;
 
@@ -30,6 +31,8 @@ private:
     void draw_axes(const Rect& region);
     void draw_curve(const Rect& region);
     void draw_switches(const Rect& region);
+    void draw_selection(const Rect& region,
+                        const Mouse_selection& s);
 
     void calculate_switch_points(
         std::vector<float>& out_points,

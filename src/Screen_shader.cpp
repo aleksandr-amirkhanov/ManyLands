@@ -24,7 +24,7 @@ void Screen_shader::initialize()
 }
 
 std::unique_ptr<Screen_shader::Line_geometry>
-Screen_shader::create_line_geometry(const Line_strip& strip)
+Screen_shader::create_geometry(const Line_strip& strip)
 {
     std::unique_ptr<Line_geometry> geom = std::make_unique<Line_geometry>();
 
@@ -45,7 +45,7 @@ Screen_shader::create_line_geometry(const Line_strip& strip)
         {
             auto norm = calc_norm(*current, *next, current->width);
 
-            Line_array elem[4];
+            Data_array elem[4];
 
             elem[0].vert = current->pos + norm;
             elem[0].color = current->color;
@@ -79,7 +79,7 @@ Screen_shader::create_line_geometry(const Line_strip& strip)
     // Allocating buffers
     glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
 	glBufferData(GL_ARRAY_BUFFER,
-                 geom->data_array.size() * sizeof(Line_array),
+                 geom->data_array.size() * sizeof(Data_array),
                  &geom->data_array[0],
                  GL_STATIC_DRAW);
 
@@ -93,7 +93,7 @@ Screen_shader::create_line_geometry(const Line_strip& strip)
     return geom;
 }
 
-void Screen_shader::draw_line_geometry(
+void Screen_shader::draw_geometry(
     const std::unique_ptr<Line_geometry>& geom)
 {
     glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
@@ -102,7 +102,7 @@ void Screen_shader::draw_line_geometry(
     glEnableVertexAttribArray(vertex_attrib_id);
     glEnableVertexAttribArray(color_attrib_id );
 
-    GLsizei stride = sizeof(Line_array);
+    GLsizei stride = sizeof(Data_array);
     void* ptr = reinterpret_cast<void*>(2 * sizeof(GLfloat));
     glVertexAttribPointer(vertex_attrib_id,
                           2,

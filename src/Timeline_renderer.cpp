@@ -4,7 +4,6 @@
 #include "Consts.h"
 #include "Line.h"
 // glm
-#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 // std
 #include <vector>
@@ -84,8 +83,8 @@ void Timeline_renderer::render()
             line.width     = 1.5;
             line.color     = glm::vec4(1.f, 0.f, 0.f, 1.f);
 
-            screen_shader->draw_line_geometry(
-                screen_shader->create_line_geometry(line));
+            screen_shader->draw_geometry(
+                screen_shader->create_geometry(line));
         }
     };
 
@@ -115,8 +114,7 @@ void Timeline_renderer::draw_axes(const Rect& region)
         Line_strip line;
         line.push_back(Line_point(start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
         line.push_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-        screen_shader->draw_line_geometry(
-            screen_shader->create_line_geometry(line));
+        screen_shader->draw_geometry(screen_shader->create_geometry(line));
     };
 
     draw_line(glm::vec2(region.left(),  region.bottom()),
@@ -247,8 +245,7 @@ void Timeline_renderer::draw_curve(const Rect& region)
                                colors[i],
                                defocused);
 
-        screen_shader->draw_line_geometry(
-            screen_shader->create_line_geometry(strip));
+        screen_shader->draw_geometry(screen_shader->create_geometry(strip));
     }
 }
 
@@ -268,9 +265,28 @@ void Timeline_renderer::draw_switches(const Rect& region)
         Line_strip line;
         line.push_back(Line_point(glm::vec2(p, region.top()), width, color));
         line.push_back(Line_point(glm::vec2(p, region.bottom()), width, color));
-        screen_shader->draw_line_geometry(
-            screen_shader->create_line_geometry(line));
+        screen_shader->draw_geometry(screen_shader->create_geometry(line));
     }
+}
+
+//******************************************************************************
+// draw_selection
+//******************************************************************************
+
+void Timeline_renderer::draw_selection(const Rect& region,
+                                       const Mouse_selection& s)
+{
+    float left = std::clamp(s.start_pnt.x, region.left(), region.right());
+    float right = std::clamp(s.end_pnt.x, region.left(), region.right());
+
+    //Rect rect(left, region.top(), right, region.bottom());
+    //painter.fillRect(rect, QBrush(QColor(0, 174, 239, 50)));
+
+    /*Line_strip line;
+    line.push_back(Line_point(left, region.top(), glm::vec4(0.f, 0.f, 0.f, 1.f)));
+    line.push_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+    screen_shader->draw_geometry(
+        screen_shader->create_geometry(line));*/
 }
 
 //******************************************************************************

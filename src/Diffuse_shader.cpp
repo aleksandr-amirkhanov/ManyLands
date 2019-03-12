@@ -26,7 +26,7 @@ void Diffuse_shader::initialize()
 }
 
 std::unique_ptr<Diffuse_shader::Mesh_geometry>
-Diffuse_shader::create_mesh_geometry(const Mesh& m)
+Diffuse_shader::create_geometry(const Mesh& m)
 {
     std::unique_ptr<Mesh_geometry> geom = std::make_unique<Mesh_geometry>();
     geom->data_array.clear();
@@ -52,7 +52,7 @@ Diffuse_shader::create_mesh_geometry(const Mesh& m)
 
                     // Vertex 1
                     {
-                        Mesh_array vnc;
+                        Data_array vnc;
                         vnc.vert = glm::vec4(m.vertices[f[0].vertex_id], 1);
                         vnc.norm = m.normals[f[0].normal_id];
                         vnc.color = c;
@@ -60,7 +60,7 @@ Diffuse_shader::create_mesh_geometry(const Mesh& m)
                     }
                     // Vertex 2
                     {
-                        Mesh_array vnc;
+                        Data_array vnc;
                         vnc.vert = glm::vec4(m.vertices[f[i + 1].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 1].normal_id];
                         vnc.color = c;
@@ -68,7 +68,7 @@ Diffuse_shader::create_mesh_geometry(const Mesh& m)
                     }
                     // Vertex 3
                     {
-                        Mesh_array vnc;
+                        Data_array vnc;
                         vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 2].normal_id];
                         vnc.color = c;
@@ -83,7 +83,7 @@ Diffuse_shader::create_mesh_geometry(const Mesh& m)
 
                     // Vertex 3
                     {
-                        Mesh_array vnc;
+                        Data_array vnc;
                         vnc.vert = glm::vec4(m.vertices[f[i + 2].vertex_id], 1);
                         vnc.norm = m.normals[f[i + 2].normal_id];
                         vnc.color = c;
@@ -104,7 +104,7 @@ Diffuse_shader::create_mesh_geometry(const Mesh& m)
     return geom;
 }
 
-void Diffuse_shader::draw_mesh_geometry(
+void Diffuse_shader::draw_geometry(
     const std::unique_ptr<Mesh_geometry>& geom)
 {
     glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
@@ -114,7 +114,7 @@ void Diffuse_shader::draw_mesh_geometry(
     glEnableVertexAttribArray(normal_attrib_id);
     glEnableVertexAttribArray(color_attrib_id );
 
-    GLsizei stride = sizeof(Mesh_array);
+    GLsizei stride = sizeof(Data_array);
     void* ptr1 = reinterpret_cast<void*>(4 * sizeof(GLfloat));
     void* ptr2 = reinterpret_cast<void*>(7 * sizeof(GLfloat));
     glVertexAttribPointer(vertex_attrib_id,

@@ -270,10 +270,10 @@ void Scene_renderer::render()
     }
 
     for(auto& g : front_geometry_)
-        diffuse_shader->draw_mesh_geometry(g);
+        diffuse_shader->draw_geometry(g);
 
     for(auto& g : back_geometry_)
-        diffuse_shader->draw_mesh_geometry(g);
+        diffuse_shader->draw_geometry(g);
 }
 
 void Scene_renderer::project_to_3D(
@@ -365,7 +365,7 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
     }
 
     back_geometry_.emplace_back(
-        std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
+        std::move(diffuse_shader->create_geometry(t_mesh)));
 }
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
@@ -423,7 +423,8 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    back_geometry_.emplace_back(std::move(diffuse_shader->create_mesh_geometry(curve_mesh)));
+    back_geometry_.emplace_back(
+        std::move(diffuse_shader->create_geometry(curve_mesh)));
 
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
@@ -714,9 +715,9 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
             t_mesh);
 
         opacity < 1.0 ? front_geometry_.emplace_back(std::move(
-                            diffuse_shader->create_mesh_geometry(t_mesh)))
+                            diffuse_shader->create_geometry(t_mesh)))
                       : back_geometry_.emplace_back(std::move(
-                            diffuse_shader->create_mesh_geometry(t_mesh)));
+                            diffuse_shader->create_geometry(t_mesh)));
     }
 }
 
@@ -740,7 +741,7 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
             t_mesh);
 
         back_geometry_.emplace_back(
-            std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
+            std::move(diffuse_shader->create_geometry(t_mesh)));
     }
 }
 
