@@ -1,21 +1,27 @@
 #pragma once
 // local
+#include "Base_renderer.h"
 #include "Scene_state.h"
-#include "Geometry_engine.h"
+#include "Mesh.h"
+#include "Diffuse_shader.h"
+#include "Screen_shader.h"
 // std
 #include <memory.h>
 // boost
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-class Scene_renderer
+class Scene_renderer : public Base_renderer
 {
+private:
+    Scene_renderer() = delete;
+
 public:
-    Scene_renderer();
     Scene_renderer(std::shared_ptr<Scene_state> state);
 
-    void set_state(std::shared_ptr<Scene_state> state);
-    void render();
+    void set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
+                     std::shared_ptr<Screen_shader> screen);
+    void render() override;
 
     void set_line_thickness(float t_thickness, float c_thickness);
     void set_sphere_diameter(float diameter);
@@ -45,18 +51,20 @@ private:
     void plots_unfolding(
         double coeff,
         std::vector<Square>& plots_2D,
-        std::vector<Curve>& curves_2D);
+        std::vector<Curve>& curves_2D);    
 
     std::vector<double> split_animation(double animation_pos, int sections);
 
-    // drawing parameters
+    // Drawing parameters
     float tesseract_thickness_,
           curve_thickness_,
           sphere_diameter_;
 
-    std::shared_ptr<Scene_state> state_;
-    std::vector<std::unique_ptr<Geometry_engine>> back_geometry_,
-                                                  front_geometry_;
+    std::shared_ptr<Diffuse_shader> diffuse_shader;
+    std::shared_ptr<Screen_shader> screen_shader;
+
+    std::vector<std::unique_ptr<Diffuse_shader::Mesh_geometry>>
+        back_geometry_, front_geometry_;
 
     bool optimize_performance_;
     int visibility_mask_;

@@ -9,10 +9,10 @@ using namespace boost::numeric::ublas;
 Tesseract::Tesseract(
     vector<double> origin,
     vector<double> size,
-    const Color* x_color,
-    const Color* y_color,
-    const Color* z_color,
-    const Color* w_color)
+    const Color& x_color,
+    const Color& y_color,
+    const Color& z_color,
+    const Color& w_color)
 {
     vertices_.resize(16);
     edges_.resize(32);
@@ -39,47 +39,27 @@ Tesseract::Tesseract(
                     v(2) = z == 0 ? origin(2) : origin(2) + size_(2);
                     v(3) = w == 0 ? origin(3) : origin(3) + size_(3);
                     v(4) = 1;
-                    vertices_.at(index(x, y, z, w)) = v;
+                    vertices_[index(x, y, z, w)] = v;
 
                     if(x == 0)
                     {
-                        std::unique_ptr<Wireframe_edge> ids =
-                            std::make_unique<Wireframe_edge>();
-                        ids->vert1 = index(0, y, z, w);
-                        ids->vert2 = index(1, y, z, w);
-                        ids->color = x_color;
-
-                        edges_.at(li++) = std::move(ids);
+                        edges_[li++] = {
+                            index(0, y, z, w), index(1, y, z, w), x_color};
                     }
                     if(y == 0)
                     {
-                        std::unique_ptr<Wireframe_edge> ids =
-                            std::make_unique<Wireframe_edge>();
-                        ids->vert1 = index(x, 0, z, w);
-                        ids->vert2 = index(x, 1, z, w);
-                        ids->color = y_color;
-
-                        edges_.at(li++) = std::move(ids);
+                        edges_[li++] = {
+                            index(x, 0, z, w), index(x, 1, z, w), y_color};
                     }
                     if(z == 0)
                     {
-                        std::unique_ptr<Wireframe_edge> ids =
-                            std::make_unique<Wireframe_edge>();
-                        ids->vert1 = index(x, y, 0, w);
-                        ids->vert2 = index(x, y, 1, w);
-                        ids->color = z_color;
-
-                        edges_.at(li++) = std::move(ids);
+                        edges_[li++] = {
+                            index(x, y, 0, w), index(x, y, 1, w), z_color};
                     }
                     if(w == 0)
                     {
-                        std::unique_ptr<Wireframe_edge> ids =
-                            std::make_unique<Wireframe_edge>();
-                        ids->vert1 = index(x, y, z, 0);
-                        ids->vert2 = index(x, y, z, 1);
-                        ids->color = w_color;
-
-                        edges_.at(li++) = std::move(ids);
+                        edges_[li++] = {
+                            index(x, y, z, 0), index(x, y, z, 1), w_color};
                     }
                 }
             }
@@ -101,14 +81,13 @@ std::vector<Cube> Tesseract::split()
     auto get_color = [&](int vert_ind1, int vert_ind2) {
         for(const auto& e : edges())
         {
-            if((e->vert1 == vert_ind1 && e->vert2 == vert_ind2) ||
-               (e->vert1 == vert_ind2 && e->vert2 == vert_ind1))
+            if((e.vert1 == vert_ind1 && e.vert2 == vert_ind2) ||
+               (e.vert1 == vert_ind2 && e.vert2 == vert_ind1))
             {
-                return e->color;
+                return e.color;
             }
         }
-        throw std::logic_error("The color always shold be found!");
-        return static_cast<const Color*>(nullptr);
+        throw std::logic_error("The color always should be found!");
     };
 
     auto add_cube =

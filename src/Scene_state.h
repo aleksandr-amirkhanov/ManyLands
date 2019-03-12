@@ -36,21 +36,22 @@ public:
     boost::numeric::ublas::vector<double> camera_4D;
 
     float xy_rot, yz_rot, zx_rot, xw_rot, yw_rot, zw_rot;
+    float fov_y;
 
     std::shared_ptr<Curve> curve, simple_curve;
     std::shared_ptr<Curve_selection> curve_selection;
 
     std::shared_ptr<Tesseract> tesseract;
 
-    const Color* get_color(int color_id);
+    const Color& get_color(int color_id);
     void update_color(int color_id, const Color& color);
 
-    float unfolding_anim_;
+    float unfolding_anim;
     bool show_tesseract,
          show_curve,
          use_simple_dali_cross;
     std::array<float, 4> tesseract_size;
 
 private:
-    std::map<std::int32_t, std::unique_ptr<Color>> colors_;
+    std::map<std::int32_t, Color> colors_;
 };

@@ -5,6 +5,7 @@
 // Win
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
+#define NOMINMAX
 #include <windows.h>
 #include <commdlg.h>
 #endif
@@ -28,15 +29,13 @@
 // Local
 #include "Mesh_generator.h"
 #include "Geometry_engine.h"
+#include "Shader.h"
 #include "Scene.h"
 #include "Scene_state.h"
 #include "Scene_renderer.h"
 #include "Consts.h"
 #include "Matrix_lib.h"
 #include "Tesseract.h"
-#include "Timeline_renderer.h"
-#include "Diffuse_shader.h"
-#include "Screen_shader.h"
 // Boost
 #include <boost/numeric/ublas/assignment.hpp>
 
@@ -78,6 +77,14 @@ ImVec4 Clear_color,
        Low_speed_color,
        High_speed_color;
 
+GLuint Mesh_program_id,
+       Proj_mat_id,
+       Mv_mat_id,
+       Normal_mat_id,
+       Light_pos_id;
+
+GLuint Screen_program_id, Screen_proj_mat_id;
+
 const bool Enable_keyboard = false,   // Controllers
            Enable_gamepad  = false;
 
@@ -88,13 +95,6 @@ int Left_panel_size = 300 * App_scale;
 
 const std::shared_ptr<Scene_state> State = std::make_shared<Scene_state>();
 Scene_renderer Renderer(State);
-Timeline_renderer Timeline(State);
-
-const std::shared_ptr<Diffuse_shader> Diffuse_shad =
-    std::make_shared<Diffuse_shader>();
-const std::shared_ptr<Screen_shader> Screen_shad =
-    std::make_shared<Screen_shader>();
-
 Scene Scene_objs(State);
 
 //******************************************************************************
@@ -352,8 +352,6 @@ void mainloop()
             State->rotation_3D = glm::eulerAngleXYZ(euler[0],
                                                     euler[1],
                                                     euler[2]);
-
-            State->fov_y = fov_y;
         }
 
         Left_panel_size = ImGui::GetWindowSize().x;
@@ -403,7 +401,7 @@ void mainloop()
                   tesseract_size),
                   std::end(tesseract_size),
                   std::begin(State->tesseract_size));
-        State->unfolding_anim  = animation;
+        State->unfolding_anim_ = animation;
         State->show_tesseract  = Show_tesseract;
         State->show_curve      = Show_curve;
 
@@ -425,27 +423,51 @@ void mainloop()
                  State->get_color(Background).a / 255.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Mesh rendering
+    glUseProgram(Mesh_program_id);
 
-    int timeline_height =
-        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.25f);
-    Base_renderer::Rect timeline_reg(Left_panel_size,
-                                     Bottom_panel_size,
-                                     width,
-                                     timeline_height);
-    Base_renderer::Rect scene_reg(Left_panel_size,
-                                  Bottom_panel_size + timeline_height,
-                                  width,
-                                  height);
+    glm::ivec2 scene_pos(Left_panel_size, Bottom_panel_size),
+               scene_size(width - Left_panel_size,
+                          height - Bottom_panel_size);
 
-    Renderer.set_redering_region(scene_reg,
-                                 io.DisplayFramebufferScale.x,
-                                 io.DisplayFramebufferScale.y);
-    Timeline.set_redering_region(timeline_reg,
-                                 io.DisplayFramebufferScale.x,
-                                 io.DisplayFramebufferScale.y);
+    glm::mat4 proj_mat = glm::perspective(
+        fov_y,
+        (float)scene_size[0] / scene_size[1],
+        0.1f,
+        100.f);
 
+    auto camera_mat = glm::translate(glm::mat4(1.f), State->camera_3D);
+
+    glm::vec3 light_pos(0.f, 0.f, 70.f);
+
+    auto world_mat = glm::toMat4(State->rotation_3D);
+    auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
+
+    glUniformMatrix4fv(Proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_mat));
+    glUniformMatrix4fv(
+        Mv_mat_id, 1, GL_FALSE, glm::value_ptr(camera_mat * world_mat));
+
+
+    // On-screen rendering
+    glUseProgram(Screen_program_id);
+    glm::mat4 proj_ortho = glm::ortho(-1.f, 1.f, -1.f, 1.f);
+    glUniformMatrix4fv(Screen_proj_mat_id, 1, GL_FALSE, glm::value_ptr(proj_ortho));
+    glUseProgram(Mesh_program_id);
+
+
+    glUniformMatrix3fv(
+        Normal_mat_id, 1, GL_FALSE, glm::value_ptr(norm_mat));
+    glUniform3fv(Light_pos_id, 1, glm::value_ptr(light_pos));
+        
+    glViewport(io.DisplayFramebufferScale.x * scene_pos[0],
+               io.DisplayFramebufferScale.y * scene_pos[1],
+               io.DisplayFramebufferScale.x * scene_size[0],
+               io.DisplayFramebufferScale.y * scene_size[1]);
     Renderer.render();
-    Timeline.render();
+    glViewport(0,
+               0,
+               io.DisplayFramebufferScale.x * width,
+               io.DisplayFramebufferScale.y * height);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(Window);
@@ -506,8 +528,8 @@ int main(int, char**)
         "ManyLands",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        1280,
-        720,
+        1600,
+        900,
         Window_flags);
     Gl_context = SDL_GL_CreateContext(Window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -553,13 +575,41 @@ int main(int, char**)
 
     set_bright_theme();
 
-    Diffuse_shad->initialize();
-    Screen_shad->initialize();
+#ifdef __EMSCRIPTEN__
+    Mesh_program_id = load_shaders("assets/Diffuse_ES.vert",
+                                   "assets/Diffuse_ES.frag");
+#else
+    Mesh_program_id = load_shaders("assets/Diffuse.vert",
+                                   "assets/Diffuse.frag");
+#endif
+<<<<<<< HEAD
+    Screen_program_id = load_shaders("assets/Diffuse_paint.vert",
+                                     "assets/Diffuse_paint.frag");
 
-    Renderer.set_shaders(Diffuse_shad, Screen_shad);
-    Timeline.set_shader(Screen_shad);
+    glUseProgram(Mesh_program_id);
+    Proj_mat_id   = glGetUniformLocation(Mesh_program_id,   "projMatrix");
+    Mv_mat_id     = glGetUniformLocation(Mesh_program_id,     "mvMatrix");
+    Normal_mat_id = glGetUniformLocation(Mesh_program_id, "normalMatrix");
+    Light_pos_id  = glGetUniformLocation(Mesh_program_id,     "lightPos");
+    
+    glUseProgram(Screen_program_id);
+    Screen_proj_mat_id = glGetUniformLocation(Screen_program_id, "projMatrix");
+
+    State      = std::make_shared<Scene_state>();
+    Renderer   = std::make_unique<Scene_renderer>(State);
+    Scene_objs = std::make_unique<Scene>(State);
+=======
+
+    Proj_mat_id   = glGetUniformLocation(Program_id,   "projMatrix");
+    Mv_mat_id     = glGetUniformLocation(Program_id,     "mvMatrix");
+    Normal_mat_id = glGetUniformLocation(Program_id, "normalMatrix");
+    Light_pos_id  = glGetUniformLocation(Program_id,     "lightPos");
+>>>>>>> re-factoring-and-color-fix-artem
 
     State->camera_4D <<= 0., 0., 0., 550., 0.;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);

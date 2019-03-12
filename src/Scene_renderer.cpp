@@ -7,51 +7,98 @@
 #include <boost/numeric/ublas/assignment.hpp>
 // std
 #include <stdexcept>
+// glm
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
+// ImGui
+#include "imgui.h"
 
 //using namespace boost::numeric::odeint;
 using namespace boost::numeric::ublas;
 
-Scene_renderer::Scene_renderer()
-    : tesseract_thickness_(1.f)
+Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
+    : Base_renderer()
+    , tesseract_thickness_(1.f)
     , curve_thickness_(1.f)
     , sphere_diameter_(1.f)
     , number_of_animations_(6)
     , optimize_performance_(true)
     , visibility_mask_(0)
 {
-}
-
-Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
-    : Scene_renderer()
-{
     set_state(state);
 }
 
-void Scene_renderer::set_state(std::shared_ptr<Scene_state> state)
+void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
+                                 std::shared_ptr<Screen_shader> screen)
 {
-    state_ = state;
+    diffuse_shader = diffuse;
+    screen_shader  = screen;
 }
 
 void Scene_renderer::render()
 {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
        state_->curve     == nullptr)
     {
-        std::logic_error("The scene is incomplete");
         return;
     }
 
-    back_geometry_.clear(); front_geometry_.clear();
+    glUseProgram(diffuse_shader->program_id);
+
+    glViewport(display_scale_x_ * region_.left(),
+               display_scale_y_ * region_.bottom(),
+               display_scale_x_ * region_.width(),
+               display_scale_y_ * region_.height());
 
     std::vector<double> anims =
-        split_animation(state_->unfolding_anim_, number_of_animations_);
+        split_animation(state_->unfolding_anim, number_of_animations_);
     double hide_4D = anims[0],
            project_curve_4D = anims[1],
            unfold_4D = anims[2],
            hide_3D = anims[3],
            project_curve_3D = anims[4],
            unfold_3D = anims[5];
+
+    glm::mat4 proj_mat = glm::perspective(
+        state_->fov_y,
+        region_.width() / region_.height(),
+        0.1f,
+        100.f);
+    auto camera_mat = glm::translate(glm::mat4(1.f), state_->camera_3D);
+    glm::vec3 light_pos(0.f, 0.f, 70.f);
+    auto world_mat = glm::toMat4(glm::lerp(state_->rotation_3D, glm::quat(), static_cast<float>(unfold_3D)));
+    auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
+
+    glUniformMatrix4fv(diffuse_shader->proj_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(proj_mat));
+    glUniformMatrix4fv(diffuse_shader->mv_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(camera_mat * world_mat));
+    glUniformMatrix3fv(diffuse_shader->normal_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(norm_mat));
+    glUniform3fv(diffuse_shader->light_pos_id,
+                 1,
+                 glm::value_ptr(light_pos));
+
+
+
+
+
+    back_geometry_.clear(); front_geometry_.clear();
+
+    
 
     //gui_.Renderer->remove_all_meshes();
     //gui_.distanceWarning->hide();
@@ -87,7 +134,7 @@ void Scene_renderer::render()
     project_to_3D(projected_c.get_vertices(), rot_m);
 
     // Animation unfolding the tesseract to the Dali-cross
-    if(state_->unfolding_anim_ == 0)
+    if(state_->unfolding_anim == 0)
     {
         // Draw tesseract
         if(state_->show_tesseract)
@@ -223,10 +270,10 @@ void Scene_renderer::render()
     }
 
     for(auto& g : front_geometry_)
-        g->draw_object();
+        diffuse_shader->draw_mesh_geometry(g);
 
     for(auto& g : back_geometry_)
-        g->draw_object();
+        diffuse_shader->draw_mesh_geometry(g);
 }
 
 void Scene_renderer::project_to_3D(
@@ -263,19 +310,22 @@ void Scene_renderer::project_to_3D(
     std::for_each(verts.begin(), verts.end(), project);
 }
 
+namespace
+{
+glm::vec4 ColorToGlm(const Color& c, const float alpha)
+{
+    return glm::vec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, alpha);
+}
+} // namespace
+
 void Scene_renderer::draw_tesseract(Wireframe_object& t)
 {
     Mesh t_mesh;
-    for(auto const& e : t.get_edges())
+    for(auto const& e : t.edges())
     {
-        auto& current = t.get_vertices().at(e->vert1);
-        auto& next = t.get_vertices().at(e->vert2);
-        //QColor col(e->color.rot, e->color.g, e->color.b);
-        glm::vec4 col(
-            (float)e->color->r / 255,
-            (float)e->color->g / 255,
-            (float)e->color->b / 255,
-            1.f);
+        auto& current = t.get_vertices()[e.vert1];
+        auto& next = t.get_vertices()[e.vert2];
+        const glm::vec4 col = ColorToGlm(e.color, 1.f);
 
         Mesh_generator::cylinder(
             5,
@@ -313,7 +363,9 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
                 t_mesh);
 
     }
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+
+    back_geometry_.emplace_back(
+        std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
 }
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
@@ -326,29 +378,32 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
 
     auto get_speed_color =
         [&opacity, &log_speed, this](float normalized_speed) {
-        float speed = log_speed(normalized_speed);
-        return glm::vec4(
-            (float)((1 - speed) * state_->get_color(Curve_low_speed)->r +
-                    speed * state_->get_color(Curve_high_speed)->r) / 255,
-            (float)((1 - speed) * state_->get_color(Curve_low_speed)->g +
-                    speed * state_->get_color(Curve_high_speed)->r) / 255,
-            (float)((1 - speed) * state_->get_color(Curve_low_speed)->b +
-                    speed * state_->get_color(Curve_high_speed)->r) / 255,
-            opacity);
-    };
+            float speed = log_speed(normalized_speed);
+            return glm::vec4(
+                ((1 - speed) * state_->get_color(Curve_low_speed).r +
+                 speed * state_->get_color(Curve_high_speed).r) /
+                    255.f,
+                ((1 - speed) * state_->get_color(Curve_low_speed).g +
+                 speed * state_->get_color(Curve_high_speed).g) /
+                    255.f,
+                ((1 - speed) * state_->get_color(Curve_low_speed).b +
+                 speed * state_->get_color(Curve_high_speed).b) /
+                    255.f,
+                opacity);
+        };
 
     // Curve
     Mesh curve_mesh;
-    for(size_t i = 0; i < c.get_edges().size(); ++i)
+    for(size_t i = 0; i < c.edges().size(); ++i)
     {
-        const auto& e = c.get_edges()[i];
+        const auto& e = c.edges()[i];
 
-        auto& current = c.get_vertices().at(e->vert1);
-        auto& next = c.get_vertices().at(e->vert2);
+        auto& current = c.get_vertices()[e.vert1];
+        auto& next = c.get_vertices()[e.vert2];
 
         // We are interested only in some interval of the curve
         if(state_->curve_selection &&
-           !state_->curve_selection->in_range(c.get_time_stamp().at(e->vert1)))
+           !state_->curve_selection->in_range(c.get_time_stamp()[e.vert1]))
         {
             continue;
         }
@@ -368,7 +423,8 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(curve_mesh));
+    back_geometry_.emplace_back(std::move(diffuse_shader->create_mesh_geometry(curve_mesh)));
+
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
 
@@ -395,6 +451,10 @@ void Scene_renderer::set_sphere_diameter(float diameter)
 {
     sphere_diameter_ = diameter;
 }
+
+
+
+
 
 std::vector<double> Scene_renderer::split_animation(double animation,
                                                     int    sections)
@@ -511,7 +571,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getYWRotationMatrix(-coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp1(5);
-        disp1 <<= 0, state_->tesseract_size[1] / 2, 0, state_->tesseract_size[3] / 2, 0;
+        disp1 <<= 0,
+                  state_->tesseract_size[1] / 2,
+                  0,
+                  state_->tesseract_size[3] / 2,
+                  0;
 
         transform_3D_plot(plots_3D[0], rot, disp1);
         transform_3D_plot(plots_3D[4], rot, disp1);
@@ -531,7 +595,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getZWRotationMatrix(coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= 0, 0, -state_->tesseract_size[2] / 2, state_->tesseract_size[3] / 2, 0;
+        disp <<= 0,
+                 0,
+                 -state_->tesseract_size[2] / 2,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[2], rot, disp);
 
@@ -541,7 +609,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getZWRotationMatrix(-coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= 0, 0, state_->tesseract_size[2] / 2, state_->tesseract_size[3] / 2, 0;
+        disp <<= 0,
+                 0,
+                 state_->tesseract_size[2] / 2,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[3], rot, disp);
 
@@ -551,7 +623,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getYWRotationMatrix(coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= 0, -state_->tesseract_size[1] / 2, 0, state_->tesseract_size[3] / 2, 0;
+        disp <<= 0,
+                 -state_->tesseract_size[1] / 2,
+                 0,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[5], rot, disp);
 
@@ -561,7 +637,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getXWRotationMatrix(coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= state_->tesseract_size[0] / 2, 0, 0, state_->tesseract_size[3] / 2, 0;
+        disp <<= state_->tesseract_size[0] / 2,
+                 0,
+                 0,
+                 state_->tesseract_size[3] / 2,
+                 0;
 
         transform_3D_plot(plots_3D[6], rot, disp);
 
@@ -571,7 +651,11 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib::getXWRotationMatrix(-coeff * PI / 2);
         boost::numeric::ublas::vector<double> disp(5);
-        disp <<= -state_->tesseract_size[0] / 2, 0, 0, state_->tesseract_size[3] / 2, 0;
+        disp <<= -state_->tesseract_size[0] / 2,
+                  0,
+                  0,
+                  state_->tesseract_size[3] / 2,
+                  0;
 
         transform_3D_plot(plots_3D[7], rot, disp);
 
@@ -610,20 +694,15 @@ Scene_renderer::get_rotation_matrix(double view_straightening)
 
 void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
 {
-    for(size_t i = 0; i < cube.get_edges().size(); ++i)
+    for(size_t i = 0; i < cube.edges().size(); ++i)
     {
-        auto const& e = cube.get_edges()[i];
+        auto const& e = cube.edges()[i];
 
         Mesh t_mesh;
 
-        auto& current = cube.get_vertices().at(e->vert1);
-        auto& next = cube.get_vertices().at(e->vert2);
-        //QColor col(e->color.rot, e->color.g, e->color.b, opacity * 255);
-        glm::vec4 col(
-            (float)e->color->r / 255,
-            (float)e->color->g / 255,
-            (float)e->color->b / 255,
-            opacity);
+        auto& current = cube.get_vertices()[e.vert1];
+        auto& next = cube.get_vertices()[e.vert2];
+        const glm::vec4 col = ColorToGlm(e.color, opacity);
 
         Mesh_generator::cylinder(
             5,
@@ -634,27 +713,22 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
             col,
             t_mesh);
 
-        if(opacity < 1.)
-            front_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
-        else
-            back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+        opacity < 1.0 ? front_geometry_.emplace_back(std::move(
+                            diffuse_shader->create_mesh_geometry(t_mesh)))
+                      : back_geometry_.emplace_back(std::move(
+                            diffuse_shader->create_mesh_geometry(t_mesh)));
     }
 }
 
 void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
 {
-    for(auto const& e : plot.get_edges())
+    for(auto const& e : plot.edges())
     {
         Mesh t_mesh;
 
-        auto& current = plot.get_vertices().at(e->vert1);
-        auto& next = plot.get_vertices().at(e->vert2);
-        //QColor col(e->color.rot, e->color.g, e->color.b);
-        glm::vec4 col(
-            (float)e->color->r / 255,
-            (float)e->color->g / 255,
-            (float)e->color->b / 255,
-            1.f);
+        auto& current = plot.get_vertices()[e.vert1];
+        auto& next = plot.get_vertices()[e.vert2];
+        const glm::vec4 col = ColorToGlm(e.color, 1.f);
 
         Mesh_generator::cylinder(
             5,
@@ -665,8 +739,8 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
             col,
             t_mesh);
 
-        //gui_.Renderer->add_mesh(t_mesh);
-        back_geometry_.push_back(std::make_unique<Geometry_engine>(t_mesh));
+        back_geometry_.emplace_back(
+            std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
     }
 }
 
