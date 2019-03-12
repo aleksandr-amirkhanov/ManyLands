@@ -10,6 +10,8 @@
 #include <vector>
 
 //******************************************************************************
+// Timeline_renderer
+//******************************************************************************
 
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_num_(0)
@@ -20,12 +22,16 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
 }
 
 //******************************************************************************
+// set_shader
+//******************************************************************************
 
 void Timeline_renderer::set_shader(std::shared_ptr<Screen_shader> screen)
 {
     screen_shader = screen;
 }
 
+//******************************************************************************
+// render
 //******************************************************************************
 
 void Timeline_renderer::render()
@@ -49,8 +55,10 @@ void Timeline_renderer::render()
                 margin,
                 region_.width() - margin,
                 region_.height() - margin);
+
     draw_axes(region);
     draw_curve(region);
+    draw_switches(region);
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(region_.width()),
@@ -89,6 +97,8 @@ void Timeline_renderer::render()
     }*/
 }
 
+//******************************************************************************
+// draw_axes
 //******************************************************************************
 
 void Timeline_renderer::draw_axes(const Rect& region)
@@ -148,6 +158,8 @@ void Timeline_renderer::draw_axes(const Rect& region)
     }
 }
 
+//******************************************************************************
+// draw_curve
 //******************************************************************************
 
 void Timeline_renderer::draw_curve(const Rect& region)
@@ -241,6 +253,53 @@ void Timeline_renderer::draw_curve(const Rect& region)
 }
 
 //******************************************************************************
+// draw_switches
+//******************************************************************************
+
+void Timeline_renderer::draw_switches(const Rect& region)
+{
+    const float width = 1.f;
+    const glm::vec4 color(0.f, 0.f, 0.f, 0.27f);
+
+    std::vector<float> points;
+    calculate_switch_points(points, region);
+    for(auto p : points)
+    {
+        Line_strip line;
+        line.push_back(Line_point(glm::vec2(p, region.top()), width, color));
+        line.push_back(Line_point(glm::vec2(p, region.bottom()), width, color));
+        screen_shader->draw_line_geometry(
+            screen_shader->create_line_geometry(line));
+    }
+}
+
+//******************************************************************************
+// calculate_switch_points
+//******************************************************************************
+
+void Timeline_renderer::calculate_switch_points(
+    std::vector<float>& out_points,
+    const Rect& region)
+{
+    if(state_->curve->get_time_stamp().size() == 0)
+        return;
+
+    float t_min = state_->curve->get_time_stamp().front();
+    float t_max = state_->curve->get_time_stamp().back();
+    float t_duration = t_max - t_min;
+
+    for(auto s : state_->curve->get_stats().switches_inds)
+    {
+        float x_pos = region.left() +
+                      region.width() * state_->curve->get_time_stamp()[s] /
+                      t_duration;
+        out_points.push_back(x_pos);
+    }
+}
+
+//******************************************************************************
+// project_point
+//******************************************************************************
 
 void Timeline_renderer::project_point(
     boost::numeric::ublas::vector<double>& point,
@@ -276,6 +335,8 @@ void Timeline_renderer::project_point(
     point(1) += axis_size * (0.5 + copy_p(3) / tesseract_size) * sin_45;
 }
 
+//******************************************************************************
+// project_point_array
 //******************************************************************************
 
 void Timeline_renderer::project_point_array(

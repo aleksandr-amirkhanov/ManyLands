@@ -29,6 +29,12 @@ public:
 private:
     void draw_axes(const Rect& region);
     void draw_curve(const Rect& region);
+    void draw_switches(const Rect& region);
+
+    void calculate_switch_points(
+        std::vector<float>& out_points,
+        const Rect& region);
+
     void project_point(
         boost::numeric::ublas::vector<double>& point,
         double size,
