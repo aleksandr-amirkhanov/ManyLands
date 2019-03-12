@@ -86,14 +86,14 @@ void Mesh_generator::cylinder(
         auto norm_shift = first_norm + 2 * i;
 
         Mesh::Object::FaceType f1;
-        f1.push_back(Mesh::Vertex(vert_shift, norm_shift));
-        f1.push_back(Mesh::Vertex(vert_shift + 2, norm_shift + 2));
-        f1.push_back(Mesh::Vertex(vert_shift + 1, norm_shift + 1));
+        f1.emplace_back(Mesh::Vertex(vert_shift, norm_shift));
+        f1.emplace_back(Mesh::Vertex(vert_shift + 2, norm_shift + 2));
+        f1.emplace_back(Mesh::Vertex(vert_shift + 1, norm_shift + 1));
 
         Mesh::Object::FaceType f2;
-        f2.push_back(Mesh::Vertex(vert_shift + 1, norm_shift + 1));
-        f2.push_back(Mesh::Vertex(vert_shift + 2, norm_shift + 2));
-        f2.push_back(Mesh::Vertex(vert_shift + 3, norm_shift + 3));
+        f2.emplace_back(Mesh::Vertex(vert_shift + 1, norm_shift + 1));
+        f2.emplace_back(Mesh::Vertex(vert_shift + 2, norm_shift + 2));
+        f2.emplace_back(Mesh::Vertex(vert_shift + 3, norm_shift + 3));
 
         object.faces.push_back(f1);
         object.faces.push_back(f2);
@@ -157,18 +157,18 @@ void Mesh_generator::sphere(
         for(unsigned int j = 0; j < rings; ++j)
         {
             Mesh::Object::FaceType f1;
-            f1.push_back(Mesh::Vertex(vert_index(i, j), norm_index(i, j)));
-            f1.push_back(
+            f1.emplace_back(Mesh::Vertex(vert_index(i, j), norm_index(i, j)));
+            f1.emplace_back(
                 Mesh::Vertex(vert_index(i, j + 1), norm_index(i, j + 1)));
-            f1.push_back(
+            f1.emplace_back(
                 Mesh::Vertex(vert_index(i + 1, j), norm_index(i + 1, j)));
 
             Mesh::Object::FaceType f2;
-            f2.push_back(Mesh::Vertex(
+            f2.emplace_back(Mesh::Vertex(
                 vert_index(i + 1, j + 1), norm_index(i + 1, j + 1)));
-            f2.push_back(
+            f2.emplace_back(
                 Mesh::Vertex(vert_index(i + 1, j), norm_index(i + 1, j)));
-            f2.push_back(
+            f2.emplace_back(
                 Mesh::Vertex(vert_index(i, j + 1), norm_index(i, j + 1)));
 
             object.faces.push_back(f1);

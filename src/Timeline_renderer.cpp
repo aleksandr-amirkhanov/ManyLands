@@ -112,8 +112,8 @@ void Timeline_renderer::draw_axes(const Rect& region)
     auto draw_line = [this](glm::vec2 start, glm::vec2 end)
     {
         Line_strip line;
-        line.push_back(Line_point(start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-        line.push_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+        line.emplace_back(Line_point(start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+        line.emplace_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
         screen_shader->draw_geometry(screen_shader->create_geometry(line));
     };
 
@@ -216,7 +216,7 @@ void Timeline_renderer::draw_curve(const Rect& region)
                 color = norm_color;
             }
 
-            strip.push_back(Line_point(curr_pnt, width, color));
+            strip.emplace_back(Line_point(curr_pnt, width, color));
 
             prev_pnt = curr_pnt;
         }
@@ -225,10 +225,10 @@ void Timeline_renderer::draw_curve(const Rect& region)
     };
 
     std::vector<glm::vec4> colors;
-    colors.push_back(glm::vec4(0.84f, 0.10f, 0.11f, 1.00f)); // #d7191c X-axis
-    colors.push_back(glm::vec4(0.99f, 0.68f, 0.38f, 1.00f)); // #fdae61 Y-axis
-    colors.push_back(glm::vec4(0.67f, 0.85f, 0.91f, 1.00f)); // #abd9e9 Z-axis
-    colors.push_back(glm::vec4(0.17f, 0.48f, 0.71f, 1.00f)); // #2c7bb6 W-axis
+    colors.emplace_back(glm::vec4(0.84f, 0.10f, 0.11f, 1.00f)); // #d7191c X-axis
+    colors.emplace_back(glm::vec4(0.99f, 0.68f, 0.38f, 1.00f)); // #fdae61 Y-axis
+    colors.emplace_back(glm::vec4(0.67f, 0.85f, 0.91f, 1.00f)); // #abd9e9 Z-axis
+    colors.emplace_back(glm::vec4(0.17f, 0.48f, 0.71f, 1.00f)); // #2c7bb6 W-axis
 
     //QPen defocused = pen;
     glm::vec4 defocused = glm::vec4(0.8f, 0.8f, 0.8f, 1.f); // #cccccc
@@ -263,8 +263,8 @@ void Timeline_renderer::draw_switches(const Rect& region)
     for(auto p : points)
     {
         Line_strip line;
-        line.push_back(Line_point(glm::vec2(p, region.top()), width, color));
-        line.push_back(Line_point(glm::vec2(p, region.bottom()), width, color));
+        line.emplace_back(Line_point(glm::vec2(p, region.top()), width, color));
+        line.emplace_back(Line_point(glm::vec2(p, region.bottom()), width, color));
         screen_shader->draw_geometry(screen_shader->create_geometry(line));
     }
 }

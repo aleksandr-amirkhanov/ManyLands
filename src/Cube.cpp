@@ -85,12 +85,12 @@ std::vector<Square> Cube::split(std::vector<Cube>& cubes)
             vert_col);
     };
 
-    squares.push_back(create_square(5, 4, 5, 6, 7));
-    squares.push_back(create_square(1, 4, 5, 6, 7));
-    squares.push_back(create_square(7, 4, 5, 6, 7));
-    squares.push_back(create_square(1, 0, 1, 5, 4));
-    squares.push_back(create_square(7, 0, 1, 5, 4));
-    squares.push_back(create_square(7, 1, 2, 6, 5));
+    squares.emplace_back(create_square(5, 4, 5, 6, 7));
+    squares.emplace_back(create_square(1, 4, 5, 6, 7));
+    squares.emplace_back(create_square(7, 4, 5, 6, 7));
+    squares.emplace_back(create_square(1, 0, 1, 5, 4));
+    squares.emplace_back(create_square(7, 0, 1, 5, 4));
+    squares.emplace_back(create_square(7, 1, 2, 6, 5));
 
     return squares;
 }
