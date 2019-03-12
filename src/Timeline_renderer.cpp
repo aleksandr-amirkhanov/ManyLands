@@ -169,45 +169,46 @@ void Timeline_renderer::draw_curve(const Rect& region)
         Line_strip strip;
 
         glm::vec2 prev_pnt;
+        const float t_min  = state_->curve->get_time_stamp().front();
 
-        for(size_t i = 0; i < state_->curve->get_vertices().size(); ++i)
+        const float min_delta_t = t_duration / region.width();
+        float prev_t = -min_delta_t;
+
+        for(size_t i = 0; i < state_->curve->get_vertices().size(); i++)
         {
+            const float t_curr = state_->curve->get_time_stamp()[i];
+            if(t_curr < prev_t + min_delta_t)
+                continue;
+
             const float val = static_cast<float>(
                 state_->curve->get_vertices()[i](dim_ind));
-
-            const float t_curr = state_->curve->get_time_stamp()[i];
-            const float t_min  = state_->curve->get_time_stamp().front();
-
             const float x_point =
                 region.left() + region.width() * (t_curr - t_min) / t_duration;
             const float y_point =
                 region.bottom() + region.height() * (0.5f + val / scale);
-
             glm::vec2 curr_pnt(x_point, y_point);
-            if(i == 0 || curr_pnt.x >= prev_pnt.x + width)
+            
+            glm::vec4 color;
+            if(state_->curve_selection != nullptr)
             {
-                glm::vec4 color;
-                if(state_->curve_selection != nullptr)
-                {
-                    if(state_->curve_selection->t_start <= t_curr &&
-                       t_curr <= state_->curve_selection->t_end)
-                    {
-                        color = norm_color;
-                    }
-                    else
-                    {
-                        color = dim_color;
-                    }
-                }
-                else
+                if(state_->curve_selection->t_start <= t_curr &&
+                    t_curr <= state_->curve_selection->t_end)
                 {
                     color = norm_color;
                 }
-
-                strip.push_back(Line_point(curr_pnt, width, color));
-
-                prev_pnt = curr_pnt;
+                else
+                {
+                    color = dim_color;
+                }
             }
+            else
+            {
+                color = norm_color;
+            }
+
+            strip.push_back(Line_point(curr_pnt, width, color));
+
+            prev_pnt = curr_pnt;
         }
 
         return strip;

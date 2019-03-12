@@ -47,7 +47,7 @@ boost::numeric::ublas::vector<double> Curve::get_point(float time)
            coeff * (get_vertices()[range[1]] - get_vertices()[range[0]]);
 }
 
-std::vector<float> Curve::get_time_stamp() const
+const std::vector<float>& Curve::get_time_stamp() const
 {
     return time_stamp_;
 }
