@@ -425,19 +425,26 @@ void mainloop()
                  State->get_color(Background).a / 255.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::ivec2 scene_pos(Left_panel_size, Bottom_panel_size),
-               scene_size(width - Left_panel_size, height - Bottom_panel_size);
 
-    Renderer.set_redering_region(scene_pos,
-                                 scene_size,
+    int timeline_height =
+        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.25f);
+    Base_renderer::Rect timeline_reg(Left_panel_size,
+                                     Bottom_panel_size,
+                                     width,
+                                     timeline_height);
+    Base_renderer::Rect scene_reg(Left_panel_size,
+                                  Bottom_panel_size + timeline_height,
+                                  width,
+                                  height);
+
+    Renderer.set_redering_region(scene_reg,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
-    Timeline.set_redering_region(scene_pos,
-                                 scene_size,
+    Timeline.set_redering_region(timeline_reg,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
 
-    //Renderer.render();
+    Renderer.render();
     Timeline.render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

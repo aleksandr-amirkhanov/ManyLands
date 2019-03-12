@@ -28,6 +28,19 @@ public:
     void render() override;
 
 private:
+    void draw_axes(const Rect& region);
+    void draw_curve(const Rect& region);
+    void project_point(
+        boost::numeric::ublas::vector<double>& point,
+        double size,
+        double tesseract_size);
+    void project_point_array(
+        std::vector<boost::numeric::ublas::vector<double>>& points,
+        double size,
+        double tesseract_size);
+
     std::shared_ptr<Screen_shader> screen_shader;
 
+    int pictogram_num_;
+    float pictogram_size_, pictogram_spacing_;
 };

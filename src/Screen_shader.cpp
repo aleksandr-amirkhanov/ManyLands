@@ -1,4 +1,10 @@
 #include "Screen_shader.h"
+// Local
+#include "Consts.h"
+// glm
+#include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/rotate_vector.hpp>
 
 void Screen_shader::initialize()
 {
@@ -17,27 +23,107 @@ void Screen_shader::initialize()
     color_attrib_id  = glGetAttribLocation(program_id,  "color");
 }
 
-std::unique_ptr<Screen_shader::Line_geometry>
+/*std::unique_ptr<Screen_shader::Line_geometry>
 Screen_shader::create_line_geometry(const Line_2D& line)
 {
     std::unique_ptr<Line_geometry> geom = std::make_unique<Line_geometry>();
 
-    geom->data_array.clear();
-    geom->indices.clear();
+    auto norm = glm::rotate(line.end_pos - line.start_pos,
+                            static_cast<float>(PI / 2));
+    norm = 0.5f * line.width * glm::normalize(norm);
 
-    Line_array d1, d2;
+    Line_array d1, d2, d3, d4;
+    d1.vert = line.start_pos + norm;
+    d2.vert = line.end_pos   + norm;
+    d3.vert = line.end_pos   - norm;
+    d4.vert = line.start_pos - norm;
 
-    d1.vert = line.start_pos;
     d1.color = line.color;
-
-    d2.vert = line.end_pos;
     d2.color = line.color;
+    d3.color = line.color;
+    d4.color = line.color;
 
     geom->data_array.push_back(d1);
     geom->data_array.push_back(d2);
+    geom->data_array.push_back(d3);
+    geom->data_array.push_back(d4);
 
     geom->indices.push_back(0);
     geom->indices.push_back(1);
+    geom->indices.push_back(2);
+    geom->indices.push_back(2);
+    geom->indices.push_back(3);
+    geom->indices.push_back(0);
+
+    // Allocating buffers
+    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
+	glBufferData(GL_ARRAY_BUFFER,
+                 geom->data_array.size() * sizeof(Line_array),
+                 &geom->data_array[0],
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 geom->indices.size() * sizeof(GLuint),
+                 &geom->indices[0],
+                 GL_STATIC_DRAW);
+
+    geom->init_buffers();
+    return geom;
+}*/
+
+std::unique_ptr<Screen_shader::Line_geometry>
+Screen_shader::create_line_geometry(const Line_strip& strip)
+{
+    std::unique_ptr<Line_geometry> geom = std::make_unique<Line_geometry>();
+
+    for(auto current = strip.begin(); current != strip.end(); ++current)
+    {
+        auto next = std::next(current);
+
+        auto calc_norm = [](const Line_point& p1,
+                            const Line_point& p2,
+                            float width)
+        {
+            auto norm = glm::rotate(p2.pos - p1.pos,
+                                    static_cast<float>(PI / 2));
+            return 0.5f * width * glm::normalize(norm);
+        };
+        
+        if(next != strip.end())
+        {
+            auto norm = calc_norm(*current, *next, current->width);
+
+            Line_array elem[4];
+
+            elem[0].vert = current->pos + norm;
+            elem[0].color = current->color;
+
+            elem[1].vert = current->pos - norm;
+            elem[1].color = current->color;
+
+            elem[2].vert = next->pos + norm;
+            elem[2].color = next->color;
+
+            elem[3].vert = next->pos - norm;
+            elem[3].color = next->color;
+
+            geom->data_array.push_back(elem[0]);
+            geom->data_array.push_back(elem[1]);
+            geom->data_array.push_back(elem[2]);
+            geom->data_array.push_back(elem[3]);
+        }
+    }
+
+    for(size_t i = 0; i < strip.size() - 1; ++i)
+    {
+        geom->indices.push_back(i * 4    );
+        geom->indices.push_back(i * 4 + 2);
+        geom->indices.push_back(i * 4 + 1);
+        geom->indices.push_back(i * 4 + 1);
+        geom->indices.push_back(i * 4 + 2);
+        geom->indices.push_back(i * 4 + 3);
+    }
 
     // Allocating buffers
     glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
@@ -80,7 +166,7 @@ void Screen_shader::draw_line_geometry(
                           stride,
                           ptr);
 
-    glDrawElements(GL_LINES, geom->indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, geom->indices.size(), GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(color_attrib_id );

@@ -17,7 +17,9 @@ public:
     };
     typedef Geometry_engine<Line_array> Line_geometry;
 
-    std::unique_ptr<Line_geometry> create_line_geometry(const Line_2D& line);
+    //std::unique_ptr<Line_geometry> create_line_geometry(const Line_2D& line);
+    std::unique_ptr<Line_geometry> create_line_geometry(
+        const Line_strip& strip);
     void draw_line_geometry(const std::unique_ptr<Line_geometry>& geom);
 
     void initialize() override;
