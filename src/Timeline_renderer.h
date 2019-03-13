@@ -38,6 +38,7 @@ private:
     void draw_axes(     const Region& region);
     void draw_curve(    const Region& region);
     void draw_switches( const Region& region);
+    void draw_marker(   const Region& region);
     void draw_selection(const Region& region, const Mouse_selection& s);
 
     void calculate_switch_points(
@@ -59,4 +60,6 @@ private:
     float pictogram_size_, pictogram_spacing_;
 
     Mouse_selection mouse_selection_;
+
+    float player_pos_;
 };

@@ -15,6 +15,7 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_num_(0)
     , pictogram_size_(60.f)
     , pictogram_spacing_(0.f)
+    , player_pos_(0.f)
 {
     set_state(state);
 }
@@ -57,6 +58,7 @@ void Timeline_renderer::render()
     draw_axes(region);
     draw_curve(region);
     draw_switches(region);
+    draw_marker(region);
 
     if(mouse_selection_.is_active)
         draw_selection(region, mouse_selection_);
@@ -274,6 +276,28 @@ void Timeline_renderer::draw_switches(const Region& region)
             glm::vec2(p, region.bottom()), width, color));
         screen_shader->draw_geometry(screen_shader->create_geometry(line));
     }
+}
+
+//******************************************************************************
+// draw_marker
+//******************************************************************************
+
+void Timeline_renderer::draw_marker(const Region& region)
+{
+    const float width = 1.f;
+    const glm::vec4 color(1.f, 0.f, 0.f, 1.f);
+    
+    float norm_pos = player_pos_ / (state_->curve->get_time_stamp().back() -
+                                    state_->curve->get_time_stamp().front());
+
+    float x_pos = region.left() + norm_pos * region.width();
+
+    Screen_shader::Line_strip line;
+    line.emplace_back(Screen_shader::Line_point(
+        glm::vec2(x_pos, region.top()), width, color));
+    line.emplace_back(Screen_shader::Line_point(
+        glm::vec2(x_pos, region.bottom()), width, color));
+    screen_shader->draw_geometry(screen_shader->create_geometry(line));
 }
 
 //******************************************************************************
