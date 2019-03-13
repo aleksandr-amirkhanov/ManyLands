@@ -35,14 +35,14 @@ public:
 
 private:
     // Drawing functions
-    void draw_axes(     const Rect& region);
-    void draw_curve(    const Rect& region);
-    void draw_switches( const Rect& region);
-    void draw_selection(const Rect& region, const Mouse_selection& s);
+    void draw_axes(     const Region& region);
+    void draw_curve(    const Region& region);
+    void draw_switches( const Region& region);
+    void draw_selection(const Region& region, const Mouse_selection& s);
 
     void calculate_switch_points(
         std::vector<float>& out_points,
-        const Rect& region);
+        const Region& region);
 
     void project_point(
         boost::numeric::ublas::vector<double>& point,

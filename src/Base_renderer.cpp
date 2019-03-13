@@ -10,7 +10,7 @@ void Base_renderer::set_state(std::shared_ptr<Scene_state> state)
     state_ = state;
 }
 
-void Base_renderer::set_redering_region(Rect region,
+void Base_renderer::set_redering_region(Region region,
                                         float scale_x,
                                         float scale_y)
 {

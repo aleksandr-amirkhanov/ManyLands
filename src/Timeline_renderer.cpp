@@ -49,10 +49,10 @@ void Timeline_renderer::render()
 
     // On-screen rendering
     const float margin = 10.f;
-    Rect region(margin,
-                margin,
-                region_.width() - margin,
-                region_.height() - margin);
+    Region region(margin,
+                  margin,
+                  region_.width() - margin,
+                  region_.height() - margin);
 
     draw_axes(region);
     draw_curve(region);
@@ -102,7 +102,7 @@ void Timeline_renderer::render()
 // draw_axes
 //******************************************************************************
 
-void Timeline_renderer::draw_axes(const Rect& region)
+void Timeline_renderer::draw_axes(const Region& region)
 {
     const int num_section    = 8,
               num_subsection = 5,
@@ -164,14 +164,14 @@ void Timeline_renderer::draw_axes(const Rect& region)
 // draw_curve
 //******************************************************************************
 
-void Timeline_renderer::draw_curve(const Rect& region)
+void Timeline_renderer::draw_curve(const Region& region)
 {
     const float t_min = state_->curve->get_time_stamp().front();
     const float t_max = state_->curve->get_time_stamp().back();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
-        const Rect& region,
+        const Region& region,
         size_t dim_ind,
         float t_duration,
         float scale,
@@ -258,7 +258,7 @@ void Timeline_renderer::draw_curve(const Rect& region)
 // draw_switches
 //******************************************************************************
 
-void Timeline_renderer::draw_switches(const Rect& region)
+void Timeline_renderer::draw_switches(const Region& region)
 {
     const float width = 1.f;
     const glm::vec4 color(0.f, 0.f, 0.f, 0.27f);
@@ -280,7 +280,7 @@ void Timeline_renderer::draw_switches(const Rect& region)
 // draw_selection
 //******************************************************************************
 
-void Timeline_renderer::draw_selection(const Rect& region,
+void Timeline_renderer::draw_selection(const Region& region,
                                        const Mouse_selection& s)
 {
     float left = std::clamp(s.start_pnt.x, region.left(), region.right());
@@ -301,7 +301,7 @@ void Timeline_renderer::draw_selection(const Rect& region,
 
 void Timeline_renderer::calculate_switch_points(
     std::vector<float>& out_points,
-    const Rect& region)
+    const Region& region)
 {
     if(state_->curve->get_time_stamp().size() == 0)
         return;
