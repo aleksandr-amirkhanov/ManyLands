@@ -59,6 +59,12 @@ public:
         glm::vec4 color_;
     };
 
+    struct Triangle
+    {
+        glm::vec2 v1, v2, v3;
+        glm::vec4 color;
+    };
+
     struct Data_array
     {
         glm::vec2 vert;
@@ -70,6 +76,8 @@ public:
         create_geometry(const Line_strip& strip);
     std::unique_ptr<Screen_geometry>
         create_geometry(const Rectangle& rect);
+    std::unique_ptr<Screen_geometry>
+        create_geometry(const Triangle& triangle);
 
     void draw_geometry(const std::unique_ptr<Screen_geometry>& geom);
 

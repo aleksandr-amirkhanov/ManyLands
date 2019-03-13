@@ -125,6 +125,38 @@ Screen_shader::create_geometry(const Rectangle& rect)
 }
 
 //******************************************************************************
+// create_geometry
+//******************************************************************************
+
+std::unique_ptr<Screen_shader::Screen_geometry>
+Screen_shader::create_geometry(const Triangle& triangle)
+{
+    std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+
+    // Create vertices
+
+    Data_array elem[3];
+
+    // The color is the same for all vertices
+    for(int i = 0; i < 3; ++i) elem[i].color = triangle.color;
+
+    elem[0].vert = triangle.v1;
+    elem[1].vert = triangle.v2;
+    elem[2].vert = triangle.v3;
+
+    for(int i = 0; i < 4; ++i) geom->data_array.push_back(elem[i]);
+
+    // Fill indices
+
+    geom->indices.push_back(0);
+    geom->indices.push_back(1);
+    geom->indices.push_back(2);
+
+    init_buffers(geom);
+    return geom;
+}
+
+//******************************************************************************
 // draw_geometry
 //******************************************************************************
 

@@ -18,7 +18,7 @@ if(NOT WIN32 OR EMSCRIPTEN)
 endif()
 
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories("include/glm" "include/imgui")
+include_directories("include/glm" "include/imgui" "include/CDT")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 if(WIN32)
     include_directories(${OPENGL_INCLUDE_DIRS} ${SDL2_INCLUDE_DIR})

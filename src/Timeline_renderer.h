@@ -40,6 +40,12 @@ private:
     void draw_switches( const Region& region);
     void draw_marker(   const Region& region);
     void draw_selection(const Region& region, const Mouse_selection& s);
+    void draw_pictogram(
+        const glm::vec2& center,
+        float size,
+        const Curve_selection& seleciton,
+        std::string dim,
+        Curve_stats::Range range);
 
     void calculate_switch_points(
         std::vector<float>& out_points,

@@ -13,6 +13,11 @@ public:
     struct Region
     {
     public:
+        Region()
+        {
+            left_   = bottom_ = right_ = top_ = 0.f;
+        }
+
         Region(float left, float bottom, float right, float top)
         {
             left_   = left;
@@ -45,6 +50,7 @@ public:
         {
             return top_ - bottom_;
         }
+
     private:
         float left_, bottom_, right_, top_;
     };
