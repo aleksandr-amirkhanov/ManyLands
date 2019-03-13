@@ -58,6 +58,9 @@ void Timeline_renderer::render()
     draw_curve(region);
     draw_switches(region);
 
+    if(mouse_selection_.is_active)
+        draw_selection(region, mouse_selection_);
+
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(region_.width()),
                                       0.f,
@@ -110,9 +113,11 @@ void Timeline_renderer::draw_axes(const Rect& region)
     // Draw the bottom axis and the left axis
     auto draw_line = [this](glm::vec2 start, glm::vec2 end)
     {
-        Line_strip line;
-        line.emplace_back(Line_point(start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-        line.emplace_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+        Screen_shader::Line_strip line;
+        line.emplace_back(Screen_shader::Line_point(
+            start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+        line.emplace_back(Screen_shader::Line_point(
+            end, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
         screen_shader->draw_geometry(screen_shader->create_geometry(line));
     };
 
@@ -175,7 +180,7 @@ void Timeline_renderer::draw_curve(const Rect& region)
     {
         const float width = 2.5f;
 
-        Line_strip strip;
+        Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
         const float t_min  = state_->curve->get_time_stamp().front();
@@ -215,7 +220,8 @@ void Timeline_renderer::draw_curve(const Rect& region)
                 color = norm_color;
             }
 
-            strip.emplace_back(Line_point(curr_pnt, width, color));
+            strip.emplace_back(
+                Screen_shader::Line_point(curr_pnt, width, color));
 
             prev_pnt = curr_pnt;
         }
@@ -261,9 +267,11 @@ void Timeline_renderer::draw_switches(const Rect& region)
     calculate_switch_points(points, region);
     for(auto p : points)
     {
-        Line_strip line;
-        line.emplace_back(Line_point(glm::vec2(p, region.top()), width, color));
-        line.emplace_back(Line_point(glm::vec2(p, region.bottom()), width, color));
+        Screen_shader::Line_strip line;
+        line.emplace_back(Screen_shader::Line_point(
+            glm::vec2(p, region.top()), width, color));
+        line.emplace_back(Screen_shader::Line_point(
+            glm::vec2(p, region.bottom()), width, color));
         screen_shader->draw_geometry(screen_shader->create_geometry(line));
     }
 }
@@ -278,14 +286,13 @@ void Timeline_renderer::draw_selection(const Rect& region,
     float left = std::clamp(s.start_pnt.x, region.left(), region.right());
     float right = std::clamp(s.end_pnt.x, region.left(), region.right());
 
-    //Rect rect(left, region.top(), right, region.bottom());
-    //painter.fillRect(rect, QBrush(QColor(0, 174, 239, 50)));
+    Screen_shader::Rectangle rect(left,
+                                  region.bottom(),
+                                  right,
+                                  region.top(),
+                                  glm::vec4(0.f, 0.68f, 0.94f, 0.20f));
 
-    /*Line_strip line;
-    line.push_back(Line_point(left, region.top(), glm::vec4(0.f, 0.f, 0.f, 1.f)));
-    line.push_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-    screen_shader->draw_geometry(
-        screen_shader->create_geometry(line));*/
+    screen_shader->draw_geometry(screen_shader->create_geometry(rect));
 }
 
 //******************************************************************************

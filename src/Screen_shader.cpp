@@ -6,6 +6,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 
+//******************************************************************************
+// initialize
+//******************************************************************************
+
 void Screen_shader::initialize()
 {
 #ifdef __EMSCRIPTEN__
@@ -22,6 +26,10 @@ void Screen_shader::initialize()
     vertex_attrib_id = glGetAttribLocation(program_id, "vertex");
     color_attrib_id  = glGetAttribLocation(program_id,  "color");
 }
+
+//******************************************************************************
+// create_geometry
+//******************************************************************************
 
 std::unique_ptr<Screen_shader::Screen_geometry>
 Screen_shader::create_geometry(const Line_strip& strip)
@@ -75,23 +83,50 @@ Screen_shader::create_geometry(const Line_strip& strip)
         geom->indices.push_back(i * 4 + 2);
         geom->indices.push_back(i * 4 + 3);
     }
-
-    // Allocating buffers
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
-	glBufferData(GL_ARRAY_BUFFER,
-                 geom->data_array.size() * sizeof(Data_array),
-                 &geom->data_array[0],
-                 GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 geom->indices.size() * sizeof(GLuint),
-                 &geom->indices[0],
-                 GL_STATIC_DRAW);
-
-    geom->init_buffers();
+    
+    init_buffers(geom);
     return geom;
 }
+
+//******************************************************************************
+// create_geometry
+//******************************************************************************
+
+std::unique_ptr<Screen_shader::Screen_geometry>
+Screen_shader::create_geometry(const Rectangle& rect)
+{
+    std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+
+    // Create vertices
+
+    Data_array elem[4];
+
+    // The color is the same for all vertices
+    for(int i = 0; i < 4; ++i) elem[i].color = rect.color();
+
+    elem[0].vert = glm::vec2(rect.left(),  rect.bottom());
+    elem[1].vert = glm::vec2(rect.left(),  rect.top()   );
+    elem[2].vert = glm::vec2(rect.right(), rect.top()   );
+    elem[3].vert = glm::vec2(rect.right(), rect.bottom());
+
+    for(int i = 0; i < 4; ++i) geom->data_array.push_back(elem[i]);
+
+    // Fill indices
+
+    geom->indices.push_back(0);
+    geom->indices.push_back(1);
+    geom->indices.push_back(2);
+    geom->indices.push_back(2);
+    geom->indices.push_back(3);
+    geom->indices.push_back(0);
+
+    init_buffers(geom);
+    return geom;
+}
+
+//******************************************************************************
+// draw_geometry
+//******************************************************************************
 
 void Screen_shader::draw_geometry(
     const std::unique_ptr<Screen_geometry>& geom)
@@ -121,4 +156,26 @@ void Screen_shader::draw_geometry(
 
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(color_attrib_id );
+}
+
+//******************************************************************************
+// init_buffers
+//******************************************************************************
+
+void Screen_shader::init_buffers(
+    const std::unique_ptr<Screen_geometry>& geom)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
+	glBufferData(GL_ARRAY_BUFFER,
+                 geom->data_array.size() * sizeof(Data_array),
+                 &geom->data_array[0],
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 geom->indices.size() * sizeof(GLuint),
+                 &geom->indices[0],
+                 GL_STATIC_DRAW);
+
+    geom->init_buffers();
 }

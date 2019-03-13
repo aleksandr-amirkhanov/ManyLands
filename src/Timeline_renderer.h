@@ -14,6 +14,12 @@ class Timeline_renderer : public Base_renderer
 private:
     struct Mouse_selection
     {
+        Mouse_selection()
+        {
+            start_pnt = end_pnt = glm::vec2(0.f, 0.f);
+            is_active = false;
+        }
+
         glm::vec2 start_pnt;
         glm::vec2 end_pnt;
         bool is_active;
@@ -28,11 +34,11 @@ public:
     void render() override;
 
 private:
-    void draw_axes(const Rect& region);
-    void draw_curve(const Rect& region);
-    void draw_switches(const Rect& region);
-    void draw_selection(const Rect& region,
-                        const Mouse_selection& s);
+    // Drawing functions
+    void draw_axes(     const Rect& region);
+    void draw_curve(    const Rect& region);
+    void draw_switches( const Rect& region);
+    void draw_selection(const Rect& region, const Mouse_selection& s);
 
     void calculate_switch_points(
         std::vector<float>& out_points,
@@ -51,4 +57,6 @@ private:
 
     int pictogram_num_;
     float pictogram_size_, pictogram_spacing_;
+
+    Mouse_selection mouse_selection_;
 };
