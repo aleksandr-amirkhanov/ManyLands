@@ -272,11 +272,16 @@ void Scene_renderer::render()
     }
 
 
-    back_geometry_->init_buffers();
-    front_geometry_->init_buffers();
-    
-    diffuse_shader_->draw_geometry(back_geometry_);
-    diffuse_shader_->draw_geometry(front_geometry_);
+    if(back_geometry_->data_array.size() > 0)
+    {
+        back_geometry_->init_buffers();
+        diffuse_shader_->draw_geometry(back_geometry_);
+    }
+    if(front_geometry_->data_array.size() > 0)
+    {
+        front_geometry_->init_buffers();
+        diffuse_shader_->draw_geometry(front_geometry_);
+    }
 }
 
 void Scene_renderer::project_to_3D(

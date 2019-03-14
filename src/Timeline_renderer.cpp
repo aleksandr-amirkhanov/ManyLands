@@ -178,8 +178,11 @@ void Timeline_renderer::render()
         }
     }
 
-    screen_geom_->init_buffers();
-    screen_shader_->draw_geometry(screen_geom_);
+    if(screen_geom_->data_array.size() > 0)
+    {
+        screen_geom_->init_buffers();
+        screen_shader_->draw_geometry(screen_geom_);
+    }
 }
 
 //******************************************************************************
