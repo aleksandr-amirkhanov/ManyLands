@@ -245,7 +245,7 @@ void mainloop()
 
             filename = std::string(fn);
 #else
-            filename = "assets/model1-default.txt";
+            filename = "assets/model2-default.txt";
 #endif
             if(!filename.empty())
                 Scene_objs.load_ode(filename);

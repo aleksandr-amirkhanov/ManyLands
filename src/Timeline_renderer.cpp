@@ -522,13 +522,17 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
 
     auto average_range = [&range](int i) {
         if(i == 0)
-            return 0.5 * (std::get<0>(range.x) + std::get<1>(range.x));
+            return 0.5f * (std::get<0>(range.x) + std::get<1>(range.x));
         else if(i == 1)
-            return 0.5 * (std::get<0>(range.y) + std::get<1>(range.y));
+            return 0.5f * (std::get<0>(range.y) + std::get<1>(range.y));
         else if(i == 2)
-            return 0.5 * (std::get<0>(range.z) + std::get<1>(range.z));
+            return 0.5f * (std::get<0>(range.z) + std::get<1>(range.z));
         else if(i == 3)
-            return 0.5 * (std::get<0>(range.w) + std::get<1>(range.w));
+            return 0.5f * (std::get<0>(range.w) + std::get<1>(range.w));
+        
+        throw std::logic_error("Invalid lambda! The variable `i` should be in "
+                               "the range from 0 to 3");
+        return 0.f;
     };
 
     std::unique_ptr<Cube> cube;
