@@ -53,6 +53,15 @@ void Timeline_renderer::render()
                display_scale_x_ * region_.width(),
                display_scale_y_ * region_.height());
 
+    glm::mat4 proj_ortho = glm::ortho(0.f,
+                                      static_cast<float>(region_.width()),
+                                      0.f,
+                                      static_cast<float>(region_.height()));
+    glUniformMatrix4fv(screen_shader->proj_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(proj_ortho));
+
     // On-screen rendering
     const float margin = 10.f;
     Region plot_region_(margin,
@@ -166,19 +175,6 @@ void Timeline_renderer::render()
             x_pos += 2 * pictogram_size_ + pictogram_spacing_;
         }
     }
-
-
-
-
-
-    glm::mat4 proj_ortho = glm::ortho(0.f,
-                                      static_cast<float>(region_.width()),
-                                      0.f,
-                                      static_cast<float>(region_.height()));
-    glUniformMatrix4fv(screen_shader->proj_mat_id,
-                       1,
-                       GL_FALSE,
-                       glm::value_ptr(proj_ortho));
 }
 
 //******************************************************************************
@@ -635,7 +631,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     pen.setWidthF(1.5);
     painter.setPen(pen);*/
 
-    Curve c = *state_->curve.get();
+    Curve c = *state_->simple_curve.get();
     project_point_array(c.get_vertices(), size, state_->tesseract_size[0]);
     draw_curve(c);
 }
