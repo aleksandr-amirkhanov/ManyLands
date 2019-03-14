@@ -245,7 +245,7 @@ void mainloop()
 
             filename = std::string(fn);
 #else
-            filename = "assets/model1-default.txt";
+            filename = "assets/model2-default.txt";
 #endif
             if(!filename.empty())
                 Scene_objs.load_ode(filename);
@@ -427,15 +427,15 @@ void mainloop()
 
 
     int timeline_height =
-        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.25f);
-    Base_renderer::Rect timeline_reg(Left_panel_size,
-                                     Bottom_panel_size,
-                                     width,
-                                     timeline_height);
-    Base_renderer::Rect scene_reg(Left_panel_size,
-                                  Bottom_panel_size + timeline_height,
-                                  width,
-                                  height);
+        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.4f);
+    Base_renderer::Region timeline_reg(Left_panel_size,
+                                       Bottom_panel_size,
+                                       width,
+                                       timeline_height);
+    Base_renderer::Region scene_reg(Left_panel_size,
+                                    Bottom_panel_size + timeline_height,
+                                    width,
+                                    height);
 
     Renderer.set_redering_region(scene_reg,
                                  io.DisplayFramebufferScale.x,

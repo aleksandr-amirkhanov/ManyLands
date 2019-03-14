@@ -18,7 +18,7 @@ public:
 
     void add_point(Point_type vertex, float time);
     Point_type get_point(float time);
-    std::vector<float> get_time_stamp() const;
+    const std::vector<float>& get_time_stamp() const;
     void shift_to_origin(double max_edge_length, Point_type& out_shift);
     void get_boundaries(Point_type& origin, Point_type& size) const;
     Curve get_simpified_curve(const double spacing);

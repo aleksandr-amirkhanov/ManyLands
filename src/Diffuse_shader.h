@@ -10,19 +10,19 @@
 class Diffuse_shader : public Base_shader
 {
 public:
-    struct Mesh_array
+    struct Data_array
     {
         glm::vec4 vert;
         glm::vec3 norm;
         glm::vec4 color;
     };
 
-    typedef Geometry_engine<Mesh_array> Mesh_geometry;
+    typedef Geometry_engine<Data_array> Mesh_geometry;
 
     void initialize() override;
 
-    std::unique_ptr<Mesh_geometry> create_mesh_geometry(const Mesh& m);
-    void draw_mesh_geometry(const std::unique_ptr<Mesh_geometry>& geom);
+    void append_to_geometry(Mesh_geometry& geom, const Mesh& m);
+    void draw_geometry(const std::unique_ptr<Mesh_geometry>& geom);
 
     GLuint program_id,
            proj_mat_id,

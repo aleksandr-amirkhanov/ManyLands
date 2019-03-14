@@ -6,17 +6,24 @@
 #include "Screen_shader.h"
 // std
 #include <memory.h>
+// glm
+#include <glm/glm.hpp>
 
 class Timeline_renderer : public Base_renderer
 {
 private:
-    struct Line_array
+    struct Mouse_selection
     {
-        glm::vec2 vert;
-        glm::vec4 color;
-    };
+        Mouse_selection()
+        {
+            start_pnt = end_pnt = glm::vec2(0.f, 0.f);
+            is_active = false;
+        }
 
-    typedef Geometry_engine<Line_array> Line_geometry;
+        glm::vec2 start_pnt;
+        glm::vec2 end_pnt;
+        bool is_active;
+    };
 
     Timeline_renderer() = delete;
 
@@ -27,8 +34,23 @@ public:
     void render() override;
 
 private:
-    void draw_axes(const Rect& region);
-    void draw_curve(const Rect& region);
+    // Drawing functions
+    void draw_axes(     const Region& region);
+    void draw_curve(    const Region& region);
+    void draw_switches( const Region& region);
+    void draw_marker(   const Region& region);
+    void draw_selection(const Region& region, const Mouse_selection& s);
+    void draw_pictogram(
+        const glm::vec2& center,
+        float size,
+        const Curve_selection& seleciton,
+        std::string dim,
+        Curve_stats::Range range);
+
+    void calculate_switch_points(
+        std::vector<float>& out_points,
+        const Region& region);
+
     void project_point(
         boost::numeric::ublas::vector<double>& point,
         double size,
@@ -38,8 +60,13 @@ private:
         double size,
         double tesseract_size);
 
-    std::shared_ptr<Screen_shader> screen_shader;
+    std::shared_ptr<Screen_shader> screen_shader_;
+    std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
     int pictogram_num_;
     float pictogram_size_, pictogram_spacing_;
+
+    Mouse_selection mouse_selection_;
+
+    float player_pos_;
 };

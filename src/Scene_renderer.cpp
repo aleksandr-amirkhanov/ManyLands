@@ -34,8 +34,8 @@ Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
 void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
                                  std::shared_ptr<Screen_shader> screen)
 {
-    diffuse_shader = diffuse;
-    screen_shader  = screen;
+    diffuse_shader_ = diffuse;
+    screen_shader_  = screen;
 }
 
 void Scene_renderer::render()
@@ -50,7 +50,10 @@ void Scene_renderer::render()
         return;
     }
 
-    glUseProgram(diffuse_shader->program_id);
+    back_geometry_  = std::make_unique<Diffuse_shader::Mesh_geometry>();
+    front_geometry_ = std::make_unique<Diffuse_shader::Mesh_geometry>();
+
+    glUseProgram(diffuse_shader_->program_id);
 
     glViewport(display_scale_x_ * region_.left(),
                display_scale_y_ * region_.bottom(),
@@ -76,19 +79,19 @@ void Scene_renderer::render()
     auto world_mat = glm::toMat4(glm::lerp(state_->rotation_3D, glm::quat(), static_cast<float>(unfold_3D)));
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
-    glUniformMatrix4fv(diffuse_shader->proj_mat_id,
+    glUniformMatrix4fv(diffuse_shader_->proj_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(proj_mat));
-    glUniformMatrix4fv(diffuse_shader->mv_mat_id,
+    glUniformMatrix4fv(diffuse_shader_->mv_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(camera_mat * world_mat));
-    glUniformMatrix3fv(diffuse_shader->normal_mat_id,
+    glUniformMatrix3fv(diffuse_shader_->normal_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(norm_mat));
-    glUniform3fv(diffuse_shader->light_pos_id,
+    glUniform3fv(diffuse_shader_->light_pos_id,
                  1,
                  glm::value_ptr(light_pos));
 
@@ -96,7 +99,6 @@ void Scene_renderer::render()
 
 
 
-    back_geometry_.clear(); front_geometry_.clear();
 
     
 
@@ -269,11 +271,17 @@ void Scene_renderer::render()
         }
     }
 
-    for(auto& g : front_geometry_)
-        diffuse_shader->draw_mesh_geometry(g);
 
-    for(auto& g : back_geometry_)
-        diffuse_shader->draw_mesh_geometry(g);
+    if(back_geometry_->data_array.size() > 0)
+    {
+        back_geometry_->init_buffers();
+        diffuse_shader_->draw_geometry(back_geometry_);
+    }
+    if(front_geometry_->data_array.size() > 0)
+    {
+        front_geometry_->init_buffers();
+        diffuse_shader_->draw_geometry(front_geometry_);
+    }
 }
 
 void Scene_renderer::project_to_3D(
@@ -347,16 +355,16 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
 
         if(i == 0)
             Mesh_generator::sphere(
-                16,
-                16,
+                6,
+                6,
                 size_coef * sphere_diameter_ / v(3),
                 pos,
                 glm::vec4(1.f, 0.f, 0.f, 1.f),
                 t_mesh);
         else
             Mesh_generator::sphere(
-                16,
-                16,
+                6,
+                6,
                 size_coef * sphere_diameter_ / v(3),
                 pos,
                 glm::vec4(0.59f, 0.59f, 0.59f, 1.f),
@@ -364,8 +372,7 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
 
     }
 
-    back_geometry_.emplace_back(
-        std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
+    diffuse_shader_->append_to_geometry(*back_geometry_.get(), t_mesh);
 }
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
@@ -423,7 +430,7 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    back_geometry_.emplace_back(std::move(diffuse_shader->create_mesh_geometry(curve_mesh)));
+    diffuse_shader_->append_to_geometry(*back_geometry_.get(), curve_mesh);
 
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
@@ -713,10 +720,10 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
             col,
             t_mesh);
 
-        opacity < 1.0 ? front_geometry_.emplace_back(std::move(
-                            diffuse_shader->create_mesh_geometry(t_mesh)))
-                      : back_geometry_.emplace_back(std::move(
-                            diffuse_shader->create_mesh_geometry(t_mesh)));
+        opacity < 1.0 ? diffuse_shader_->append_to_geometry(
+                            *front_geometry_.get(), t_mesh)
+                      : diffuse_shader_->append_to_geometry(
+                            *back_geometry_.get(), t_mesh);
     }
 }
 
@@ -739,8 +746,7 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
             col,
             t_mesh);
 
-        back_geometry_.emplace_back(
-            std::move(diffuse_shader->create_mesh_geometry(t_mesh)));
+        diffuse_shader_->append_to_geometry(*back_geometry_.get(), t_mesh);
     }
 }
 

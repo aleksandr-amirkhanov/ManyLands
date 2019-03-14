@@ -2,30 +2,40 @@
 
 // Local
 #include "Consts.h"
-#include "Line.h"
+#include "Global.h"
 // glm
-#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 // std
 #include <vector>
+// boost
+#include <boost/geometry.hpp>
+// CDT
+#include "CDT.h"
 
+//******************************************************************************
+// Timeline_renderer
 //******************************************************************************
 
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_num_(0)
-    , pictogram_size_(60.f)
+    , pictogram_size_(50.f)
     , pictogram_spacing_(0.f)
+    , player_pos_(0.f)
 {
     set_state(state);
 }
 
 //******************************************************************************
+// set_shader
+//******************************************************************************
 
 void Timeline_renderer::set_shader(std::shared_ptr<Screen_shader> screen)
 {
-    screen_shader = screen;
+    screen_shader_ = screen;
 }
 
+//******************************************************************************
+// render
 //******************************************************************************
 
 void Timeline_renderer::render()
@@ -33,65 +43,153 @@ void Timeline_renderer::render()
     if(!state_->curve)
         return;
 
+    screen_geom_ = std::make_unique<Screen_shader::Screen_geometry>();
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glUseProgram(screen_shader->program_id);
+    glUseProgram(screen_shader_->program_id);
 
     glViewport(display_scale_x_ * region_.left(),
                display_scale_y_ * region_.bottom(),
                display_scale_x_ * region_.width(),
                display_scale_y_ * region_.height());
 
-    // On-screen rendering
-    const float margin = 10.f;
-    Rect region(margin,
-                margin,
-                region_.width() - margin,
-                region_.height() - margin);
-    draw_axes(region);
-    draw_curve(region);
-
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(region_.width()),
                                       0.f,
                                       static_cast<float>(region_.height()));
-    glUniformMatrix4fv(screen_shader->proj_mat_id,
+    glUniformMatrix4fv(screen_shader_->proj_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(proj_ortho));
 
-    // Draw tesseract
-    /*glm::vec2 center =  0.5f * glm::vec2(region_.width(), region_.height());
-    auto draw_wireframe_obj = [this, &center](
-                                  const Wireframe_object& obj) {
-        for(auto& e : obj.edges())
-        {
-            const auto& v1 = obj.vertices()[e.vert1];
-            const auto& v2 = obj.vertices()[e.vert2];
+    // On-screen rendering
+    const float margin = 10.f;
+    Region plot_region_(margin,
+                        0.5f * region_.height() + margin,
+                        region_.width() - margin,
+                        region_.height() - margin);
 
-            Line_2D line;
-            line.start_pos = center + glm::vec2(v1(0), v1(1));
-            line.end_pos   = center + glm::vec2(v2(0), v2(1));
-            line.width     = 1.5;
-            line.color     = glm::vec4(1.f, 0.f, 0.f, 1.f);
+    Region pictogram_region_(margin,
+                             margin,
+                             region_.width() - margin,
+                             0.5f * region_.height() - margin);
 
-            screen_shader->draw_line_geometry(
-                screen_shader->create_line_geometry(line));
-        }
-    };
+    draw_axes(plot_region_);
+    draw_curve(plot_region_);
+    draw_switches(plot_region_);
+    draw_marker(plot_region_);
 
-    if(state_->tesseract)
+    if(mouse_selection_.is_active)
+        draw_selection(plot_region_, mouse_selection_);
+
+
+
+
+    if(state_->curve->get_stats().switches_inds.size() > 0)
     {
-        auto t = *state_->tesseract.get();
-        project_point_array(t.get_vertices(), 60., state_->tesseract_size[0]);
-        draw_wireframe_obj(t);
-    }*/
+        // Draw pictograms
+        pictogram_num_ = state_->curve->get_stats().switches_inds.size() + 1;
+
+        std::vector<float> switch_points;
+        calculate_switch_points(switch_points, plot_region_);
+
+        std::vector<float> switch_center;
+        if(switch_points.size() > 0)
+        {
+            switch_center.push_back(
+                0.5 * (plot_region_.left() + switch_points[0]));
+
+            for(size_t i = 1; i < switch_points.size(); ++i)
+            {
+                switch_center.push_back(
+                    0.5f * (switch_points[i - 1] + switch_points[i]));
+            }
+
+            switch_center.push_back(
+                0.5f * (switch_points.back() + plot_region_.right()));
+        }
+
+        float x_pos = pictogram_size_ + pictogram_spacing_;
+        for(int i = 0; i < pictogram_num_; ++i)
+        {
+            Curve_selection selection;
+            std::string dim;
+            Curve_stats::Range range = state_->curve->get_stats().range[i];
+            if(i == 0)
+            {
+                selection.t_start = state_->curve->get_time_stamp().front();
+                selection.t_end =
+                    state_->curve->get_time_stamp()[state_->curve->get_stats()
+                                                 .switches_inds[i]];
+
+                dim = state_->curve->get_stats().dimensionality.front();
+            }
+            else if(i == pictogram_num_ - 1)
+            {
+                size_t ind = state_->curve->get_stats().switches_inds[i - 1];
+
+                selection.t_start = state_->curve->get_time_stamp()[ind];
+                selection.t_end = state_->curve->get_time_stamp().back();
+
+                dim = state_->curve->get_stats().dimensionality[ind];
+            }
+            else
+            {
+                size_t ind = state_->curve->get_stats().switches_inds[i - 1];
+
+                selection.t_start = state_->curve->get_time_stamp()[ind];
+                selection.t_end =
+                    state_->curve->get_time_stamp()[state_->curve->get_stats()
+                                                 .switches_inds[i]];
+
+                dim = state_->curve->get_stats().dimensionality[ind];
+            }
+
+            draw_pictogram(
+                glm::vec2(x_pos,
+                          pictogram_region_.bottom() +
+                          0.5f * pictogram_region_.height()),
+                pictogram_size_,
+                selection,
+                dim,
+                range);
+
+            /*pen.setWidthF(1.);
+            pen.setColor(QColor(0, 0, 0, 80));
+            painter.setPen(pen);
+            painter.setBrush(QBrush());
+
+            glm::vec2 pictogram_p(
+                x_pos, pictogram_region_.center().y() - pictogram_size_);
+            glm::vec2 switch_p(switch_center[i], plot_region_.bottom());
+
+            QPainterPath path;
+            path.moveTo(switch_p);
+            path.cubicTo(
+                QPointF(switch_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
+                QPointF(
+                    pictogram_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
+                pictogram_p);
+            painter.drawPath(path);*/
+
+            x_pos += 2 * pictogram_size_ + pictogram_spacing_;
+        }
+    }
+
+    if(screen_geom_->data_array.size() > 0)
+    {
+        screen_geom_->init_buffers();
+        screen_shader_->draw_geometry(screen_geom_);
+    }
 }
 
 //******************************************************************************
+// draw_axes
+//******************************************************************************
 
-void Timeline_renderer::draw_axes(const Rect& region)
+void Timeline_renderer::draw_axes(const Region& region)
 {
     const int num_section    = 8,
               num_subsection = 5,
@@ -102,11 +200,12 @@ void Timeline_renderer::draw_axes(const Rect& region)
     // Draw the bottom axis and the left axis
     auto draw_line = [this](glm::vec2 start, glm::vec2 end)
     {
-        Line_strip line;
-        line.push_back(Line_point(start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-        line.push_back(Line_point(end,   1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-        screen_shader->draw_line_geometry(
-            screen_shader->create_line_geometry(line));
+        Screen_shader::Line_strip line;
+        line.emplace_back(Screen_shader::Line_point(
+            start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+        line.emplace_back(Screen_shader::Line_point(
+            end, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
+        screen_shader_->append_to_geometry(*screen_geom_.get(), line);
     };
 
     draw_line(glm::vec2(region.left(),  region.bottom()),
@@ -149,15 +248,17 @@ void Timeline_renderer::draw_axes(const Rect& region)
 }
 
 //******************************************************************************
+// draw_curve
+//******************************************************************************
 
-void Timeline_renderer::draw_curve(const Rect& region)
+void Timeline_renderer::draw_curve(const Region& region)
 {
     const float t_min = state_->curve->get_time_stamp().front();
     const float t_max = state_->curve->get_time_stamp().back();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
-        const Rect& region,
+        const Region& region,
         size_t dim_ind,
         float t_duration,
         float scale,
@@ -166,58 +267,60 @@ void Timeline_renderer::draw_curve(const Rect& region)
     {
         const float width = 2.5f;
 
-        Line_strip strip;
+        Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
+        const float t_min  = state_->curve->get_time_stamp().front();
 
-        for(size_t i = 0; i < state_->curve->get_vertices().size(); ++i)
+        const float min_delta_t = t_duration / region.width();
+        float prev_t = -min_delta_t;
+
+        for(size_t i = 0; i < state_->curve->get_vertices().size(); i++)
         {
+            const float t_curr = state_->curve->get_time_stamp()[i];
+            if(t_curr < prev_t + min_delta_t)
+                continue;
+
             const float val = static_cast<float>(
                 state_->curve->get_vertices()[i](dim_ind));
-
-            const float t_curr = state_->curve->get_time_stamp()[i];
-            const float t_min  = state_->curve->get_time_stamp().front();
-
             const float x_point =
                 region.left() + region.width() * (t_curr - t_min) / t_duration;
             const float y_point =
                 region.bottom() + region.height() * (0.5f + val / scale);
-
             glm::vec2 curr_pnt(x_point, y_point);
-            if(i == 0 || curr_pnt.x >= prev_pnt.x + width)
+            
+            glm::vec4 color;
+            if(state_->curve_selection != nullptr)
             {
-                glm::vec4 color;
-                if(state_->curve_selection != nullptr)
-                {
-                    if(state_->curve_selection->t_start <= t_curr &&
-                       t_curr <= state_->curve_selection->t_end)
-                    {
-                        color = norm_color;
-                    }
-                    else
-                    {
-                        color = dim_color;
-                    }
-                }
-                else
+                if(state_->curve_selection->t_start <= t_curr &&
+                    t_curr <= state_->curve_selection->t_end)
                 {
                     color = norm_color;
                 }
-
-                strip.push_back(Line_point(curr_pnt, width, color));
-
-                prev_pnt = curr_pnt;
+                else
+                {
+                    color = dim_color;
+                }
             }
+            else
+            {
+                color = norm_color;
+            }
+
+            strip.emplace_back(
+                Screen_shader::Line_point(curr_pnt, width, color));
+
+            prev_pnt = curr_pnt;
         }
 
         return strip;
     };
 
     std::vector<glm::vec4> colors;
-    colors.push_back(glm::vec4(0.84f, 0.10f, 0.11f, 1.00f)); // #d7191c X-axis
-    colors.push_back(glm::vec4(0.99f, 0.68f, 0.38f, 1.00f)); // #fdae61 Y-axis
-    colors.push_back(glm::vec4(0.67f, 0.85f, 0.91f, 1.00f)); // #abd9e9 Z-axis
-    colors.push_back(glm::vec4(0.17f, 0.48f, 0.71f, 1.00f)); // #2c7bb6 W-axis
+    colors.emplace_back(glm::vec4(0.84f, 0.10f, 0.11f, 1.00f)); // #d7191c X-axis
+    colors.emplace_back(glm::vec4(0.99f, 0.68f, 0.38f, 1.00f)); // #fdae61 Y-axis
+    colors.emplace_back(glm::vec4(0.67f, 0.85f, 0.91f, 1.00f)); // #abd9e9 Z-axis
+    colors.emplace_back(glm::vec4(0.17f, 0.48f, 0.71f, 1.00f)); // #2c7bb6 W-axis
 
     //QPen defocused = pen;
     glm::vec4 defocused = glm::vec4(0.8f, 0.8f, 0.8f, 1.f); // #cccccc
@@ -234,11 +337,341 @@ void Timeline_renderer::draw_curve(const Rect& region)
                                colors[i],
                                defocused);
 
-        screen_shader->draw_line_geometry(
-            screen_shader->create_line_geometry(strip));
+        screen_shader_->append_to_geometry(*screen_geom_, strip);
     }
 }
 
+//******************************************************************************
+// draw_switches
+//******************************************************************************
+
+void Timeline_renderer::draw_switches(const Region& region)
+{
+    const float width = 1.f;
+    const glm::vec4 color(0.f, 0.f, 0.f, 0.27f);
+
+    std::vector<float> points;
+    calculate_switch_points(points, region);
+    for(auto p : points)
+    {
+        Screen_shader::Line_strip line;
+        line.emplace_back(Screen_shader::Line_point(
+            glm::vec2(p, region.top()), width, color));
+        line.emplace_back(Screen_shader::Line_point(
+            glm::vec2(p, region.bottom()), width, color));
+        screen_shader_->append_to_geometry(*screen_geom_, line);
+    }
+}
+
+//******************************************************************************
+// draw_marker
+//******************************************************************************
+
+void Timeline_renderer::draw_marker(const Region& region)
+{
+    const float width = 1.f;
+    const glm::vec4 color(1.f, 0.f, 0.f, 1.f);
+    
+    float norm_pos = player_pos_ / (state_->curve->get_time_stamp().back() -
+                                    state_->curve->get_time_stamp().front());
+
+    float x_pos = region.left() + norm_pos * region.width();
+
+    Screen_shader::Line_strip line;
+    line.emplace_back(Screen_shader::Line_point(
+        glm::vec2(x_pos, region.top()), width, color));
+    line.emplace_back(Screen_shader::Line_point(
+        glm::vec2(x_pos, region.bottom()), width, color));
+    screen_shader_->append_to_geometry(*screen_geom_, line);
+}
+
+//******************************************************************************
+// draw_selection
+//******************************************************************************
+
+void Timeline_renderer::draw_selection(const Region& region,
+                                       const Mouse_selection& s)
+{
+    float left = std::clamp(s.start_pnt.x, region.left(), region.right());
+    float right = std::clamp(s.end_pnt.x, region.left(), region.right());
+
+    Screen_shader::Rectangle rect(left,
+                                  region.bottom(),
+                                  right,
+                                  region.top(),
+                                  glm::vec4(0.f, 0.68f, 0.94f, 0.20f));
+
+    screen_shader_->append_to_geometry(*screen_geom_, rect);
+}
+
+//******************************************************************************
+// draw_pictogram
+//******************************************************************************
+
+void Timeline_renderer::draw_pictogram(const glm::vec2& center,
+                                       float size,
+                                       const Curve_selection& seleciton,
+                                       std::string dim,
+                                       Curve_stats::Range range)
+{
+    if(!state_->tesseract)
+        return;
+
+    auto fill_wireframe_obj = [this, &center](Wireframe_object& obj,
+                                              float speed)
+    {
+        typedef CDT::Triangulation<float> Triangulation_type;
+        typedef CDT::V2d<float> Vert_type;
+
+        std::vector<Vert_type> verts;
+        for(size_t i = 0; i < obj.vertices().size(); ++i)
+        {
+            verts.emplace_back(
+                Vert_type::make(center.x + obj.vertices()[i](0),
+                                center.y + obj.vertices()[i](1)));
+        }
+
+
+        Triangulation_type cdt;
+        cdt.insertVertices(verts);
+        cdt.eraseSuperTriangle();
+
+        for(auto& t : cdt.triangles)
+        {
+            Screen_shader::Triangle screen_t;
+
+            screen_t.v1 = glm::vec2(cdt.vertices[t.vertices[0]].pos.x,
+                                    cdt.vertices[t.vertices[0]].pos.y);
+            screen_t.v2 = glm::vec2(cdt.vertices[t.vertices[1]].pos.x,
+                                    cdt.vertices[t.vertices[1]].pos.y);
+            screen_t.v3 = glm::vec2(cdt.vertices[t.vertices[2]].pos.x,
+                                    cdt.vertices[t.vertices[2]].pos.y);
+
+            screen_t.color = glm::vec4(1.f, 0.f, 0.f, 0.5f);
+
+            screen_shader_->append_to_geometry(*screen_geom_, screen_t);
+        }
+    };
+
+    auto draw_wireframe_obj = [this, &center](
+                                  const Wireframe_object& obj) {
+        for(auto& e : obj.edges())
+        {
+            const auto& v1 = obj.vertices()[e.vert1];
+            const auto& v2 = obj.vertices()[e.vert2];
+
+            const float width(1.f);
+            const glm::vec4 color(0.f, 0.f, 0.f, 1.f);
+
+            Screen_shader::Line_strip line;
+            line.emplace_back(Screen_shader::Line_point(
+                center + glm::vec2(v1(0), v1(1)), width, color));
+            line.emplace_back(Screen_shader::Line_point(
+                center + glm::vec2(v2(0), v2(1)), width, color));
+
+            screen_shader_->append_to_geometry(*screen_geom_, line);
+        }
+    };
+
+    auto draw_curve =
+        [this, &center, &seleciton](const Curve& curve) {
+            for(auto& e : curve.edges())
+            {
+                const auto& v1 = curve.vertices()[e.vert1];
+                const auto& v2 = curve.vertices()[e.vert2];
+
+                float t1 = curve.get_time_stamp()[e.vert1];
+                float t2 = curve.get_time_stamp()[e.vert2];
+
+                if(seleciton.in_range(t1) && seleciton.in_range(t2))
+                {
+                    const float width(1.f);
+                    const glm::vec4 color(0.f, 0.f, 0.f, 1.f);
+
+                    Screen_shader::Line_strip line;
+                    line.emplace_back(Screen_shader::Line_point(
+                        center + glm::vec2(v1(0), v1(1)), width, color));
+                    line.emplace_back(Screen_shader::Line_point(
+                        center + glm::vec2(v2(0), v2(1)), width, color));
+
+                    screen_shader_->append_to_geometry(*screen_geom_, line);
+                }
+            }
+        };
+
+    auto get_curve_speed = [this, &seleciton](Curve& curve) {
+        double speed = (std::numeric_limits<double>::min)();
+        for(auto& e : curve.edges())
+        {
+            const auto& v1 = curve.vertices()[e.vert1];
+            float t = curve.get_time_stamp()[e.vert1];
+            if(seleciton.in_range(t))
+            {
+                speed = (std::max)(speed, curve.get_stats().speed[e.vert1]);
+            }
+        }
+
+        float norm_speed =
+            (speed - curve.get_stats().min_speed) /
+            (curve.get_stats().max_speed - curve.get_stats().min_speed);
+        float log_speed = Global::log_speed(norm_speed);
+
+        return log_speed;
+    };
+
+    std::vector<Cube> cubes = state_->tesseract->split();
+    std::vector<Square> squares = Cube::split(cubes);
+
+    /*pen.setColor(QColor("#000000"));
+    pen.setWidthF(1.5);
+    painter.setPen(pen);*/
+
+    auto average_range = [&range](int i) {
+        if(i == 0)
+            return 0.5f * (std::get<0>(range.x) + std::get<1>(range.x));
+        else if(i == 1)
+            return 0.5f * (std::get<0>(range.y) + std::get<1>(range.y));
+        else if(i == 2)
+            return 0.5f * (std::get<0>(range.z) + std::get<1>(range.z));
+        else if(i == 3)
+            return 0.5f * (std::get<0>(range.w) + std::get<1>(range.w));
+        
+        throw std::logic_error("Invalid lambda! The variable `i` should be in "
+                               "the range from 0 to 3");
+        return 0.f;
+    };
+
+    std::unique_ptr<Cube> cube;
+    std::unique_ptr<Square> square;
+    std::unique_ptr<Tesseract> tesseract;
+
+    if(dim == "xyz")
+    {
+        if(average_range(3) > 0)
+            cube = std::make_unique<Cube>(cubes[0]);
+        else
+            cube = std::make_unique<Cube>(cubes[1]);
+    }
+    else if(dim == "xyw")
+    {
+        if(average_range(2) > 0)
+            cube = std::make_unique<Cube>(cubes[2]);
+        else
+            cube = std::make_unique<Cube>(cubes[3]);
+    }
+    else if(dim == "xzw")
+    {
+        if(average_range(1) > 0)
+            cube = std::make_unique<Cube>(cubes[5]);
+        else
+            cube = std::make_unique<Cube>(cubes[4]);
+    }
+    else if(dim == "yzw")
+    {
+        if(average_range(0) > 0)
+            cube = std::make_unique<Cube>(cubes[7]);
+        else
+            cube = std::make_unique<Cube>(cubes[6]);
+    }
+    else if(dim.size() == 2)
+    {
+        // This code below generates mask to acess the right tesseract plane.
+        // It might be hard to understand, sorry.
+
+        // 'n' = not defined
+        std::string mask = "nnnn";
+
+        for(char i = 0; i < 2; ++i)
+        {
+            // fix axes
+            if(dim[i] == 'x')
+                mask[0] = 'x';
+            else if(dim[i] == 'y')
+                mask[1] = 'y';
+            else if(dim[i] == 'z')
+                mask[2] = 'z';
+            else if(dim[i] == 'w')
+                mask[3] = 'w';
+        }
+
+        for(char i = 0; i < 4; ++i)
+        {
+            if(mask[i] == 'n')
+                mask[i] = average_range(i) > 0 ? '1' : '0';
+        }
+        square = std::make_unique<Square>(state_->tesseract->get_plain(mask));
+    }
+    else if(dim.size() == 4)
+    {
+        tesseract = std::make_unique<Tesseract>(*state_->tesseract.get());
+    }
+
+    if(cube)
+    {
+        // Draw a cube
+        project_point_array(cube->get_vertices(), size, state_->tesseract_size[0]);
+        fill_wireframe_obj(*cube.get(), get_curve_speed(*state_->curve.get()));
+        // draw_wireframe_obj(*cube.get());
+    }
+    else if(square)
+    {
+        // Draw a plain
+        project_point_array(square->get_vertices(), size, state_->tesseract_size[0]);
+        fill_wireframe_obj(*square.get(), get_curve_speed(*state_->curve.get()));
+        // draw_wireframe_obj(*square.get());
+    }
+
+    if(tesseract)
+    {
+        // Draw a tesseract
+        project_point_array(tesseract->get_vertices(), size, state_->tesseract_size[0]);
+        fill_wireframe_obj(*tesseract.get(), get_curve_speed(*state_->curve.get()));
+        // draw_wireframe_obj(*tesseract.get());
+    }
+
+    /*pen.setColor(QColor(0, 0, 0, 63));
+    pen.setWidthF(1.2);
+    painter.setPen(pen);*/
+
+    Tesseract t = *state_->tesseract.get();
+    project_point_array(t.get_vertices(), size, state_->tesseract_size[0]);
+    draw_wireframe_obj(t);
+
+    /*pen.setColor(QColor("#000000"));
+    pen.setWidthF(1.5);
+    painter.setPen(pen);*/
+
+    Curve c = *state_->simple_curve.get();
+    project_point_array(c.get_vertices(), size, state_->tesseract_size[0]);
+    draw_curve(c);
+}
+
+//******************************************************************************
+// calculate_switch_points
+//******************************************************************************
+
+void Timeline_renderer::calculate_switch_points(
+    std::vector<float>& out_points,
+    const Region& region)
+{
+    if(state_->curve->get_time_stamp().size() == 0)
+        return;
+
+    float t_min = state_->curve->get_time_stamp().front();
+    float t_max = state_->curve->get_time_stamp().back();
+    float t_duration = t_max - t_min;
+
+    for(auto s : state_->curve->get_stats().switches_inds)
+    {
+        float x_pos = region.left() +
+                      region.width() * state_->curve->get_time_stamp()[s] /
+                      t_duration;
+        out_points.push_back(x_pos);
+    }
+}
+
+//******************************************************************************
+// project_point
 //******************************************************************************
 
 void Timeline_renderer::project_point(
@@ -275,6 +708,8 @@ void Timeline_renderer::project_point(
     point(1) += axis_size * (0.5 + copy_p(3) / tesseract_size) * sin_45;
 }
 
+//******************************************************************************
+// project_point_array
 //******************************************************************************
 
 void Timeline_renderer::project_point_array(

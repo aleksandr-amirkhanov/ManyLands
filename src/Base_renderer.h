@@ -10,10 +10,15 @@
 class Base_renderer
 {
 public:
-    struct Rect
+    struct Region
     {
     public:
-        Rect(float left, float bottom, float right, float top)
+        Region()
+        {
+            left_   = bottom_ = right_ = top_ = 0.f;
+        }
+
+        Region(float left, float bottom, float right, float top)
         {
             left_   = left;
             bottom_ = bottom;
@@ -45,6 +50,7 @@ public:
         {
             return top_ - bottom_;
         }
+
     private:
         float left_, bottom_, right_, top_;
     };
@@ -52,11 +58,13 @@ public:
     Base_renderer();
 
     virtual void set_state(std::shared_ptr<Scene_state> state);
-    virtual void set_redering_region(Rect region, float scale_x, float scale_y);
+    virtual void set_redering_region(Region region,
+                                     float scale_x,
+                                     float scale_y);
     virtual void render() = 0;
 
 protected:
     std::shared_ptr<Scene_state> state_;
-    Rect region_;
+    Region region_;
     float display_scale_x_, display_scale_y_;
 };
