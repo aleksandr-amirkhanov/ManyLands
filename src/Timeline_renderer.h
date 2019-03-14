@@ -61,6 +61,7 @@ private:
         double tesseract_size);
 
     std::shared_ptr<Screen_shader> screen_shader;
+    std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
     int pictogram_num_;
     float pictogram_size_, pictogram_spacing_;

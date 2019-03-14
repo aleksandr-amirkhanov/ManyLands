@@ -72,12 +72,9 @@ public:
     };
     typedef Geometry_engine<Data_array> Screen_geometry;
 
-    std::unique_ptr<Screen_geometry>
-        create_geometry(const Line_strip& strip);
-    std::unique_ptr<Screen_geometry>
-        create_geometry(const Rectangle& rect);
-    std::unique_ptr<Screen_geometry>
-        create_geometry(const Triangle& triangle);
+    void create_geometry(Screen_geometry& geom, const Line_strip& strip);
+    void create_geometry(Screen_geometry& geom, const Rectangle& rect);
+    void create_geometry(Screen_geometry& geom, const Triangle& triangle);
 
     void draw_geometry(const std::unique_ptr<Screen_geometry>& geom);
 
@@ -88,6 +85,6 @@ public:
            vertex_attrib_id,
            color_attrib_id;
 
-private:
+//private:
     void init_buffers(const std::unique_ptr<Screen_geometry>& geom);
 };

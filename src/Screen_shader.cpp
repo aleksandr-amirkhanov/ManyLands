@@ -31,10 +31,11 @@ void Screen_shader::initialize()
 // create_geometry
 //******************************************************************************
 
-std::unique_ptr<Screen_shader::Screen_geometry>
-Screen_shader::create_geometry(const Line_strip& strip)
+void
+Screen_shader::create_geometry(Screen_geometry& geom, const Line_strip& strip)
 {
-    std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+    //std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+    size_t ind_disp = geom.data_array.size();
 
     for(auto current = strip.begin(); current != strip.end(); ++current)
     {
@@ -67,35 +68,36 @@ Screen_shader::create_geometry(const Line_strip& strip)
             elem[3].vert = next->pos - norm;
             elem[3].color = next->color;
 
-            geom->data_array.push_back(elem[0]);
-            geom->data_array.push_back(elem[1]);
-            geom->data_array.push_back(elem[2]);
-            geom->data_array.push_back(elem[3]);
+            geom.data_array.push_back(elem[0]);
+            geom.data_array.push_back(elem[1]);
+            geom.data_array.push_back(elem[2]);
+            geom.data_array.push_back(elem[3]);
         }
     }
 
     for(size_t i = 0; i < strip.size() - 1; ++i)
     {
-        geom->indices.push_back(i * 4    );
-        geom->indices.push_back(i * 4 + 2);
-        geom->indices.push_back(i * 4 + 1);
-        geom->indices.push_back(i * 4 + 1);
-        geom->indices.push_back(i * 4 + 2);
-        geom->indices.push_back(i * 4 + 3);
+        geom.indices.push_back(ind_disp + i * 4    );
+        geom.indices.push_back(ind_disp + i * 4 + 2);
+        geom.indices.push_back(ind_disp + i * 4 + 1);
+        geom.indices.push_back(ind_disp + i * 4 + 1);
+        geom.indices.push_back(ind_disp + i * 4 + 2);
+        geom.indices.push_back(ind_disp + i * 4 + 3);
     }
     
-    init_buffers(geom);
-    return geom;
+    //init_buffers(geom);
+    //return geom;
 }
 
 //******************************************************************************
 // create_geometry
 //******************************************************************************
 
-std::unique_ptr<Screen_shader::Screen_geometry>
-Screen_shader::create_geometry(const Rectangle& rect)
+void
+Screen_shader::create_geometry(Screen_geometry& geom, const Rectangle& rect)
 {
-    std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+    //std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+    size_t ind_disp = geom.data_array.size();
 
     // Create vertices
 
@@ -109,29 +111,30 @@ Screen_shader::create_geometry(const Rectangle& rect)
     elem[2].vert = glm::vec2(rect.right(), rect.top()   );
     elem[3].vert = glm::vec2(rect.right(), rect.bottom());
 
-    for(int i = 0; i < 4; ++i) geom->data_array.push_back(elem[i]);
+    for(int i = 0; i < 4; ++i) geom.data_array.push_back(elem[i]);
 
     // Fill indices
 
-    geom->indices.push_back(0);
-    geom->indices.push_back(1);
-    geom->indices.push_back(2);
-    geom->indices.push_back(2);
-    geom->indices.push_back(3);
-    geom->indices.push_back(0);
+    geom.indices.push_back(ind_disp + 0);
+    geom.indices.push_back(ind_disp + 1);
+    geom.indices.push_back(ind_disp + 2);
+    geom.indices.push_back(ind_disp + 2);
+    geom.indices.push_back(ind_disp + 3);
+    geom.indices.push_back(ind_disp + 0);
 
-    init_buffers(geom);
-    return geom;
+    //init_buffers(geom);
+    //return geom;
 }
 
 //******************************************************************************
 // create_geometry
 //******************************************************************************
 
-std::unique_ptr<Screen_shader::Screen_geometry>
-Screen_shader::create_geometry(const Triangle& triangle)
+void
+Screen_shader::create_geometry(Screen_geometry& geom, const Triangle& triangle)
 {
-    std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+    //std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
+    size_t ind_disp = geom.data_array.size();
 
     // Create vertices
 
@@ -144,16 +147,16 @@ Screen_shader::create_geometry(const Triangle& triangle)
     elem[1].vert = triangle.v2;
     elem[2].vert = triangle.v3;
 
-    for(int i = 0; i < 4; ++i) geom->data_array.push_back(elem[i]);
+    for(int i = 0; i < 4; ++i) geom.data_array.push_back(elem[i]);
 
     // Fill indices
 
-    geom->indices.push_back(0);
-    geom->indices.push_back(1);
-    geom->indices.push_back(2);
+    geom.indices.push_back(ind_disp + 0);
+    geom.indices.push_back(ind_disp + 1);
+    geom.indices.push_back(ind_disp + 2);
 
-    init_buffers(geom);
-    return geom;
+    //init_buffers(geom);
+    //return geom;
 }
 
 //******************************************************************************

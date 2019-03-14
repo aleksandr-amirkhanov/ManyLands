@@ -427,7 +427,7 @@ void mainloop()
 
 
     int timeline_height =
-        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.25f);
+        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.4f);
     Base_renderer::Region timeline_reg(Left_panel_size,
                                        Bottom_panel_size,
                                        width,

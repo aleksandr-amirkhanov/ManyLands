@@ -18,7 +18,7 @@
 
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_num_(0)
-    , pictogram_size_(60.f)
+    , pictogram_size_(50.f)
     , pictogram_spacing_(0.f)
     , player_pos_(0.f)
 {
@@ -42,6 +42,8 @@ void Timeline_renderer::render()
 {
     if(!state_->curve)
         return;
+
+    screen_geom_ = std::make_unique<Screen_shader::Screen_geometry>();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -175,6 +177,9 @@ void Timeline_renderer::render()
             x_pos += 2 * pictogram_size_ + pictogram_spacing_;
         }
     }
+
+    screen_geom_->init_buffers();
+    screen_shader->draw_geometry(screen_geom_);
 }
 
 //******************************************************************************
@@ -197,7 +202,7 @@ void Timeline_renderer::draw_axes(const Region& region)
             start, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
         line.emplace_back(Screen_shader::Line_point(
             end, 1.5f, glm::vec4(0.f, 0.f, 0.f, 1.f)));
-        screen_shader->draw_geometry(screen_shader->create_geometry(line));
+        screen_shader->create_geometry(*screen_geom_.get(), line);
     };
 
     draw_line(glm::vec2(region.left(),  region.bottom()),
@@ -329,7 +334,7 @@ void Timeline_renderer::draw_curve(const Region& region)
                                colors[i],
                                defocused);
 
-        screen_shader->draw_geometry(screen_shader->create_geometry(strip));
+        screen_shader->create_geometry(*screen_geom_, strip);
     }
 }
 
@@ -351,7 +356,7 @@ void Timeline_renderer::draw_switches(const Region& region)
             glm::vec2(p, region.top()), width, color));
         line.emplace_back(Screen_shader::Line_point(
             glm::vec2(p, region.bottom()), width, color));
-        screen_shader->draw_geometry(screen_shader->create_geometry(line));
+        screen_shader->create_geometry(*screen_geom_, line);
     }
 }
 
@@ -374,7 +379,7 @@ void Timeline_renderer::draw_marker(const Region& region)
         glm::vec2(x_pos, region.top()), width, color));
     line.emplace_back(Screen_shader::Line_point(
         glm::vec2(x_pos, region.bottom()), width, color));
-    screen_shader->draw_geometry(screen_shader->create_geometry(line));
+    screen_shader->create_geometry(*screen_geom_, line);
 }
 
 //******************************************************************************
@@ -393,7 +398,7 @@ void Timeline_renderer::draw_selection(const Region& region,
                                   region.top(),
                                   glm::vec4(0.f, 0.68f, 0.94f, 0.20f));
 
-    screen_shader->draw_geometry(screen_shader->create_geometry(rect));
+    screen_shader->create_geometry(*screen_geom_, rect);
 }
 
 //******************************************************************************
@@ -441,8 +446,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
 
             screen_t.color = glm::vec4(1.f, 0.f, 0.f, 0.5f);
 
-            screen_shader->draw_geometry(
-                screen_shader->create_geometry(screen_t));
+            screen_shader->create_geometry(*screen_geom_, screen_t);
         }
     };
 
@@ -462,7 +466,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
             line.emplace_back(Screen_shader::Line_point(
                 center + glm::vec2(v2(0), v2(1)), width, color));
 
-            screen_shader->draw_geometry(screen_shader->create_geometry(line));
+            screen_shader->create_geometry(*screen_geom_, line);
         }
     };
 
@@ -487,8 +491,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
                     line.emplace_back(Screen_shader::Line_point(
                         center + glm::vec2(v2(0), v2(1)), width, color));
 
-                    screen_shader->draw_geometry(
-                        screen_shader->create_geometry(line));
+                    screen_shader->create_geometry(*screen_geom_, line);
                 }
             }
         };
