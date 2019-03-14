@@ -60,8 +60,9 @@ private:
           curve_thickness_,
           sphere_diameter_;
 
-    std::shared_ptr<Diffuse_shader> diffuse_shader;
-    std::shared_ptr<Screen_shader> screen_shader;
+    std::shared_ptr<Diffuse_shader> diffuse_shader_;
+    // TODO: the `screen_shader_` is currently not used. Delete it?
+    std::shared_ptr<Screen_shader> screen_shader_;
 
     std::vector<std::unique_ptr<Diffuse_shader::Mesh_geometry>>
         back_geometry_, front_geometry_;
