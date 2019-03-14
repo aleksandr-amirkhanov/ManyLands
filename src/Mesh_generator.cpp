@@ -152,27 +152,27 @@ void Mesh_generator::sphere(
     };
 
     Mesh::Object object;
+    // Optimization: resize the face array to its final size
+    object.faces.resize(2 * segments * rings);
+
     for(unsigned int i = 0; i < segments; ++i)
     {
         for(unsigned int j = 0; j < rings; ++j)
         {
-            Mesh::Object::FaceType f1;
+            Mesh::Object::FaceType& f1 = object.faces[2 * (i * rings + j)];
             f1.emplace_back(Mesh::Vertex(vert_index(i, j), norm_index(i, j)));
             f1.emplace_back(
                 Mesh::Vertex(vert_index(i, j + 1), norm_index(i, j + 1)));
             f1.emplace_back(
                 Mesh::Vertex(vert_index(i + 1, j), norm_index(i + 1, j)));
 
-            Mesh::Object::FaceType f2;
+            Mesh::Object::FaceType& f2 = object.faces[2 * (i * rings + j) + 1];
             f2.emplace_back(Mesh::Vertex(
                 vert_index(i + 1, j + 1), norm_index(i + 1, j + 1)));
             f2.emplace_back(
                 Mesh::Vertex(vert_index(i + 1, j), norm_index(i + 1, j)));
             f2.emplace_back(
                 Mesh::Vertex(vert_index(i, j + 1), norm_index(i, j + 1)));
-
-            object.faces.push_back(f1);
-            object.faces.push_back(f2);
         }
     }
 

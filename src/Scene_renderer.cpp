@@ -347,16 +347,16 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
 
         if(i == 0)
             Mesh_generator::sphere(
-                16,
-                16,
+                6,
+                6,
                 size_coef * sphere_diameter_ / v(3),
                 pos,
                 glm::vec4(1.f, 0.f, 0.f, 1.f),
                 t_mesh);
         else
             Mesh_generator::sphere(
-                16,
-                16,
+                6,
+                6,
                 size_coef * sphere_diameter_ / v(3),
                 pos,
                 glm::vec4(0.59f, 0.59f, 0.59f, 1.f),
