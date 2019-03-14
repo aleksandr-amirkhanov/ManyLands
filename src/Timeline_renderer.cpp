@@ -253,8 +253,8 @@ void Timeline_renderer::draw_axes(const Region& region)
 
 void Timeline_renderer::draw_curve(const Region& region)
 {
-    const float t_min = state_->curve->get_time_stamp().front();
-    const float t_max = state_->curve->get_time_stamp().back();
+    const float t_min = state_->simple_curve->get_time_stamp().front();
+    const float t_max = state_->simple_curve->get_time_stamp().back();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
@@ -270,19 +270,19 @@ void Timeline_renderer::draw_curve(const Region& region)
         Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
-        const float t_min  = state_->curve->get_time_stamp().front();
+        const float t_min  = state_->simple_curve->get_time_stamp().front();
 
-        const float min_delta_t = t_duration / region.width();
+        const float min_delta_t = width * t_duration / region.width();
         float prev_t = -min_delta_t;
 
-        for(size_t i = 0; i < state_->curve->get_vertices().size(); i++)
+        for(size_t i = 0; i < state_->simple_curve->get_vertices().size(); i++)
         {
-            const float t_curr = state_->curve->get_time_stamp()[i];
+            const float t_curr = state_->simple_curve->get_time_stamp()[i];
             if(t_curr < prev_t + min_delta_t)
                 continue;
 
             const float val = static_cast<float>(
-                state_->curve->get_vertices()[i](dim_ind));
+                state_->simple_curve->get_vertices()[i](dim_ind));
             const float x_point =
                 region.left() + region.width() * (t_curr - t_min) / t_duration;
             const float y_point =
