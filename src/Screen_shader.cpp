@@ -180,25 +180,3 @@ void Screen_shader::draw_geometry(
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(color_attrib_id );
 }
-
-//******************************************************************************
-// init_buffers
-//******************************************************************************
-
-void Screen_shader::init_buffers(
-    const std::unique_ptr<Screen_geometry>& geom)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
-	glBufferData(GL_ARRAY_BUFFER,
-                 geom->data_array.size() * sizeof(Data_array),
-                 &geom->data_array[0],
-                 GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 geom->indices.size() * sizeof(GLuint),
-                 &geom->indices[0],
-                 GL_STATIC_DRAW);
-
-    geom->init_buffers();
-}

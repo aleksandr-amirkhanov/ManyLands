@@ -21,7 +21,7 @@ public:
 
     void initialize() override;
 
-    std::unique_ptr<Mesh_geometry> create_geometry(const Mesh& m);
+    void append_to_geometry(Mesh_geometry& geom, const Mesh& m);
     void draw_geometry(const std::unique_ptr<Mesh_geometry>& geom);
 
     GLuint program_id,
