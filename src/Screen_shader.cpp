@@ -28,14 +28,13 @@ void Screen_shader::initialize()
 }
 
 //******************************************************************************
-// create_geometry
+// append_to_geometry
 //******************************************************************************
 
-void
-Screen_shader::create_geometry(Screen_geometry& geom, const Line_strip& strip)
+void Screen_shader::append_to_geometry(Screen_geometry& geom,
+                                       const Line_strip& strip)
 {
-    //std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
-    size_t ind_disp = geom.data_array.size();
+    auto ind_disp = geom.data_array.size();
 
     for(auto current = strip.begin(); current != strip.end(); ++current)
     {
@@ -84,20 +83,16 @@ Screen_shader::create_geometry(Screen_geometry& geom, const Line_strip& strip)
         geom.indices.push_back(ind_disp + i * 4 + 2);
         geom.indices.push_back(ind_disp + i * 4 + 3);
     }
-    
-    //init_buffers(geom);
-    //return geom;
 }
 
 //******************************************************************************
-// create_geometry
+// append_to_geometry
 //******************************************************************************
 
-void
-Screen_shader::create_geometry(Screen_geometry& geom, const Rectangle& rect)
+void Screen_shader::append_to_geometry(Screen_geometry& geom,
+                                       const Rectangle& rect)
 {
-    //std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
-    size_t ind_disp = geom.data_array.size();
+    auto ind_disp = geom.data_array.size();
 
     // Create vertices
 
@@ -121,20 +116,16 @@ Screen_shader::create_geometry(Screen_geometry& geom, const Rectangle& rect)
     geom.indices.push_back(ind_disp + 2);
     geom.indices.push_back(ind_disp + 3);
     geom.indices.push_back(ind_disp + 0);
-
-    //init_buffers(geom);
-    //return geom;
 }
 
 //******************************************************************************
-// create_geometry
+// append_to_geometry
 //******************************************************************************
 
-void
-Screen_shader::create_geometry(Screen_geometry& geom, const Triangle& triangle)
+void Screen_shader::append_to_geometry(Screen_geometry& geom,
+                                       const Triangle& triangle)
 {
-    //std::unique_ptr<Screen_geometry> geom = std::make_unique<Screen_geometry>();
-    size_t ind_disp = geom.data_array.size();
+    auto ind_disp = geom.data_array.size();
 
     // Create vertices
 
@@ -154,9 +145,6 @@ Screen_shader::create_geometry(Screen_geometry& geom, const Triangle& triangle)
     geom.indices.push_back(ind_disp + 0);
     geom.indices.push_back(ind_disp + 1);
     geom.indices.push_back(ind_disp + 2);
-
-    //init_buffers(geom);
-    //return geom;
 }
 
 //******************************************************************************

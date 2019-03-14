@@ -72,10 +72,14 @@ public:
     };
     typedef Geometry_engine<Data_array> Screen_geometry;
 
-    void create_geometry(Screen_geometry& geom, const Line_strip& strip);
-    void create_geometry(Screen_geometry& geom, const Rectangle& rect);
-    void create_geometry(Screen_geometry& geom, const Triangle& triangle);
+    void append_to_geometry(Screen_geometry& geom, const Line_strip& strip);
+    void append_to_geometry(Screen_geometry& geom, const Rectangle& rect);
+    void append_to_geometry(Screen_geometry& geom, const Triangle& triangle);
 
+    void init_buffers(const std::unique_ptr<Screen_geometry>& geom);
+
+    // Please do not forget to call the `init_buffers` method before drawing the
+    // geometry
     void draw_geometry(const std::unique_ptr<Screen_geometry>& geom);
 
     void initialize() override;
@@ -84,7 +88,4 @@ public:
            proj_mat_id,
            vertex_attrib_id,
            color_attrib_id;
-
-//private:
-    void init_buffers(const std::unique_ptr<Screen_geometry>& geom);
 };
