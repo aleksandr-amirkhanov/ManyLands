@@ -33,6 +33,8 @@ public:
     void set_shader(std::shared_ptr<Screen_shader> screen);
     void render() override;
 
+    void set_pictogram_size(float size);
+
 private:
     // Drawing functions
     void draw_axes(     const Region& region);

@@ -47,6 +47,7 @@ void Timeline_renderer::render()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
 
     glUseProgram(screen_shader_->program_id);
 
@@ -67,14 +68,14 @@ void Timeline_renderer::render()
     // On-screen rendering
     const float margin = 10.f;
     Region plot_region_(margin,
-                        0.5f * region_.height() + margin,
+                        2 * pictogram_size_ + 2 * margin,
                         region_.width() - margin,
                         region_.height() - margin);
 
     Region pictogram_region_(margin,
                              margin,
                              region_.width() - margin,
-                             0.5f * region_.height() - margin);
+                             2 * pictogram_size_);
 
     draw_axes(plot_region_);
     draw_curve(plot_region_);
@@ -181,8 +182,17 @@ void Timeline_renderer::render()
     if(screen_geom_->data_array.size() > 0)
     {
         screen_geom_->init_buffers();
-        screen_shader_->draw_geometry(screen_geom_);
+        screen_shader_->draw_geometry(*screen_geom_.get());
     }
+}
+
+//******************************************************************************
+// set_pictogram_size
+//******************************************************************************
+
+void Timeline_renderer::set_pictogram_size(float size)
+{
+    pictogram_size_ = size;
 }
 
 //******************************************************************************

@@ -151,11 +151,10 @@ void Screen_shader::append_to_geometry(Screen_geometry& geom,
 // draw_geometry
 //******************************************************************************
 
-void Screen_shader::draw_geometry(
-    const std::unique_ptr<Screen_geometry>& geom)
+void Screen_shader::draw_geometry(const Screen_geometry& geom)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
+    glBindBuffer(GL_ARRAY_BUFFER, geom.array_buff_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom.index_buff_id);
 
     glEnableVertexAttribArray(vertex_attrib_id);
     glEnableVertexAttribArray(color_attrib_id );
@@ -175,7 +174,7 @@ void Screen_shader::draw_geometry(
                           stride,
                           ptr);
 
-    glDrawElements(GL_TRIANGLES, geom->indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, geom.indices.size(), GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(color_attrib_id );

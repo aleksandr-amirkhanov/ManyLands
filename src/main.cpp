@@ -191,6 +191,9 @@ void mainloop()
     int width = (int)io.DisplaySize.x;
     int height = (int)io.DisplaySize.y;
 
+    static float timeline_height = 250.f,
+                 pictograms_size = 40.f;
+
     // ImGui windows start
     {
         static float tesseract_size[4] = { 200.f, 200.f, 200.f, 200.f },
@@ -206,7 +209,9 @@ void mainloop()
                      zw_rot = 0.f,
                      fov_4d[3] = { 30.f * DEG_TO_RAD,
                                    30.f * DEG_TO_RAD,
-                                   30.f * DEG_TO_RAD };
+                                   30.f * DEG_TO_RAD },
+                     fog_dist = 10.f,
+                     fog_range = 2.f;
 
         ImGui::SetNextWindowSize(ImVec2(Left_panel_size, height));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -278,6 +283,10 @@ void mainloop()
                 "Curve##thickness", &curve_thickness, 0.1f, 10.0f);
             ImGui::SliderFloat(
                 "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
+            ImGui::SliderFloat(
+                "Timeline", &timeline_height, 0.f, 1000.0f);
+            ImGui::SliderFloat(
+                "Pictograms", &pictograms_size, 0.f, 100.0f);
 
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
@@ -291,6 +300,9 @@ void mainloop()
             ImGui::ColorEdit3(
                 "Curve fast", (float*)&High_speed_color
             );
+
+            ImGui::SliderFloat("Fog distance", &fog_dist,  0.1f, 10.f);
+            ImGui::SliderFloat("Fog range",    &fog_range, 0.1f, 10.f);
         }
 
         if (ImGui::CollapsingHeader("4D projection",
@@ -409,6 +421,7 @@ void mainloop()
 
         Renderer.set_line_thickness(tesseract_thickness, curve_thickness);
         Renderer.set_sphere_diameter(sphere_diameter);
+        Renderer.set_fog(fog_dist, fog_range);
     } // ImGui windows end
 
     // Rendering
@@ -426,8 +439,6 @@ void mainloop()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    int timeline_height =
-        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.4f);
     Base_renderer::Region timeline_reg(Left_panel_size,
                                        Bottom_panel_size,
                                        width,
@@ -443,6 +454,26 @@ void mainloop()
     Timeline.set_redering_region(timeline_reg,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
+
+    Timeline.set_pictogram_size(pictograms_size);
+
+    glm::mat4 proj_ortho = glm::ortho(0.f,
+                                      static_cast<float>(width),
+                                      0.f,
+                                      static_cast<float>(height));
+    glUniformMatrix4fv(Screen_shad->proj_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(proj_ortho));
+    Screen_shader::Screen_geometry separator;
+    Screen_shader::Line_strip line;
+    line.emplace_back(Screen_shader::Line_point(glm::vec2(Left_panel_size, timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    line.emplace_back(Screen_shader::Line_point(glm::vec2(width,           timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    Screen_shad->append_to_geometry(separator, line);
+    
+
+    separator.init_buffers();
+    Screen_shad->draw_geometry(separator);
 
     Renderer.render();
     Timeline.render();

@@ -19,6 +19,4 @@ private:
     std::shared_ptr<Scene_state> state_;
     boost::numeric::ublas::vector<double> c_origin;
     boost::numeric::ublas::vector<double> c_size;
-
-    const double tesseract_size;
 };

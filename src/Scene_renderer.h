@@ -25,6 +25,7 @@ public:
 
     void set_line_thickness(float t_thickness, float c_thickness);
     void set_sphere_diameter(float diameter);
+    void set_fog(float fog_dist, float fog_range); 
 
 private:
     void project_to_3D(
@@ -59,6 +60,8 @@ private:
     float tesseract_thickness_,
           curve_thickness_,
           sphere_diameter_;
+
+    glm::vec2 fog_range_;
 
     std::shared_ptr<Diffuse_shader> diffuse_shader_;
     // TODO: the `screen_shader_` is currently not used. Delete it?

@@ -31,5 +31,6 @@ public:
            light_pos_id,
            vertex_attrib_id,
            normal_attrib_id,
-           color_attrib_id;
+           color_attrib_id,
+           fog_range_id;
 };

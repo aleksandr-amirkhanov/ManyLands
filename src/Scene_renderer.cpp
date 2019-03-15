@@ -19,6 +19,10 @@
 //using namespace boost::numeric::odeint;
 using namespace boost::numeric::ublas;
 
+//******************************************************************************
+// Scene_renderer
+//******************************************************************************
+
 Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
     : Base_renderer()
     , tesseract_thickness_(1.f)
@@ -31,6 +35,10 @@ Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
     set_state(state);
 }
 
+//******************************************************************************
+// set_shaders
+//******************************************************************************
+
 void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
                                  std::shared_ptr<Screen_shader> screen)
 {
@@ -38,10 +46,15 @@ void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
     screen_shader_  = screen;
 }
 
+//******************************************************************************
+// render
+//******************************************************************************
+
 void Scene_renderer::render()
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
     
     if(state_            == nullptr ||
        state_->tesseract == nullptr ||
@@ -94,13 +107,9 @@ void Scene_renderer::render()
     glUniform3fv(diffuse_shader_->light_pos_id,
                  1,
                  glm::value_ptr(light_pos));
-
-
-
-
-
-
-    
+    glUniform2fv(diffuse_shader_->fog_range_id,
+                 1,
+                 glm::value_ptr(fog_range_));
 
     //gui_.Renderer->remove_all_meshes();
     //gui_.distanceWarning->hide();
@@ -271,7 +280,6 @@ void Scene_renderer::render()
         }
     }
 
-
     if(back_geometry_->data_array.size() > 0)
     {
         back_geometry_->init_buffers();
@@ -283,6 +291,10 @@ void Scene_renderer::render()
         diffuse_shader_->draw_geometry(front_geometry_);
     }
 }
+
+//******************************************************************************
+// project_to_3D
+//******************************************************************************
 
 void Scene_renderer::project_to_3D(
     boost::numeric::ublas::vector<double>& point,
@@ -307,6 +319,10 @@ void Scene_renderer::project_to_3D(
     point = tmp_vert;
 }
 
+//******************************************************************************
+// project_to_3D
+//******************************************************************************
+
 void Scene_renderer::project_to_3D(
     std::vector<boost::numeric::ublas::vector<double>>& verts,
     const boost::numeric::ublas::matrix<double>& rot_mat)
@@ -320,11 +336,19 @@ void Scene_renderer::project_to_3D(
 
 namespace
 {
+//******************************************************************************
+// ColorToGlm
+//******************************************************************************
+
 glm::vec4 ColorToGlm(const Color& c, const float alpha)
 {
     return glm::vec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, alpha);
 }
 } // namespace
+
+//******************************************************************************
+// draw_tesseract
+//******************************************************************************
 
 void Scene_renderer::draw_tesseract(Wireframe_object& t)
 {
@@ -374,6 +398,10 @@ void Scene_renderer::draw_tesseract(Wireframe_object& t)
 
     diffuse_shader_->append_to_geometry(*back_geometry_.get(), t_mesh);
 }
+
+//******************************************************************************
+// draw_curve
+//******************************************************************************
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
 {
@@ -448,20 +476,38 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     back_geometry_.push_back(std::make_unique<Geometry_engine>(marker_mesh));*/
 }
 
+//******************************************************************************
+// set_line_thickness
+//******************************************************************************
+
 void Scene_renderer::set_line_thickness(float t_thickness, float c_thickness)
 {
     tesseract_thickness_ = t_thickness;
     curve_thickness_ = c_thickness;
 }
 
+//******************************************************************************
+// set_sphere_diameter
+//******************************************************************************
+
 void Scene_renderer::set_sphere_diameter(float diameter)
 {
     sphere_diameter_ = diameter;
 }
 
+//******************************************************************************
+// set_fog
+//******************************************************************************
 
+void Scene_renderer::set_fog(float fog_dist, float fog_range)
+{
+    fog_range_.x = fog_dist - 0.5f * fog_range;
+    fog_range_.y = fog_dist + 0.5f * fog_range;
+}
 
-
+//******************************************************************************
+// split_animation
+//******************************************************************************
 
 std::vector<double> Scene_renderer::split_animation(double animation,
                                                     int    sections)
@@ -486,6 +532,10 @@ std::vector<double> Scene_renderer::split_animation(double animation,
     return splited_animations;
 }
 
+//******************************************************************************
+// draw_annotations
+//******************************************************************************
+
 void Scene_renderer::draw_annotations(Curve& c)
 {
     // TODO: port the method
@@ -501,6 +551,10 @@ void Scene_renderer::draw_annotations(Curve& c)
     for(auto& a : annot_dots)
         draw_point(a, QColor(0, 0, 0), 3.);*/
 }
+
+//******************************************************************************
+// move_curves_to_3D_plots
+//******************************************************************************
 
 void Scene_renderer::move_curves_to_3D_plots(double coeff,
                                              std::vector<Curve>& curves)
@@ -531,6 +585,10 @@ void Scene_renderer::move_curves_to_3D_plots(double coeff,
         v(0) = v(0) + coeff * (state_->tesseract_size[0] / 2 - v(0));
 }
 
+//******************************************************************************
+// move_curves_to_2D_plots
+//******************************************************************************
+
 void Scene_renderer::move_curves_to_2D_plots(
     double coeff,
     std::vector<Curve>& curves)
@@ -554,6 +612,10 @@ void Scene_renderer::move_curves_to_2D_plots(
     for(auto& v : curves[5].get_vertices())
         v(0) = v(0) + coeff * (1.5 * state_->tesseract_size[0] - v(0));
 }
+
+//******************************************************************************
+// tesseract_unfolding
+//******************************************************************************
 
 void Scene_renderer::tesseract_unfolding(
     double coeff,
@@ -670,6 +732,10 @@ void Scene_renderer::tesseract_unfolding(
     }
 }
 
+//******************************************************************************
+// get_rotation_matrix
+//******************************************************************************
+
 boost::numeric::ublas::matrix<double> Scene_renderer::get_rotation_matrix()
 {
     auto m = Matrix_lib::getXYRotationMatrix(state_->xy_rot);
@@ -681,6 +747,10 @@ boost::numeric::ublas::matrix<double> Scene_renderer::get_rotation_matrix()
 
     return m;
 }
+
+//******************************************************************************
+// get_rotation_matrix
+//******************************************************************************
 
 boost::numeric::ublas::matrix<double>
 Scene_renderer::get_rotation_matrix(double view_straightening)
@@ -698,6 +768,10 @@ Scene_renderer::get_rotation_matrix(double view_straightening)
 
     return m;
 }
+
+//******************************************************************************
+// draw_3D_plot
+//******************************************************************************
 
 void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
 {
@@ -727,6 +801,10 @@ void Scene_renderer::draw_3D_plot(Cube& cube, double opacity)
     }
 }
 
+//******************************************************************************
+// draw_2D_plot
+//******************************************************************************
+
 void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
 {
     for(auto const& e : plot.edges())
@@ -749,6 +827,10 @@ void Scene_renderer::draw_2D_plot(Wireframe_object& plot)
         diffuse_shader_->append_to_geometry(*back_geometry_.get(), t_mesh);
     }
 }
+
+//******************************************************************************
+// plots_unfolding
+//******************************************************************************
 
 void Scene_renderer::plots_unfolding(
     double coeff,

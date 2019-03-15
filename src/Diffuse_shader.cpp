@@ -19,6 +19,7 @@ void Diffuse_shader::initialize()
     mv_mat_id     = glGetUniformLocation(program_id,    "mvMatrix");
     normal_mat_id = glGetUniformLocation(program_id,"normalMatrix");
     light_pos_id  = glGetUniformLocation(program_id,    "lightPos");
+    fog_range_id  = glGetUniformLocation(program_id,    "fogRange");
 
     vertex_attrib_id = glGetAttribLocation(program_id, "vertex");
     normal_attrib_id = glGetAttribLocation(program_id, "normal");

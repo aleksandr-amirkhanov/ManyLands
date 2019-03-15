@@ -10,8 +10,7 @@
 using namespace boost::numeric::ublas;
 
 Scene::Scene(std::shared_ptr<Scene_state> state)
-    : tesseract_size(200.)
-    , state_(state)
+    : state_(state)
 {
 }
 
@@ -63,7 +62,7 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     }
 
     boost::numeric::ublas::vector<double> shift;
-    curve->shift_to_origin(tesseract_size, shift);
+    curve->shift_to_origin(state_->tesseract_size[0], shift);
 
     auto longest_axis_length = [](Curve* c) {
         boost::numeric::ublas::vector<double> origin, size;
@@ -84,18 +83,18 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     if(tesseract_scale_mode == 0)
     {
         double max_size = longest_axis_length(curve.get());
-        curve->scale_vertices(tesseract_size / max_size);
+        curve->scale_vertices(state_->tesseract_size[0] / max_size);
     }
     else if(tesseract_scale_mode == 1)
     {
         boost::numeric::ublas::vector<double> scale(5);
-        scale[0] = tesseract_size / size[0];
-        scale[1] = tesseract_size / size[1];
-        scale[2] = tesseract_size / size[2];
-        scale[3] = tesseract_size / size[3];
+        scale[0] = state_->tesseract_size[0] / size[0];
+        scale[1] = state_->tesseract_size[0] / size[1];
+        scale[2] = state_->tesseract_size[0] / size[2];
+        scale[3] = state_->tesseract_size[0] / size[3];
         scale[4] = 1;
         curve->scale_vertices(scale);
-        curve->shift_to_origin(tesseract_size, shift);
+        curve->shift_to_origin(state_->tesseract_size[0], shift);
     }
 
     // Save curve origin and size to the class members
