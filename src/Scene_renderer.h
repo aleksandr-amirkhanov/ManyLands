@@ -22,6 +22,7 @@ public:
     void set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
                      std::shared_ptr<Screen_shader> screen);
     void render() override;
+    void process_input(const Renderer_io& io) override;
 
     void set_line_thickness(float t_thickness, float c_thickness);
     void set_sphere_diameter(float diameter);
@@ -74,4 +75,6 @@ private:
     bool optimize_performance_;
     int visibility_mask_;
     const int number_of_animations_;
+
+    bool track_mouse_;
 };

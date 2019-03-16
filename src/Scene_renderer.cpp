@@ -31,6 +31,7 @@ Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
     , number_of_animations_(6)
     , optimize_performance_(true)
     , visibility_mask_(0)
+    , track_mouse_(false)
 {
     set_state(state);
 }
@@ -290,6 +291,33 @@ void Scene_renderer::render()
         front_geometry_->init_buffers();
         diffuse_shader_->draw_geometry(front_geometry_);
     }
+}
+
+//******************************************************************************
+// process_input
+//******************************************************************************
+
+void Scene_renderer::process_input(const Base_renderer::Renderer_io& io)
+{
+    if(io.mouse_down && region_.contains(io.mouse_pos))
+        track_mouse_ = true;
+
+    if(io.mouse_up)
+        track_mouse_ = false;
+
+    if(track_mouse_ && glm::length(io.mouse_move) > 0)
+    {
+        glm::vec3 axis(-io.mouse_move.y, io.mouse_move.x, 0.f);
+        float length = glm::length(axis);
+        state_->rotation_3D =
+            glm::angleAxis(
+                glm::radians(0.25f * length),
+                glm::normalize(axis)) *
+            state_->rotation_3D;
+    }
+
+    if(io.mouse_wheel && region_.contains(io.mouse_pos))
+        state_->camera_3D.z += io.mouse_wheel_y * 0.3f;
 }
 
 //******************************************************************************

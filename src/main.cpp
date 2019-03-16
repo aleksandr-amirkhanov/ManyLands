@@ -97,6 +97,9 @@ const std::shared_ptr<Screen_shader> Screen_shad =
 
 Scene Scene_objs(State);
 
+Base_renderer::Region Scene_region, Timeline_region;
+Base_renderer::Renderer_io Previous_io;
+
 //******************************************************************************
 // Color_to_ImVec4
 //******************************************************************************
@@ -137,6 +140,33 @@ void set_dark_theme()
 }
 
 //******************************************************************************
+// process_mouse_input
+//******************************************************************************
+
+void process_mouse_input(const SDL_Event& event)
+{
+    int height = (int)ImGui::GetIO().DisplaySize.y;
+    int mouse_x, mouse_y;
+    SDL_GetMouseState(&mouse_x, &mouse_y);
+    mouse_y = height - mouse_y;
+
+    Base_renderer::Renderer_io io;
+    io.mouse_pos  = glm::vec2(mouse_x, mouse_y);
+    io.mouse_move = glm::vec2(io.mouse_pos.x - Previous_io.mouse_pos.x,
+                              io.mouse_pos.y - Previous_io.mouse_pos.y);
+    io.mouse_down = (event.button.button == SDL_BUTTON_LEFT &&
+                     event.type == SDL_MOUSEBUTTONDOWN);
+    io.mouse_up = (event.type == SDL_MOUSEBUTTONUP);
+    io.mouse_wheel = (event.type == SDL_MOUSEWHEEL);
+    io.mouse_wheel_y = event.wheel.y;
+
+    Renderer.process_input(io);
+    Timeline.process_input(io);
+
+    Previous_io = io;
+}
+
+//******************************************************************************
 // mainloop
 //******************************************************************************
 
@@ -161,23 +191,7 @@ void mainloop()
 
         if(!io.WantCaptureMouse)
         {
-            if(   event.type == SDL_MOUSEMOTION
-               && event.button.button == SDL_BUTTON_LEFT)
-            {
-                //event.motion.xrel
-                glm::vec3 axis(event.motion.yrel, event.motion.xrel, 0.f);
-                float length = glm::length(axis);
-                State->rotation_3D =
-                    glm::angleAxis(
-                        glm::radians(0.25f * length),
-                        glm::normalize(axis)) *
-                    State->rotation_3D;
-            }
-
-            if(event.type == SDL_MOUSEWHEEL)
-            {
-                State->camera_3D.z += event.wheel.y * 0.3f;
-            }
+            process_mouse_input(event);
         }
     }
 
@@ -191,8 +205,8 @@ void mainloop()
     int width = (int)io.DisplaySize.x;
     int height = (int)io.DisplaySize.y;
 
-    static float timeline_height = 250.f,
-                 pictograms_size = 40.f;
+    static float timeline_height = 200.f,
+                 pictograms_size = 30.f;
 
     // ImGui windows start
     {
@@ -439,19 +453,19 @@ void mainloop()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    Base_renderer::Region timeline_reg(Left_panel_size,
-                                       Bottom_panel_size,
-                                       width,
-                                       timeline_height);
-    Base_renderer::Region scene_reg(Left_panel_size,
-                                    Bottom_panel_size + timeline_height,
-                                    width,
-                                    height);
+    Timeline_region = Base_renderer::Region(Left_panel_size,
+                                            Bottom_panel_size,
+                                            width,
+                                            timeline_height);
+    Scene_region = Base_renderer::Region(Left_panel_size,
+                                         Bottom_panel_size + timeline_height,
+                                         width,
+                                         height);
 
-    Renderer.set_redering_region(scene_reg,
+    Renderer.set_redering_region(Scene_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
-    Timeline.set_redering_region(timeline_reg,
+    Timeline.set_redering_region(Timeline_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
 

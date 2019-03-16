@@ -21,6 +21,7 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     , pictogram_size_(50.f)
     , pictogram_spacing_(0.f)
     , player_pos_(0.f)
+    , track_mouse_(false)
 {
     set_state(state);
 }
@@ -66,16 +67,6 @@ void Timeline_renderer::render()
                        glm::value_ptr(proj_ortho));
 
     // On-screen rendering
-    const float margin = 10.f;
-    Region plot_region_(margin,
-                        2 * pictogram_size_ + 2 * margin,
-                        region_.width() - margin,
-                        region_.height() - margin);
-
-    Region pictogram_region_(margin,
-                             margin,
-                             region_.width() - margin,
-                             2 * pictogram_size_);
 
     draw_axes(plot_region_);
     draw_curve(plot_region_);
@@ -187,12 +178,54 @@ void Timeline_renderer::render()
 }
 
 //******************************************************************************
+// process_input
+//******************************************************************************
+
+void Timeline_renderer::process_input(const Renderer_io& io)
+{
+    glm::vec2 mouse_pos = io.mouse_pos -
+                          glm::vec2(region_.left(), region_.bottom());
+
+    if(io.mouse_down && plot_region_.contains(mouse_pos))
+    {
+        track_mouse_ = true;
+        mouse_selection_.is_active = true;
+        mouse_selection_.start_pnt = mouse_pos;
+        mouse_selection_.end_pnt = mouse_pos;
+    }
+
+    if(io.mouse_up)
+    {
+        track_mouse_ = false;
+        mouse_selection_.is_active = false;
+    }
+
+    if(track_mouse_ && glm::length(io.mouse_move) > 0)
+    {
+        mouse_selection_.end_pnt = mouse_pos;
+    }
+}
+
+//******************************************************************************
+// set_redering_region
+//******************************************************************************
+
+void Timeline_renderer::set_redering_region(Region region,
+                                            float scale_x,
+                                            float scale_y)
+{
+    Base_renderer::set_redering_region(region, scale_x, scale_y);
+    update_regions();
+}
+
+//******************************************************************************
 // set_pictogram_size
 //******************************************************************************
 
 void Timeline_renderer::set_pictogram_size(float size)
 {
     pictogram_size_ = size;
+    update_regions();
 }
 
 //******************************************************************************
@@ -729,4 +762,23 @@ void Timeline_renderer::project_point_array(
 {
     for(auto& p : points)
         project_point(p, size, tesseract_size);
+}
+
+//******************************************************************************
+// update_regions
+//******************************************************************************
+
+void Timeline_renderer::update_regions()
+{
+    const float margin = 10.f;
+
+    plot_region_ = Region(margin,
+                          2 * pictogram_size_ + 2 * margin,
+                          region_.width() - margin,
+                          region_.height() - margin);
+
+    pictogram_region_ = Region(margin,
+                               margin,
+                               region_.width() - margin,
+                               2 * pictogram_size_);
 }

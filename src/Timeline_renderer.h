@@ -32,7 +32,11 @@ public:
 
     void set_shader(std::shared_ptr<Screen_shader> screen);
     void render() override;
+    void process_input(const Renderer_io& io) override;
 
+    virtual void set_redering_region(Region region,
+                                     float scale_x,
+                                     float scale_y) override;
     void set_pictogram_size(float size);
 
 private:
@@ -62,6 +66,8 @@ private:
         double size,
         double tesseract_size);
 
+    void update_regions();
+
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
@@ -71,4 +77,8 @@ private:
     Mouse_selection mouse_selection_;
 
     float player_pos_;
+
+    bool track_mouse_;
+
+    Region plot_region_, pictogram_region_;
 };
