@@ -198,6 +198,8 @@ void Timeline_renderer::process_input(const Renderer_io& io)
     {
         track_mouse_ = false;
         mouse_selection_.is_active = false;
+
+        make_selection(mouse_selection_);
     }
 
     if(track_mouse_ && glm::length(io.mouse_move) > 0)
@@ -687,6 +689,52 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     Curve c = *state_->simple_curve.get();
     project_point_array(c.get_vertices(), size, state_->tesseract_size[0]);
     draw_curve(c);
+}
+
+//******************************************************************************
+// make_selection
+//******************************************************************************
+
+void Timeline_renderer::make_selection(const Mouse_selection& s)
+{
+    if(state_->curve == nullptr)
+        return;
+
+    if(s.start_pnt == s.end_pnt)
+    {
+        //state_->curve_selection.release();
+        state_->curve_selection = std::make_unique<Curve_selection>();
+        state_->curve_selection->t_start = state_->curve->get_time_stamp().front();
+        state_->curve_selection->t_end = state_->curve->get_time_stamp().back();
+        return;
+    }
+
+    auto get_local_coord = [this](double x_coord) {
+        return (x_coord - plot_region_.left()) / (plot_region_.width());
+    };
+
+    // Currently, we are interested only in X coordinates of the user selection
+    double x_min, x_max;
+    if(s.start_pnt.x < s.end_pnt.x)
+    {
+        // The selection was done from left to right
+        x_min = get_local_coord(s.start_pnt.x);
+        x_max = get_local_coord(s.end_pnt.x);
+    }
+    else
+    {
+        // The selection was done from right to left
+        x_min = get_local_coord(s.end_pnt.x);
+        x_max = get_local_coord(s.start_pnt.x);
+    }
+
+    double t_start  = state_->curve->get_time_stamp().front();
+    double t_end    = state_->curve->get_time_stamp().back();
+    double t_length = t_end - t_start;
+
+    state_->curve_selection = std::make_unique<Curve_selection>();
+    state_->curve_selection->t_start = t_start + x_min * t_length;
+    state_->curve_selection->t_end = t_start + x_max * t_length;
 }
 
 //******************************************************************************

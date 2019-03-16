@@ -298,9 +298,9 @@ void mainloop()
             ImGui::SliderFloat(
                 "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
             ImGui::SliderFloat(
-                "Timeline", &timeline_height, 0.f, 1000.0f);
+                "Timeline", &timeline_height, 10.f, 1000.0f);
             ImGui::SliderFloat(
-                "Pictograms", &pictograms_size, 0.f, 100.0f);
+                "Pictograms", &pictograms_size, 10.f, 100.0f);
 
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
