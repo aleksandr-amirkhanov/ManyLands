@@ -1,7 +1,5 @@
 #include "Square.h"
 
-using namespace boost::numeric::ublas;
-
 const Color Square::default_color_ = Color(0, 0, 0, 255);
 
 Square::Square(Scene_wireframe_vertex v1,

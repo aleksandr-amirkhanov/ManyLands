@@ -7,8 +7,6 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
 
-using namespace boost::numeric::ublas;
-
 Scene::Scene(std::shared_ptr<Scene_state> state)
     : state_(state)
 {

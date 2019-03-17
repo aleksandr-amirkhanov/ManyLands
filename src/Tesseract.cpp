@@ -4,8 +4,6 @@
 // std
 #include <tuple>
 
-using namespace boost::numeric::ublas;
-
 Tesseract::Tesseract(
     Scene_wireframe_vertex origin,
     Scene_wireframe_vertex size,

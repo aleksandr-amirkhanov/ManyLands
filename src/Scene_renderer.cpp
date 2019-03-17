@@ -16,9 +16,6 @@
 // ImGui
 #include "imgui.h"
 
-//using namespace boost::numeric::odeint;
-using namespace boost::numeric::ublas;
-
 //******************************************************************************
 // Scene_renderer
 //******************************************************************************
@@ -648,7 +645,7 @@ void Scene_renderer::tesseract_unfolding(
 {
     auto transform_3D_plot =
         [](Scene_wireframe_object& c,
-           matrix<float>& rot,
+           boost::numeric::ublas::matrix<float>& rot,
            Scene_wireframe_vertex disp)
     {
         for(auto& v : c.get_vertices())
@@ -871,7 +868,9 @@ void Scene_renderer::plots_unfolding(
     std::vector<Curve>& curves_2D)
 {
     auto transform_3D_plot =
-        [](Scene_wireframe_object& c, matrix<float>& rot, Scene_wireframe_vertex& disp)
+        [](Scene_wireframe_object& c,
+           boost::numeric::ublas::matrix<float>& rot,
+           Scene_wireframe_vertex& disp)
     {
         for(auto& v : c.get_vertices())
         {

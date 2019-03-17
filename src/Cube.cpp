@@ -2,8 +2,6 @@
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
 
-using namespace boost::numeric::ublas;
-
 const Color Cube::default_color_ = Color(0, 0, 0, 255);
 
 Cube::Cube(Scene_wireframe_vertex v1,
