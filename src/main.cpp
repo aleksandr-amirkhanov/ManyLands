@@ -106,7 +106,7 @@ Base_renderer::Renderer_io Previous_io;
 
 ImVec4 Color_to_ImVec4(Color c)
 {
-    return ImVec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
+    return ImVec4(c.r_norm(), c.g_norm(), c.b_norm(), c.a_norm());
 }
 
 //******************************************************************************
@@ -345,7 +345,7 @@ void mainloop()
             ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Basics:");
-            const float dist_min = 1.f, dist_max = 20.f;
+            const float dist_min = 0.5f, dist_max = 5.f;
             camera_3D_dist = std::clamp((float)(-State->camera_3D.z),
                                         dist_min,
                                         dist_max);
@@ -401,7 +401,7 @@ void mainloop()
 
         State->camera_3D.z = -camera_3D_dist;
 
-        State->projection_4D = Matrix_lib::get4DProjectionMatrix(
+        State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(
             fov_4d[0], fov_4d[1], fov_4d[2], 1, 10);
 
         State->xy_rot = xy_rot;
@@ -446,10 +446,10 @@ void mainloop()
         0,
         static_cast<int>(io.DisplayFramebufferScale.x * io.DisplaySize.x),
         static_cast<int>(io.DisplayFramebufferScale.y * io.DisplaySize.y));
-    glClearColor(State->get_color(Background).r / 255.f,
-                 State->get_color(Background).g / 255.f,
-                 State->get_color(Background).b / 255.f,
-                 State->get_color(Background).a / 255.f);
+    glClearColor(State->get_color(Background).r_norm(),
+                 State->get_color(Background).g_norm(),
+                 State->get_color(Background).b_norm(),
+                 State->get_color(Background).a_norm());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 

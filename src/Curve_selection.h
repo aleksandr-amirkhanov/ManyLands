@@ -3,8 +3,8 @@
 // A very simple structure secribign the curve selection
 struct Curve_selection
 {
-    double t_start;
-    double t_end;
+    // The curve selection is normalized to [0, 1]
+    float t_start, t_end;
 
     bool in_range(double t) const
     {

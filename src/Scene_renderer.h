@@ -5,6 +5,7 @@
 #include "Mesh.h"
 #include "Diffuse_shader.h"
 #include "Screen_shader.h"
+#include "Scene_wireframe_object.h"
 // std
 #include <memory.h>
 // boost
@@ -30,32 +31,32 @@ public:
 
 private:
     void project_to_3D(
-        boost::numeric::ublas::vector<double>& point,
-        const boost::numeric::ublas::matrix<double>& rot_mat);
+        Scene_wireframe_vertex& point,
+        const boost::numeric::ublas::matrix<float>& rot_mat);
     void project_to_3D(
-        std::vector<boost::numeric::ublas::vector<double>>& verts,
-        const boost::numeric::ublas::matrix<double>& rot_mat);
+        std::vector<Scene_wireframe_vertex>& verts,
+        const boost::numeric::ublas::matrix<float>& rot_mat);
 
-    void draw_tesseract(Wireframe_object& t);
+    void draw_tesseract(Scene_wireframe_object& t);
     void draw_curve(Curve& c, float opacity);
     void draw_annotations(Curve& c);
-    void move_curves_to_3D_plots(double coeff, std::vector<Curve>& curves);
-    void move_curves_to_2D_plots(double coeff, std::vector<Curve>& curves);
+    void move_curves_to_3D_plots(float coeff, std::vector<Curve>& curves);
+    void move_curves_to_2D_plots(float coeff, std::vector<Curve>& curves);
     void tesseract_unfolding(
-        double coeff,
+        float coeff,
         std::vector<Cube>& plots_3D,
         std::vector<Curve>& curves_3D);
-    boost::numeric::ublas::matrix<double> get_rotation_matrix();
-    boost::numeric::ublas::matrix<double>
-    get_rotation_matrix(double view_straightening);
-    void draw_3D_plot(Cube& cube, double opacity);
-    void draw_2D_plot(Wireframe_object& plot);
+    boost::numeric::ublas::matrix<float> get_rotation_matrix();
+    boost::numeric::ublas::matrix<float>
+    get_rotation_matrix(float view_straightening);
+    void draw_3D_plot(Cube& cube, float opacity);
+    void draw_2D_plot(Scene_wireframe_object& plot);
     void plots_unfolding(
-        double coeff,
+        float coeff,
         std::vector<Square>& plots_2D,
         std::vector<Curve>& curves_2D);    
 
-    std::vector<double> split_animation(double animation_pos, int sections);
+    std::vector<float> split_animation(float animation_pos, int sections);
 
     // Drawing parameters
     float tesseract_thickness_,

@@ -15,7 +15,7 @@ Tesseract::Tesseract(
     const Color& w_color)
 {
     vertices_.resize(16);
-    edges_.resize(32);
+    edges_.resize(32, Scene_wireframe_edge(0, 0, Color()));
 
     size_ = size;
 

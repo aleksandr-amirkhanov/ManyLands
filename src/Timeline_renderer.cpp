@@ -3,6 +3,7 @@
 // Local
 #include "Consts.h"
 #include "Global.h"
+#include "Scene_wireframe_object.h"
 // glm
 #include <glm/gtc/type_ptr.hpp>
 // std
@@ -462,7 +463,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     if(!state_->tesseract)
         return;
 
-    auto fill_wireframe_obj = [this, &center](Wireframe_object& obj,
+    auto fill_wireframe_obj = [this, &center](Scene_wireframe_object& obj,
                                               float speed)
     {
         typedef CDT::Triangulation<float> Triangulation_type;
@@ -499,7 +500,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     };
 
     auto draw_wireframe_obj = [this, &center](
-                                  const Wireframe_object& obj) {
+                                  const Scene_wireframe_object& obj) {
         for(auto& e : obj.edges())
         {
             const auto& v1 = obj.vertices()[e.vert1];
@@ -545,14 +546,14 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         };
 
     auto get_curve_speed = [this, &seleciton](Curve& curve) {
-        double speed = (std::numeric_limits<double>::min)();
+        double speed = std::numeric_limits<double>::min();
         for(auto& e : curve.edges())
         {
             const auto& v1 = curve.vertices()[e.vert1];
             float t = curve.get_time_stamp()[e.vert1];
             if(seleciton.in_range(t))
             {
-                speed = (std::max)(speed, curve.get_stats().speed[e.vert1]);
+                speed = std::max(speed, curve.get_stats().speed[e.vert1]);
             }
         }
 
@@ -732,6 +733,8 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
     double t_end    = state_->curve->get_time_stamp().back();
     double t_length = t_end - t_start;
 
+    // FIXME: the current approach works only if the curve is defined by points
+    // with fixed delta time
     state_->curve_selection = std::make_unique<Curve_selection>();
     state_->curve_selection->t_start = t_start + x_min * t_length;
     state_->curve_selection->t_end = t_start + x_max * t_length;
@@ -766,9 +769,9 @@ void Timeline_renderer::calculate_switch_points(
 //******************************************************************************
 
 void Timeline_renderer::project_point(
-    boost::numeric::ublas::vector<double>& point,
-    double size,
-    double tesseract_size)
+    Scene_wireframe_vertex& point,
+    float size,
+    float tesseract_size)
 {
     if(point.size() < 4)
         return;
@@ -804,9 +807,9 @@ void Timeline_renderer::project_point(
 //******************************************************************************
 
 void Timeline_renderer::project_point_array(
-    std::vector<boost::numeric::ublas::vector<double>>& points,
-    double size,
-    double tesseract_size)
+    std::vector<Scene_wireframe_vertex>& points,
+    float size,
+    float tesseract_size)
 {
     for(auto& p : points)
         project_point(p, size, tesseract_size);

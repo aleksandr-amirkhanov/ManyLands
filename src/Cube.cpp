@@ -4,30 +4,31 @@
 
 using namespace boost::numeric::ublas;
 
-Cube::Cube(
-    boost::numeric::ublas::vector<double> v1,
-    boost::numeric::ublas::vector<double> v2,
-    boost::numeric::ublas::vector<double> v3,
-    boost::numeric::ublas::vector<double> v4,
-    boost::numeric::ublas::vector<double> v5,
-    boost::numeric::ublas::vector<double> v6,
-    boost::numeric::ublas::vector<double> v7,
-    boost::numeric::ublas::vector<double> v8)
+const Color Cube::default_color_ = Color(0, 0, 0, 255);
+
+Cube::Cube(Scene_wireframe_vertex v1,
+           Scene_wireframe_vertex v2,
+           Scene_wireframe_vertex v3,
+           Scene_wireframe_vertex v4,
+           Scene_wireframe_vertex v5,
+           Scene_wireframe_vertex v6,
+           Scene_wireframe_vertex v7,
+           Scene_wireframe_vertex v8)
     : Cube(v1, v2, v3, v4, v5, v6, v7, v8,
-        default_color,
-        default_color,
-        default_color)
+        default_color_,
+        default_color_,
+        default_color_)
 {}
 
 Cube::Cube(
-    boost::numeric::ublas::vector<double> v1,
-    boost::numeric::ublas::vector<double> v2,
-    boost::numeric::ublas::vector<double> v3,
-    boost::numeric::ublas::vector<double> v4,
-    boost::numeric::ublas::vector<double> v5,
-    boost::numeric::ublas::vector<double> v6,
-    boost::numeric::ublas::vector<double> v7,
-    boost::numeric::ublas::vector<double> v8,
+    Scene_wireframe_vertex v1,
+    Scene_wireframe_vertex v2,
+    Scene_wireframe_vertex v3,
+    Scene_wireframe_vertex v4,
+    Scene_wireframe_vertex v5,
+    Scene_wireframe_vertex v6,
+    Scene_wireframe_vertex v7,
+    Scene_wireframe_vertex v8,
     const Color& horiz_col,
     const Color& vert_col,
     const Color& depth_col)
@@ -41,20 +42,20 @@ Cube::Cube(
     vertices_.push_back(v7);
     vertices_.push_back(v8);
 
-    add_edge(0, 1, horiz_col);
-    add_edge(1, 2, vert_col);
-    add_edge(2, 3, horiz_col);
-    add_edge(3, 0, vert_col);
+    add_edge(Scene_wireframe_edge(0, 1, horiz_col));
+    add_edge(Scene_wireframe_edge(1, 2, vert_col ));
+    add_edge(Scene_wireframe_edge(2, 3, horiz_col));
+    add_edge(Scene_wireframe_edge(3, 0, vert_col ));
 
-    add_edge(4, 5, horiz_col);
-    add_edge(5, 6, vert_col);
-    add_edge(6, 7, horiz_col);
-    add_edge(7, 4, vert_col);
+    add_edge(Scene_wireframe_edge(4, 5, horiz_col));
+    add_edge(Scene_wireframe_edge(5, 6, vert_col ));
+    add_edge(Scene_wireframe_edge(6, 7, horiz_col));
+    add_edge(Scene_wireframe_edge(7, 4, vert_col ));
 
-    add_edge(0, 4, depth_col);
-    add_edge(1, 5, depth_col);
-    add_edge(2, 6, depth_col);
-    add_edge(3, 7, depth_col);
+    add_edge(Scene_wireframe_edge(0, 4, depth_col));
+    add_edge(Scene_wireframe_edge(1, 5, depth_col));
+    add_edge(Scene_wireframe_edge(2, 6, depth_col));
+    add_edge(Scene_wireframe_edge(3, 7, depth_col));
 }
 
 std::vector<Square> Cube::split(std::vector<Cube>& cubes)
@@ -70,7 +71,7 @@ std::vector<Square> Cube::split(std::vector<Cube>& cubes)
                 return e.color;
             }
         }
-        return default_color;
+        return default_color_;
     };
 
     auto create_square = [&](int cube_ind, int v1, int v2, int v3, int v4) {

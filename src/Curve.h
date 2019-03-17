@@ -3,14 +3,15 @@
 #include "Curve_annotations.h"
 #include "Curve_selection.h"
 #include "Curve_stats.h"
-#include "Wireframe_object.h"
+#include "Color.h"
+#include "Scene_wireframe_object.h"
 // boost
 #include "boost/tuple/tuple.hpp"
 #include <boost/numeric/ublas/vector.hpp>
 // std
 #include <vector>
 
-class Curve : public Wireframe_object
+class Curve : public Scene_wireframe_object
 {
 public:
     typedef boost::numeric::ublas::vector<double> Point_type;
@@ -29,6 +30,10 @@ public:
     std::vector<Curve_annotations> get_arrows(const Curve_selection& selection);
     std::vector<Point_type> get_markers(const Curve_selection& selection);
 
+    void translate_vertices(const Scene_wireframe_vertex& translate);
+    void scale_vertices(float scale_factor);
+    void scale_vertices(const Scene_wireframe_vertex& scale_factor);
+
 private:
     void calculate_general_stats();
     void calculate_annotations();
@@ -39,4 +44,6 @@ private:
     // Annotations
     std::vector<Arrow_type> arrows_;
     std::vector<size_t> markers_;
+
+    const static Color default_color_;
 };

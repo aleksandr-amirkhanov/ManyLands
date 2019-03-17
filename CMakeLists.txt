@@ -17,6 +17,10 @@ if(NOT WIN32 OR EMSCRIPTEN)
     add_compile_definitions(USE_GL_ES3)
 endif()
 
+if(WIN32)
+    add_compile_definitions(NOMINMAX)
+endif()
+
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories("include/glm" "include/imgui" "include/CDT")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

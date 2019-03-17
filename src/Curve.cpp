@@ -1,9 +1,18 @@
 #include "Curve.h"
+
+#include "Scene_wireframe_object.h"
+
 // std
 #include <algorithm>
 #include <cmath>
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
+
+const Color Curve::default_color_ = Color(0, 0, 0, 255);
+
+//******************************************************************************
+// add_point
+//******************************************************************************
 
 void Curve::add_point(Point_type vertex, float time)
 {
@@ -12,11 +21,17 @@ void Curve::add_point(Point_type vertex, float time)
 
     // Adding edge
     if(get_vertices().size() > 1)
-        add_edge(get_vertices().size() - 2, get_vertices().size() - 1);
+        add_edge(Scene_wireframe_edge(get_vertices().size() - 2,
+                                      get_vertices().size() - 1,
+                                      default_color_));
 
     // Adding time stamp
     time_stamp_.push_back(time);
 }
+
+//******************************************************************************
+// get_point
+//******************************************************************************
 
 boost::numeric::ublas::vector<double> Curve::get_point(float time)
 {
@@ -47,10 +62,18 @@ boost::numeric::ublas::vector<double> Curve::get_point(float time)
            coeff * (get_vertices()[range[1]] - get_vertices()[range[0]]);
 }
 
+//******************************************************************************
+// get_time_stamp
+//******************************************************************************
+
 const std::vector<float>& Curve::get_time_stamp() const
 {
     return time_stamp_;
 }
+
+//******************************************************************************
+// shift_to_origin
+//******************************************************************************
 
 void Curve::shift_to_origin(double max_edge_length, Point_type& out_shift)
 {
@@ -60,6 +83,10 @@ void Curve::shift_to_origin(double max_edge_length, Point_type& out_shift)
 
     translate_vertices(-0.5f * size - origin);
 }
+
+//******************************************************************************
+// get_boundaries
+//******************************************************************************
 
 void Curve::get_boundaries(Point_type& origin, Point_type& size) const
 {
@@ -88,6 +115,10 @@ void Curve::get_boundaries(Point_type& origin, Point_type& size) const
     origin = min;
     size = max - min;
 }
+
+//******************************************************************************
+// get_simpified_curve
+//******************************************************************************
 
 Curve Curve::get_simpified_curve(const double spacing)
 {
@@ -133,16 +164,28 @@ Curve Curve::get_simpified_curve(const double spacing)
     return simplified_curve;
 }
 
+//******************************************************************************
+// update_stats
+//******************************************************************************
+
 void Curve::update_stats()
 {
     calculate_general_stats();
     calculate_annotations();
 }
 
+//******************************************************************************
+// get_stats
+//******************************************************************************
+
 const Curve_stats& Curve::get_stats()
 {
     return stats_;
 }
+
+//******************************************************************************
+// calculate_general_stats
+//******************************************************************************
 
 void Curve::calculate_general_stats()
 {
@@ -182,7 +225,7 @@ void Curve::calculate_general_stats()
     stats_.max_speed = max_speed;
 
     // Find how many dimension curve segments have
-    boost::numeric::ublas::vector<double> min(5), max(5);
+    boost::numeric::ublas::vector<float> min(5), max(5);
     double start_t = 0., end_t = 0.;
     for(size_t i = 0; i < time_stamp_.size(); ++i)
     {
@@ -235,25 +278,17 @@ void Curve::calculate_general_stats()
         Curve_stats::Range r;
         for(size_t i = ind1; i < ind2; ++i)
         {
-            std::get<0>(r.x) =
-                std::min((double)std::get<0>(r.x), vertices_[i](0));
-            std::get<1>(r.x) =
-                std::max((double)std::get<0>(r.x), vertices_[i](0));
+            std::get<0>(r.x) = std::min(std::get<0>(r.x), vertices_[i](0));
+            std::get<1>(r.x) = std::max(std::get<0>(r.x), vertices_[i](0));
 
-            std::get<0>(r.y) =
-                std::min((double)std::get<0>(r.y), vertices_[i](1));
-            std::get<1>(r.y) =
-                std::max((double)std::get<0>(r.y), vertices_[i](1));
+            std::get<0>(r.y) = std::min(std::get<0>(r.y), vertices_[i](1));
+            std::get<1>(r.y) = std::max(std::get<0>(r.y), vertices_[i](1));
 
-            std::get<0>(r.z) =
-                std::min((double)std::get<0>(r.z), vertices_[i](2));
-            std::get<1>(r.z) =
-                std::max((double)std::get<0>(r.z), vertices_[i](2));
+            std::get<0>(r.z) = std::min(std::get<0>(r.z), vertices_[i](2));
+            std::get<1>(r.z) = std::max(std::get<0>(r.z), vertices_[i](2));
 
-            std::get<0>(r.w) =
-                std::min((double)std::get<0>(r.w), vertices_[i](3));
-            std::get<1>(r.w) =
-                std::max((double)std::get<0>(r.w), vertices_[i](3));
+            std::get<0>(r.w) = std::min(std::get<0>(r.w), vertices_[i](3));
+            std::get<1>(r.w) = std::max(std::get<0>(r.w), vertices_[i](3));
         }
         stats_.range.push_back(r);
     };
@@ -267,6 +302,10 @@ void Curve::calculate_general_stats()
     if(stats_.switches_inds.size() > 0)
         compute_range(stats_.switches_inds.back(), vertices_.size());
 }
+
+//******************************************************************************
+// calculate_annotations
+//******************************************************************************
 
 void Curve::calculate_annotations()
 {
@@ -334,6 +373,10 @@ void Curve::calculate_annotations()
     out_arrows = annotations;*/
 }
 
+//******************************************************************************
+// get_arrows
+//******************************************************************************
+
 std::vector<Curve_annotations>
 Curve::get_arrows(const Curve_selection& selection)
 {
@@ -356,6 +399,10 @@ Curve::get_arrows(const Curve_selection& selection)
     return annotations;
 }
 
+//******************************************************************************
+// get_markers
+//******************************************************************************
+
 std::vector<Curve::Point_type>
 Curve::get_markers(const Curve_selection& selection)
 {
@@ -368,4 +415,42 @@ Curve::get_markers(const Curve_selection& selection)
     }
 
     return res;
+}
+
+//******************************************************************************
+// translate_vertices
+//******************************************************************************
+
+void Curve::translate_vertices(const Scene_wireframe_vertex& translate)
+{
+    for(auto& v : vertices_)
+        v += translate;
+}
+
+//******************************************************************************
+// scale_vertices
+//******************************************************************************
+
+void Curve::scale_vertices(float scale_factor)
+{
+    for(auto& v : vertices_)
+        v *= scale_factor;
+}
+
+//******************************************************************************
+// scale_vertices
+//******************************************************************************
+
+void Curve::scale_vertices(const Scene_wireframe_vertex& scale_factor)
+{
+    for(auto& v : vertices_)
+    {
+        assert(v.size() == scale_factor.size());
+
+        if(v.size() == scale_factor.size())
+        {
+            for(int i = 0; i < v.size(); i++)
+                v[i] *= scale_factor[i];
+        }
+    }
 }

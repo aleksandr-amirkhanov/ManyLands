@@ -1,14 +1,14 @@
 #pragma once
 // Local
 #include "Cube.h"
-#include "Wireframe_object.h"
+#include "Scene_wireframe_object.h"
 // boost
 #include <boost/numeric/ublas/vector.hpp>
 // std
 #include <vector>
 #include <string>
 
-class Tesseract : public Wireframe_object
+class Tesseract : public Scene_wireframe_object
 {
 public:
     Tesseract(

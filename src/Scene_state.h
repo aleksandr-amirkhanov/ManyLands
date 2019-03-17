@@ -2,6 +2,7 @@
 // local
 #include "Curve.h"
 #include "Curve_selection.h"
+#include "Color.h"
 #include "Tesseract.h"
 // boost
 #include <boost/numeric/ublas/matrix.hpp>

@@ -59,13 +59,13 @@ private:
         const Region& region);
 
     void project_point(
-        boost::numeric::ublas::vector<double>& point,
-        double size,
-        double tesseract_size);
+        Scene_wireframe_vertex& point,
+        float size,
+        float tesseract_size);
     void project_point_array(
-        std::vector<boost::numeric::ublas::vector<double>>& points,
-        double size,
-        double tesseract_size);
+        std::vector<Scene_wireframe_vertex>& points,
+        float size,
+        float tesseract_size);
 
     void update_regions();
 
