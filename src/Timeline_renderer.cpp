@@ -53,10 +53,10 @@ void Timeline_renderer::render()
 
     glUseProgram(screen_shader_->program_id);
 
-    glViewport(display_scale_x_ * region_.left(),
-               display_scale_y_ * region_.bottom(),
-               display_scale_x_ * region_.width(),
-               display_scale_y_ * region_.height());
+    glViewport(static_cast<GLint>(display_scale_x_ * region_.left()),
+               static_cast<GLint>(display_scale_y_ * region_.bottom()),
+               static_cast<GLsizei>(display_scale_x_ * region_.width()),
+               static_cast<GLsizei>(display_scale_y_ * region_.height()));
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(region_.width()),
@@ -92,7 +92,7 @@ void Timeline_renderer::render()
         if(switch_points.size() > 0)
         {
             switch_center.push_back(
-                0.5 * (plot_region_.left() + switch_points[0]));
+                0.5f * (plot_region_.left() + switch_points[0]));
 
             for(size_t i = 1; i < switch_points.size(); ++i)
             {
@@ -546,7 +546,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         };
 
     auto get_curve_speed = [this, &seleciton](Curve& curve) {
-        double speed = std::numeric_limits<double>::min();
+        auto speed = std::numeric_limits<float>::min();
         for(auto& e : curve.edges())
         {
             const auto& v1 = curve.vertices()[e.vert1];
@@ -710,12 +710,12 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
         return;
     }
 
-    auto get_local_coord = [this](double x_coord) {
+    auto get_local_coord = [this](float x_coord) {
         return (x_coord - plot_region_.left()) / (plot_region_.width());
     };
 
     // Currently, we are interested only in X coordinates of the user selection
-    double x_min, x_max;
+    float x_min, x_max;
     if(s.start_pnt.x < s.end_pnt.x)
     {
         // The selection was done from left to right
@@ -729,9 +729,9 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
         x_max = get_local_coord(s.start_pnt.x);
     }
 
-    double t_start  = state_->curve->get_time_stamp().front();
-    double t_end    = state_->curve->get_time_stamp().back();
-    double t_length = t_end - t_start;
+    auto t_start  = state_->curve->get_time_stamp().front();
+    auto t_end    = state_->curve->get_time_stamp().back();
+    auto t_length = t_end - t_start;
 
     // FIXME: the current approach works only if the curve is defined by points
     // with fixed delta time
@@ -776,30 +776,30 @@ void Timeline_renderer::project_point(
     if(point.size() < 4)
         return;
 
-    const double axis_size = 2 * size * std::sin(PI / 8);
-    const float dist_to_origin =
-        size - 4 * size * std::pow(std::sin(PI / 8), 2);
+    const auto axis_size = 2 * size * std::sin(static_cast<float>(PI / 8));
+    const auto dist_to_origin =
+        size - 4 * size * std::pow(static_cast<float>(std::sin(PI / 8)), 2);
 
-    boost::numeric::ublas::vector<double> origin(2);
-    origin(0) = dist_to_origin * std::cos(7 * PI / 8);
-    origin(1) = -dist_to_origin * std::sin(7 * PI / 8);
+    Scene_wireframe_vertex origin(2);
+    origin(0) = dist_to_origin * std::cos(static_cast<float>(7 * PI / 8));
+    origin(1) = -dist_to_origin * std::sin(static_cast<float>(7 * PI / 8));
 
     auto copy_p = point;
 
     // sin and cos of 45 degrees
-    const double sin_45 = std::sin(PI / 4);
-    const double cos_45 = std::cos(PI / 4);
+    const auto sin_45 = std::sin(static_cast<float>(PI / 4));
+    const auto cos_45 = std::cos(static_cast<float>(PI / 4));
 
     // X-axis
-    point(0) = origin(0) + axis_size * (0.5 + copy_p(0) / tesseract_size);
+    point(0) = origin(0) + axis_size * (0.5f + copy_p(0) / tesseract_size);
     // Y-axis
-    point(1) = origin(1) - axis_size * (0.5 + copy_p(1) / tesseract_size);
+    point(1) = origin(1) - axis_size * (0.5f + copy_p(1) / tesseract_size);
     // Z -axis
-    point(0) += axis_size * (0.5 + copy_p(2) / tesseract_size) * cos_45;
-    point(1) += axis_size * (0.5 + copy_p(2) / tesseract_size) * sin_45;
+    point(0) += axis_size * (0.5f + copy_p(2) / tesseract_size) * cos_45;
+    point(1) += axis_size * (0.5f + copy_p(2) / tesseract_size) * sin_45;
     // W-axis
-    point(0) -= axis_size * (0.5 + copy_p(3) / tesseract_size) * cos_45;
-    point(1) += axis_size * (0.5 + copy_p(3) / tesseract_size) * sin_45;
+    point(0) -= axis_size * (0.5f + copy_p(3) / tesseract_size) * cos_45;
+    point(1) += axis_size * (0.5f + copy_p(3) / tesseract_size) * sin_45;
 }
 
 //******************************************************************************

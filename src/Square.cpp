@@ -4,11 +4,10 @@ using namespace boost::numeric::ublas;
 
 const Color Square::default_color_ = Color(0, 0, 0, 255);
 
-Square::Square(
-    vector<double> v1,
-    vector<double> v2,
-    vector<double> v3,
-    vector<double> v4)
+Square::Square(Scene_wireframe_vertex v1,
+               Scene_wireframe_vertex v2,
+               Scene_wireframe_vertex v3,
+               Scene_wireframe_vertex v4)
 {
     vertices_.push_back(v1);
     vertices_.push_back(v2);
@@ -21,13 +20,12 @@ Square::Square(
     add_edge(Scene_wireframe_edge(3, 0, default_color_));
 }
 
-Square::Square(
-    boost::numeric::ublas::vector<double> v1,
-    boost::numeric::ublas::vector<double> v2,
-    boost::numeric::ublas::vector<double> v3,
-    boost::numeric::ublas::vector<double> v4,
-    const Color& horiz_col,
-    const Color& vert_col)
+Square::Square(Scene_wireframe_vertex v1,
+               Scene_wireframe_vertex v2,
+               Scene_wireframe_vertex v3,
+               Scene_wireframe_vertex v4,
+               const Color& horiz_col,
+               const Color& vert_col)
 {
     vertices_.push_back(v1);
     vertices_.push_back(v2);

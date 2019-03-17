@@ -401,7 +401,7 @@ public:
         y /= len;
         z /= len;
 
-        T ic = 1.0 - c;
+        T ic = static_cast<T>(1.0) - c;
         rotation(0, 0) = x * x * ic + c;
         rotation(1, 0) = x * y * ic - z * s;
         rotation(2, 0) = x * z * ic + y * s;

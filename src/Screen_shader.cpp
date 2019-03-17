@@ -76,12 +76,12 @@ void Screen_shader::append_to_geometry(Screen_geometry& geom,
 
     for(size_t i = 0; i < strip.size() - 1; ++i)
     {
-        geom.indices.push_back(ind_disp + i * 4    );
-        geom.indices.push_back(ind_disp + i * 4 + 2);
-        geom.indices.push_back(ind_disp + i * 4 + 1);
-        geom.indices.push_back(ind_disp + i * 4 + 1);
-        geom.indices.push_back(ind_disp + i * 4 + 2);
-        geom.indices.push_back(ind_disp + i * 4 + 3);
+        geom.indices.push_back(static_cast<GLint>(ind_disp + i * 4    ));
+        geom.indices.push_back(static_cast<GLint>(ind_disp + i * 4 + 2));
+        geom.indices.push_back(static_cast<GLint>(ind_disp + i * 4 + 1));
+        geom.indices.push_back(static_cast<GLint>(ind_disp + i * 4 + 1));
+        geom.indices.push_back(static_cast<GLint>(ind_disp + i * 4 + 2));
+        geom.indices.push_back(static_cast<GLint>(ind_disp + i * 4 + 3));
     }
 }
 
@@ -110,12 +110,12 @@ void Screen_shader::append_to_geometry(Screen_geometry& geom,
 
     // Fill indices
 
-    geom.indices.push_back(ind_disp + 0);
-    geom.indices.push_back(ind_disp + 1);
-    geom.indices.push_back(ind_disp + 2);
-    geom.indices.push_back(ind_disp + 2);
-    geom.indices.push_back(ind_disp + 3);
-    geom.indices.push_back(ind_disp + 0);
+    geom.indices.push_back(static_cast<GLuint>(ind_disp + 0));
+    geom.indices.push_back(static_cast<GLuint>(ind_disp + 1));
+    geom.indices.push_back(static_cast<GLuint>(ind_disp + 2));
+    geom.indices.push_back(static_cast<GLuint>(ind_disp + 2));
+    geom.indices.push_back(static_cast<GLuint>(ind_disp + 3));
+    geom.indices.push_back(static_cast<GLuint>(ind_disp + 0));
 }
 
 //******************************************************************************
@@ -142,9 +142,9 @@ void Screen_shader::append_to_geometry(Screen_geometry& geom,
 
     // Fill indices
 
-    geom.indices.push_back(ind_disp + 0);
-    geom.indices.push_back(ind_disp + 1);
-    geom.indices.push_back(ind_disp + 2);
+    geom.indices.push_back(static_cast<GLint>(ind_disp + 0));
+    geom.indices.push_back(static_cast<GLint>(ind_disp + 1));
+    geom.indices.push_back(static_cast<GLint>(ind_disp + 2));
 }
 
 //******************************************************************************
@@ -174,7 +174,9 @@ void Screen_shader::draw_geometry(const Screen_geometry& geom)
                           stride,
                           ptr);
 
-    glDrawElements(GL_TRIANGLES, geom.indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES,
+                   static_cast<GLsizei>(geom.indices.size()),
+                   GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(color_attrib_id );

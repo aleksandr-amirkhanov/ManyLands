@@ -72,7 +72,7 @@ private:
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
-    int pictogram_num_;
+    size_t pictogram_num_;
     float pictogram_size_, pictogram_spacing_;
 
     Mouse_selection mouse_selection_;

@@ -13,10 +13,10 @@ public:
 private:
     std::shared_ptr<Curve> load_curve(std::string filename);
     void create_tesseract(
-        boost::numeric::ublas::vector<double> shift,
+        Scene_wireframe_vertex shift,
         const Curve& curve);
 
     std::shared_ptr<Scene_state> state_;
-    boost::numeric::ublas::vector<double> c_origin;
-    boost::numeric::ublas::vector<double> c_size;
+    Scene_wireframe_vertex c_origin;
+    Scene_wireframe_vertex c_size;
 };

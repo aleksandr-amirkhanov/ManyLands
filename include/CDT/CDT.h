@@ -354,7 +354,7 @@ void Triangulation<T>::addSuperTriangle(const Box2d<T>& box)
     const T w = box.max.x - box.min.x;
     const T h = box.max.y - box.min.y;
     const T diag = T(4) * std::sqrt(w * w + h * h);
-    const T shift = diag / std::sqrt(2.0); // diagonal * sin(45deg)
+    const T shift = diag / std::sqrt(static_cast<T>(2.0)); // diagonal * sin(45deg)
     const V2d<T> posV1 = {center.x - shift, center.y - shift};
     const V2d<T> posV2 = {center.x + shift, center.y - shift};
     const V2d<T> posV3 = {center.x, center.y + diag};
@@ -586,10 +586,10 @@ Triangulation<T>::walkingSearchTrianglesAt(const V2d<T>& pos) const
         const Triangle& t = triangles[currTri];
         found = true;
         // stochastic offset to randomize which edge we check first
-        const size_t offset = rand() % 3;
-        for(size_t i_ = 0; i_ < 3; ++i_)
+        const CDT::Index offset = rand() % 3;
+        for(CDT::Index i_ = 0; i_ < 3; ++i_)
         {
-            const size_t i = (i_ + offset) % 3;
+            const CDT::Index i = (i_ + offset) % 3;
             const V2d<T> vStart = vertices[t.vertices[i]].pos;
             const V2d<T> vEnd = vertices[t.vertices[ccw(i)]].pos;
             const PtLineLocation::Enum edgeCheck = locatePointLine(pos, vStart, vEnd);

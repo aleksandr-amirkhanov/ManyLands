@@ -12,18 +12,18 @@ class Tesseract : public Scene_wireframe_object
 {
 public:
     Tesseract(
-        boost::numeric::ublas::vector<double> origin,
-        boost::numeric::ublas::vector<double> size,
+        Scene_wireframe_vertex origin,
+        Scene_wireframe_vertex size,
         const Color& x_color,
         const Color& y_color,
         const Color& z_color,
         const Color& w_color);
 
-    boost::numeric::ublas::vector<double> get_size();
+    Scene_wireframe_vertex get_size();
 
     std::vector<Cube> split();
     Square get_plain(std::string mask);
 
 private:
-    boost::numeric::ublas::vector<double> size_;
+    Scene_wireframe_vertex size_;
 };

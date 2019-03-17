@@ -69,10 +69,10 @@ void Scene_renderer::render()
 
     glUseProgram(diffuse_shader_->program_id);
 
-    glViewport(display_scale_x_ * region_.left(),
-               display_scale_y_ * region_.bottom(),
-               display_scale_x_ * region_.width(),
-               display_scale_y_ * region_.height());
+    glViewport(static_cast<GLint>(display_scale_x_ * region_.left()),
+               static_cast<GLint>(display_scale_y_ * region_.bottom()),
+               static_cast<GLsizei>(display_scale_x_ * region_.width()),
+               static_cast<GLsizei>(display_scale_y_ * region_.height()));
 
     std::vector<float> anims =
         split_animation(state_->unfolding_anim, number_of_animations_);
@@ -173,11 +173,11 @@ void Scene_renderer::render()
         for(auto& p : plots_3D)
             project_to_3D(p.get_vertices(), rot);
 
-        auto visibility_coeff = [this](int i) {
+        auto visibility_coeff = [this](size_t i) {
             if(visibility_mask_ == 0 || visibility_mask_ & 1 << i)
-                return 1.;
+                return 1.f;
             else
-                return 0.1;
+                return 0.1f;
         };
 
         if(0 < hide_4D && project_curve_3D == 0)
@@ -198,12 +198,12 @@ void Scene_renderer::render()
                         if(hide_4D != 1)
                         {
                             draw_3D_plot(
-                                c, visibility_coeff(i) * (1 - hide_4D));
+                                c, visibility_coeff(i) * (1.f - hide_4D));
                         }
                     }
                     else
                     {
-                        draw_3D_plot(c, visibility_coeff(i) * (1. - hide_3D));
+                        draw_3D_plot(c, visibility_coeff(i) * (1.f - hide_3D));
                     }
                 }
             }
@@ -223,7 +223,7 @@ void Scene_renderer::render()
                     auto c = curves_3D[i];
                     project_to_3D(c.get_vertices(), rot);
 
-                    draw_curve(c, visibility_coeff(i) * (1. - hide_3D));
+                    draw_curve(c, visibility_coeff(i) * (1.f - hide_3D));
                     if(visibility_coeff(i) == 1. && hide_3D < 0.5)
                         draw_annotations(c);
                 }
@@ -328,8 +328,7 @@ void Scene_renderer::project_to_3D(
     Scene_wireframe_vertex& point,
     const boost::numeric::ublas::matrix<float>& rot_mat)
 {
-    boost::numeric::ublas::vector<float> tmp_vert =
-        prod(point, rot_mat);
+    Scene_wireframe_vertex tmp_vert = prod(point, rot_mat);
     tmp_vert = tmp_vert - state_->camera_4D;
     tmp_vert = prod(tmp_vert, state_->projection_4D);
 
@@ -635,7 +634,7 @@ void Scene_renderer::move_curves_to_2D_plots(
         v(1) = v(1) + coeff * (-state_->tesseract_size[1] / 2 - v(1));
     // Curve 6
     for(auto& v : curves[5].get_vertices())
-        v(0) = v(0) + coeff * (1.5 * state_->tesseract_size[0] - v(0));
+        v(0) = v(0) + coeff * (1.5f * state_->tesseract_size[0] - v(0));
 }
 
 //******************************************************************************
@@ -648,7 +647,9 @@ void Scene_renderer::tesseract_unfolding(
     std::vector<Curve>& curves_3D)
 {
     auto transform_3D_plot =
-        [](Scene_wireframe_object& c, matrix<float>& rot, vector<float> disp)
+        [](Scene_wireframe_object& c,
+           matrix<float>& rot,
+           Scene_wireframe_vertex disp)
     {
         for(auto& v : c.get_vertices())
         {
@@ -664,7 +665,8 @@ void Scene_renderer::tesseract_unfolding(
 
     // Cube and curve 1 and 5
     {
-        auto rot = Matrix_lib_f::getYWRotationMatrix(-coeff * PI / 2);
+        auto rot = Matrix_lib_f::getYWRotationMatrix(
+            static_cast<float>(-coeff * PI / 2));
         Scene_wireframe_vertex disp1(5);
         disp1 <<= 0,
                   state_->tesseract_size[1] / 2,
@@ -688,7 +690,8 @@ void Scene_renderer::tesseract_unfolding(
     }
     // Cube and curve 3
     {
-        auto rot = Matrix_lib_f::getZWRotationMatrix(coeff * PI / 2);
+        auto rot = Matrix_lib_f::getZWRotationMatrix(
+            static_cast<float>(coeff * PI / 2));
         Scene_wireframe_vertex disp(5);
         disp <<= 0,
                  0,
@@ -702,7 +705,8 @@ void Scene_renderer::tesseract_unfolding(
     }
     // Cube and curve 4
     {
-        auto rot = Matrix_lib_f::getZWRotationMatrix(-coeff * PI / 2);
+        auto rot = Matrix_lib_f::getZWRotationMatrix(
+            static_cast<float>(-coeff * PI / 2));
         Scene_wireframe_vertex disp(5);
         disp <<= 0,
                  0,
@@ -716,7 +720,8 @@ void Scene_renderer::tesseract_unfolding(
     }
     // Cube and curve 6
     {
-        auto rot = Matrix_lib_f::getYWRotationMatrix(coeff * PI / 2);
+        auto rot = Matrix_lib_f::getYWRotationMatrix(
+            static_cast<float>(coeff * PI / 2));
         Scene_wireframe_vertex disp(5);
         disp <<= 0,
                  -state_->tesseract_size[1] / 2,
@@ -730,7 +735,8 @@ void Scene_renderer::tesseract_unfolding(
     }
     // Cube and curve 7
     {
-        auto rot = Matrix_lib_f::getXWRotationMatrix(coeff * PI / 2);
+        auto rot = Matrix_lib_f::getXWRotationMatrix(
+            static_cast<float>(coeff * PI / 2));
         Scene_wireframe_vertex disp(5);
         disp <<= state_->tesseract_size[0] / 2,
                  0,
@@ -744,7 +750,8 @@ void Scene_renderer::tesseract_unfolding(
     }
     // Cube and curve 8
     {
-        auto rot = Matrix_lib_f::getXWRotationMatrix(-coeff * PI / 2);
+        auto rot = Matrix_lib_f::getXWRotationMatrix(
+            static_cast<float>(-coeff * PI / 2));
         Scene_wireframe_vertex disp(5);
         disp <<= -state_->tesseract_size[0] / 2,
                   0,
@@ -890,7 +897,10 @@ void Scene_renderer::plots_unfolding(
         auto rot_axis =
             plots_2D[1].get_vertices()[1] - plots_2D[1].get_vertices()[0];
         auto rot = Matrix_lib_f::getRotationMatrix(
-            coeff * PI / 2, rot_axis(0), rot_axis(1), rot_axis(2));
+            static_cast<float>(coeff * PI / 2),
+            rot_axis(0),
+            rot_axis(1),
+            rot_axis(2));
         Scene_wireframe_vertex disp(5);
         disp <<= -anchor(0), -anchor(1), -anchor(2), 0, 0;
 
@@ -907,7 +917,10 @@ void Scene_renderer::plots_unfolding(
         auto rot_axis =
             plots_2D[4].get_vertices()[2] - plots_2D[4].get_vertices()[1];
         auto rot = Matrix_lib_f::getRotationMatrix(
-            coeff * PI / 2, rot_axis(0), rot_axis(1), rot_axis(2));
+            static_cast<float>(coeff * PI / 2),
+            rot_axis(0),
+            rot_axis(1),
+            rot_axis(2));
         Scene_wireframe_vertex disp(5);
         disp <<= -anchor(0), -anchor(1), -anchor(2), 0, 0;
 

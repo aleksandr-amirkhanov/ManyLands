@@ -19,6 +19,8 @@ endif()
 
 if(WIN32)
     add_compile_definitions(NOMINMAX)
+	# We add the definition below to suppress warning from boost library
+    add_compile_definitions(_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 endif()
 
 include_directories(${Boost_INCLUDE_DIRS})

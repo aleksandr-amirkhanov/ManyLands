@@ -83,8 +83,8 @@ const bool Enable_keyboard = false,   // Controllers
 
 const float App_scale = 1.f;          // Global app scale
 
-const int Bottom_panel_size = 36 * App_scale;
-int Left_panel_size = 300 * App_scale;
+const int Bottom_panel_size = static_cast<int>(36 * App_scale);
+int Left_panel_size = static_cast<int>(300 * App_scale);
 
 const std::shared_ptr<Scene_state> State = std::make_shared<Scene_state>();
 Scene_renderer Renderer(State);
@@ -158,7 +158,7 @@ void process_mouse_input(const SDL_Event& event)
                      event.type == SDL_MOUSEBUTTONDOWN);
     io.mouse_up = (event.type == SDL_MOUSEBUTTONUP);
     io.mouse_wheel = (event.type == SDL_MOUSEWHEEL);
-    io.mouse_wheel_y = event.wheel.y;
+    io.mouse_wheel_y = static_cast<float>(event.wheel.y);
 
     Renderer.process_input(io);
     Timeline.process_input(io);
@@ -200,7 +200,7 @@ void mainloop()
     ImGui_ImplSDL2_NewFrame(Window);
     ImGui::NewFrame();
 
-    static float fov_y = 45.f * DEG_TO_RAD;
+    static float fov_y = 45.f * static_cast<float>(DEG_TO_RAD);
 
     int width = (int)io.DisplaySize.x;
     int height = (int)io.DisplaySize.y;
@@ -221,16 +221,18 @@ void mainloop()
                      xw_rot = 0.f,
                      yw_rot = 0.f,
                      zw_rot = 0.f,
-                     fov_4d[3] = { 30.f * DEG_TO_RAD,
-                                   30.f * DEG_TO_RAD,
-                                   30.f * DEG_TO_RAD },
+                     fov_4d[3] = { 30.f * static_cast<float>(DEG_TO_RAD),
+                                   30.f * static_cast<float>(DEG_TO_RAD),
+                                   30.f * static_cast<float>(DEG_TO_RAD) },
                      fog_dist = 10.f,
                      fog_range = 2.f;
 
-        ImGui::SetNextWindowSize(ImVec2(Left_panel_size, height));
+        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
+                                        static_cast<float>(height)));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0, height), ImVec2(FLT_MAX, height));
+            ImVec2(0.f, static_cast<float>(height)),
+            ImVec2(FLT_MAX, static_cast<float>(height)));
 
         ImGui::Begin(
             "Control panel",
@@ -382,13 +384,15 @@ void mainloop()
             State->fov_y = fov_y;
         }
 
-        Left_panel_size = ImGui::GetWindowSize().x;
+        Left_panel_size = static_cast<int>(ImGui::GetWindowSize().x);
         ImGui::End();
 
-        ImGui::SetNextWindowSize(ImVec2(width - Left_panel_size,
-                                 Bottom_panel_size));
-        ImGui::SetNextWindowPos(ImVec2(Left_panel_size,
-                                height - Bottom_panel_size));
+        ImGui::SetNextWindowSize(
+            ImVec2(static_cast<float>(width - Left_panel_size),
+                   static_cast<float>(Bottom_panel_size)));
+        ImGui::SetNextWindowPos(
+            ImVec2(static_cast<float>(Left_panel_size),
+                   static_cast<float>(height - Bottom_panel_size)));
         static float animation = 0.f;
         ImGui::Begin(
             "##animation",
@@ -402,7 +406,7 @@ void mainloop()
         State->camera_3D.z = -camera_3D_dist;
 
         State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(
-            fov_4d[0], fov_4d[1], fov_4d[2], 1, 10);
+            fov_4d[0], fov_4d[1], fov_4d[2], 1.f, 10.f);
 
         State->xy_rot = xy_rot;
         State->yz_rot = yz_rot;
@@ -413,7 +417,10 @@ void mainloop()
 
         // Helper lambda expression
         auto ImVec4_to_Color = [](ImVec4 v) {
-            return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
+            return Color(static_cast<int>(v.x * 255),
+                         static_cast<int>(v.y * 255),
+                         static_cast<int>(v.z * 255),
+                         static_cast<int>(v.w * 255));
         };
 
         State->update_color(Background,       ImVec4_to_Color(Clear_color));
@@ -453,14 +460,16 @@ void mainloop()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    Timeline_region = Base_renderer::Region(Left_panel_size,
-                                            Bottom_panel_size,
-                                            width,
-                                            timeline_height);
-    Scene_region = Base_renderer::Region(Left_panel_size,
-                                         Bottom_panel_size + timeline_height,
-                                         width,
-                                         height);
+    Timeline_region = Base_renderer::Region(
+        static_cast<float>(Left_panel_size),
+        static_cast<float>(Bottom_panel_size),
+        static_cast<float>(width),
+        static_cast<float>(timeline_height));
+    Scene_region = Base_renderer::Region(
+        static_cast<float>(Left_panel_size),
+        static_cast<float>(Bottom_panel_size + timeline_height),
+        static_cast<float>(width),
+        static_cast<float>(height));
 
     Renderer.set_redering_region(Scene_region,
                                  io.DisplayFramebufferScale.x,
