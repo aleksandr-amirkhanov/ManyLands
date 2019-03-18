@@ -1,10 +1,10 @@
 #pragma once
 
-#include <boost/numeric/ublas/vector.hpp>
+#include "Scene_wireframe_object.h"
 
 struct Curve_annotations
 {
     unsigned int dimensionality;
-    boost::numeric::ublas::vector<double> dir;
-    boost::numeric::ublas::vector<double> point;
+    Scene_wireframe_vertex dir;
+    Scene_wireframe_vertex point;
 };

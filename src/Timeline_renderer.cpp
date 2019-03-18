@@ -3,6 +3,7 @@
 // Local
 #include "Consts.h"
 #include "Global.h"
+#include "Scene_wireframe_object.h"
 // glm
 #include <glm/gtc/type_ptr.hpp>
 // std
@@ -21,6 +22,7 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     , pictogram_size_(50.f)
     , pictogram_spacing_(0.f)
     , player_pos_(0.f)
+    , track_mouse_(false)
 {
     set_state(state);
 }
@@ -47,13 +49,14 @@ void Timeline_renderer::render()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
 
     glUseProgram(screen_shader_->program_id);
 
-    glViewport(display_scale_x_ * region_.left(),
-               display_scale_y_ * region_.bottom(),
-               display_scale_x_ * region_.width(),
-               display_scale_y_ * region_.height());
+    glViewport(static_cast<GLint>(display_scale_x_ * region_.left()),
+               static_cast<GLint>(display_scale_y_ * region_.bottom()),
+               static_cast<GLsizei>(display_scale_x_ * region_.width()),
+               static_cast<GLsizei>(display_scale_y_ * region_.height()));
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(region_.width()),
@@ -65,16 +68,6 @@ void Timeline_renderer::render()
                        glm::value_ptr(proj_ortho));
 
     // On-screen rendering
-    const float margin = 10.f;
-    Region plot_region_(margin,
-                        0.5f * region_.height() + margin,
-                        region_.width() - margin,
-                        region_.height() - margin);
-
-    Region pictogram_region_(margin,
-                             margin,
-                             region_.width() - margin,
-                             0.5f * region_.height() - margin);
 
     draw_axes(plot_region_);
     draw_curve(plot_region_);
@@ -99,7 +92,7 @@ void Timeline_renderer::render()
         if(switch_points.size() > 0)
         {
             switch_center.push_back(
-                0.5 * (plot_region_.left() + switch_points[0]));
+                0.5f * (plot_region_.left() + switch_points[0]));
 
             for(size_t i = 1; i < switch_points.size(); ++i)
             {
@@ -181,8 +174,61 @@ void Timeline_renderer::render()
     if(screen_geom_->data_array.size() > 0)
     {
         screen_geom_->init_buffers();
-        screen_shader_->draw_geometry(screen_geom_);
+        screen_shader_->draw_geometry(*screen_geom_.get());
     }
+}
+
+//******************************************************************************
+// process_input
+//******************************************************************************
+
+void Timeline_renderer::process_input(const Renderer_io& io)
+{
+    glm::vec2 mouse_pos = io.mouse_pos -
+                          glm::vec2(region_.left(), region_.bottom());
+
+    if(io.mouse_down && plot_region_.contains(mouse_pos))
+    {
+        track_mouse_ = true;
+        mouse_selection_.is_active = true;
+        mouse_selection_.start_pnt = mouse_pos;
+        mouse_selection_.end_pnt = mouse_pos;
+    }
+
+    if(io.mouse_up)
+    {
+        track_mouse_ = false;
+        mouse_selection_.is_active = false;
+
+        make_selection(mouse_selection_);
+    }
+
+    if(track_mouse_ && glm::length(io.mouse_move) > 0)
+    {
+        mouse_selection_.end_pnt = mouse_pos;
+    }
+}
+
+//******************************************************************************
+// set_redering_region
+//******************************************************************************
+
+void Timeline_renderer::set_redering_region(Region region,
+                                            float scale_x,
+                                            float scale_y)
+{
+    Base_renderer::set_redering_region(region, scale_x, scale_y);
+    update_regions();
+}
+
+//******************************************************************************
+// set_pictogram_size
+//******************************************************************************
+
+void Timeline_renderer::set_pictogram_size(float size)
+{
+    pictogram_size_ = size;
+    update_regions();
 }
 
 //******************************************************************************
@@ -253,8 +299,8 @@ void Timeline_renderer::draw_axes(const Region& region)
 
 void Timeline_renderer::draw_curve(const Region& region)
 {
-    const float t_min = state_->curve->get_time_stamp().front();
-    const float t_max = state_->curve->get_time_stamp().back();
+    const float t_min = state_->simple_curve->get_time_stamp().front();
+    const float t_max = state_->simple_curve->get_time_stamp().back();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
@@ -270,19 +316,19 @@ void Timeline_renderer::draw_curve(const Region& region)
         Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
-        const float t_min  = state_->curve->get_time_stamp().front();
+        const float t_min  = state_->simple_curve->get_time_stamp().front();
 
-        const float min_delta_t = t_duration / region.width();
+        const float min_delta_t = width * t_duration / region.width();
         float prev_t = -min_delta_t;
 
-        for(size_t i = 0; i < state_->curve->get_vertices().size(); i++)
+        for(size_t i = 0; i < state_->simple_curve->get_vertices().size(); i++)
         {
-            const float t_curr = state_->curve->get_time_stamp()[i];
+            const float t_curr = state_->simple_curve->get_time_stamp()[i];
             if(t_curr < prev_t + min_delta_t)
                 continue;
 
             const float val = static_cast<float>(
-                state_->curve->get_vertices()[i](dim_ind));
+                state_->simple_curve->get_vertices()[i](dim_ind));
             const float x_point =
                 region.left() + region.width() * (t_curr - t_min) / t_duration;
             const float y_point =
@@ -417,7 +463,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     if(!state_->tesseract)
         return;
 
-    auto fill_wireframe_obj = [this, &center](Wireframe_object& obj,
+    auto fill_wireframe_obj = [this, &center](Scene_wireframe_object& obj,
                                               float speed)
     {
         typedef CDT::Triangulation<float> Triangulation_type;
@@ -454,7 +500,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     };
 
     auto draw_wireframe_obj = [this, &center](
-                                  const Wireframe_object& obj) {
+                                  const Scene_wireframe_object& obj) {
         for(auto& e : obj.edges())
         {
             const auto& v1 = obj.vertices()[e.vert1];
@@ -500,14 +546,14 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         };
 
     auto get_curve_speed = [this, &seleciton](Curve& curve) {
-        double speed = (std::numeric_limits<double>::min)();
+        auto speed = std::numeric_limits<float>::min();
         for(auto& e : curve.edges())
         {
             const auto& v1 = curve.vertices()[e.vert1];
             float t = curve.get_time_stamp()[e.vert1];
             if(seleciton.in_range(t))
             {
-                speed = (std::max)(speed, curve.get_stats().speed[e.vert1]);
+                speed = std::max(speed, curve.get_stats().speed[e.vert1]);
             }
         }
 
@@ -647,6 +693,54 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
 }
 
 //******************************************************************************
+// make_selection
+//******************************************************************************
+
+void Timeline_renderer::make_selection(const Mouse_selection& s)
+{
+    if(state_->curve == nullptr)
+        return;
+
+    if(s.start_pnt == s.end_pnt)
+    {
+        //state_->curve_selection.release();
+        state_->curve_selection = std::make_unique<Curve_selection>();
+        state_->curve_selection->t_start = state_->curve->get_time_stamp().front();
+        state_->curve_selection->t_end = state_->curve->get_time_stamp().back();
+        return;
+    }
+
+    auto get_local_coord = [this](float x_coord) {
+        return (x_coord - plot_region_.left()) / (plot_region_.width());
+    };
+
+    // Currently, we are interested only in X coordinates of the user selection
+    float x_min, x_max;
+    if(s.start_pnt.x < s.end_pnt.x)
+    {
+        // The selection was done from left to right
+        x_min = get_local_coord(s.start_pnt.x);
+        x_max = get_local_coord(s.end_pnt.x);
+    }
+    else
+    {
+        // The selection was done from right to left
+        x_min = get_local_coord(s.end_pnt.x);
+        x_max = get_local_coord(s.start_pnt.x);
+    }
+
+    auto t_start  = state_->curve->get_time_stamp().front();
+    auto t_end    = state_->curve->get_time_stamp().back();
+    auto t_length = t_end - t_start;
+
+    // FIXME: the current approach works only if the curve is defined by points
+    // with fixed delta time
+    state_->curve_selection = std::make_unique<Curve_selection>();
+    state_->curve_selection->t_start = t_start + x_min * t_length;
+    state_->curve_selection->t_end = t_start + x_max * t_length;
+}
+
+//******************************************************************************
 // calculate_switch_points
 //******************************************************************************
 
@@ -675,37 +769,37 @@ void Timeline_renderer::calculate_switch_points(
 //******************************************************************************
 
 void Timeline_renderer::project_point(
-    boost::numeric::ublas::vector<double>& point,
-    double size,
-    double tesseract_size)
+    Scene_wireframe_vertex& point,
+    float size,
+    float tesseract_size)
 {
     if(point.size() < 4)
         return;
 
-    const double axis_size = 2 * size * std::sin(PI / 8);
-    const float dist_to_origin =
-        size - 4 * size * std::pow(std::sin(PI / 8), 2);
+    const auto axis_size = 2 * size * std::sin(static_cast<float>(PI / 8));
+    const auto dist_to_origin =
+        size - 4 * size * std::pow(static_cast<float>(std::sin(PI / 8)), 2);
 
-    boost::numeric::ublas::vector<double> origin(2);
-    origin(0) = dist_to_origin * std::cos(7 * PI / 8);
-    origin(1) = -dist_to_origin * std::sin(7 * PI / 8);
+    Scene_wireframe_vertex origin(2);
+    origin(0) = dist_to_origin * std::cos(static_cast<float>(7 * PI / 8));
+    origin(1) = -dist_to_origin * std::sin(static_cast<float>(7 * PI / 8));
 
     auto copy_p = point;
 
     // sin and cos of 45 degrees
-    const double sin_45 = std::sin(PI / 4);
-    const double cos_45 = std::cos(PI / 4);
+    const auto sin_45 = std::sin(static_cast<float>(PI / 4));
+    const auto cos_45 = std::cos(static_cast<float>(PI / 4));
 
     // X-axis
-    point(0) = origin(0) + axis_size * (0.5 + copy_p(0) / tesseract_size);
+    point(0) = origin(0) + axis_size * (0.5f + copy_p(0) / tesseract_size);
     // Y-axis
-    point(1) = origin(1) - axis_size * (0.5 + copy_p(1) / tesseract_size);
+    point(1) = origin(1) - axis_size * (0.5f + copy_p(1) / tesseract_size);
     // Z -axis
-    point(0) += axis_size * (0.5 + copy_p(2) / tesseract_size) * cos_45;
-    point(1) += axis_size * (0.5 + copy_p(2) / tesseract_size) * sin_45;
+    point(0) += axis_size * (0.5f + copy_p(2) / tesseract_size) * cos_45;
+    point(1) += axis_size * (0.5f + copy_p(2) / tesseract_size) * sin_45;
     // W-axis
-    point(0) -= axis_size * (0.5 + copy_p(3) / tesseract_size) * cos_45;
-    point(1) += axis_size * (0.5 + copy_p(3) / tesseract_size) * sin_45;
+    point(0) -= axis_size * (0.5f + copy_p(3) / tesseract_size) * cos_45;
+    point(1) += axis_size * (0.5f + copy_p(3) / tesseract_size) * sin_45;
 }
 
 //******************************************************************************
@@ -713,10 +807,29 @@ void Timeline_renderer::project_point(
 //******************************************************************************
 
 void Timeline_renderer::project_point_array(
-    std::vector<boost::numeric::ublas::vector<double>>& points,
-    double size,
-    double tesseract_size)
+    std::vector<Scene_wireframe_vertex>& points,
+    float size,
+    float tesseract_size)
 {
     for(auto& p : points)
         project_point(p, size, tesseract_size);
+}
+
+//******************************************************************************
+// update_regions
+//******************************************************************************
+
+void Timeline_renderer::update_regions()
+{
+    const float margin = 10.f;
+
+    plot_region_ = Region(margin,
+                          2 * pictogram_size_ + 2 * margin,
+                          region_.width() - margin,
+                          region_.height() - margin);
+
+    pictogram_region_ = Region(margin,
+                               margin,
+                               region_.width() - margin,
+                               2 * pictogram_size_);
 }

@@ -19,6 +19,7 @@ void Diffuse_shader::initialize()
     mv_mat_id     = glGetUniformLocation(program_id,    "mvMatrix");
     normal_mat_id = glGetUniformLocation(program_id,"normalMatrix");
     light_pos_id  = glGetUniformLocation(program_id,    "lightPos");
+    fog_range_id  = glGetUniformLocation(program_id,    "fogRange");
 
     vertex_attrib_id = glGetAttribLocation(program_id, "vertex");
     normal_attrib_id = glGetAttribLocation(program_id, "normal");
@@ -27,7 +28,7 @@ void Diffuse_shader::initialize()
 
 void Diffuse_shader::append_to_geometry(Mesh_geometry& geom, const Mesh& m)
 {
-    GLuint ind = geom.data_array.size();
+    GLuint ind = static_cast<GLuint>(geom.data_array.size());
 
     for(size_t i = 0; i < m.objects.size(); ++i)
     {
@@ -87,12 +88,12 @@ void Diffuse_shader::append_to_geometry(Mesh_geometry& geom, const Mesh& m)
                     }
                 }
 
-                geom.indices.push_back(ind);         // Vertex 1
-                geom.indices.push_back(ind + i + 1); // Vertex 2
-                geom.indices.push_back(ind + i + 2); // Vertex 3
+                geom.indices.push_back(static_cast<GLint>(ind        )); // Vertex 1
+                geom.indices.push_back(static_cast<GLint>(ind + i + 1)); // Vertex 2
+                geom.indices.push_back(static_cast<GLint>(ind + i + 2)); // Vertex 3
             }
 
-            ind += num_verts;
+            ind += static_cast<GLint>(num_verts);
         }
     }
 }
@@ -127,7 +128,10 @@ void Diffuse_shader::draw_geometry(
                           stride,
                           ptr2);
 
-    glDrawElements(GL_TRIANGLES, geom->indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES,
+                   static_cast<GLsizei>(geom->indices.size()),
+                   GL_UNSIGNED_INT,
+                   0);
 
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(normal_attrib_id);

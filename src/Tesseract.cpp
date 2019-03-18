@@ -4,18 +4,16 @@
 // std
 #include <tuple>
 
-using namespace boost::numeric::ublas;
-
 Tesseract::Tesseract(
-    vector<double> origin,
-    vector<double> size,
+    Scene_wireframe_vertex origin,
+    Scene_wireframe_vertex size,
     const Color& x_color,
     const Color& y_color,
     const Color& z_color,
     const Color& w_color)
 {
     vertices_.resize(16);
-    edges_.resize(32);
+    edges_.resize(32, Scene_wireframe_edge(0, 0, Color()));
 
     size_ = size;
 
@@ -33,7 +31,7 @@ Tesseract::Tesseract(
             {
                 for(char w = 0; w < 2; ++w)
                 {
-                    vector<double> v(5);
+                    Scene_wireframe_vertex v(5);
                     v(0) = x == 0 ? origin(0) : origin(0) + size_(0);
                     v(1) = y == 0 ? origin(1) : origin(1) + size_(1);
                     v(2) = z == 0 ? origin(2) : origin(2) + size_(2);
@@ -67,7 +65,7 @@ Tesseract::Tesseract(
     }
 }
 
-boost::numeric::ublas::vector<double> Tesseract::get_size()
+Scene_wireframe_vertex Tesseract::get_size()
 {
     return size_;
 }
@@ -148,7 +146,7 @@ Square Tesseract::get_plain(std::string mask)
         }
     }
 
-    std::vector<boost::numeric::ublas::vector<double>> verts;
+    std::vector<Scene_wireframe_vertex> verts;
     for(char x = std::get<0>(limits[0]); x <= std::get<1>(limits[0]); ++x)
     {
         for(char y = std::get<0>(limits[1]); y <= std::get<1>(limits[1]); ++y)

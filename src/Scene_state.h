@@ -2,6 +2,7 @@
 // local
 #include "Curve.h"
 #include "Curve_selection.h"
+#include "Color.h"
 #include "Tesseract.h"
 // boost
 #include <boost/numeric/ublas/matrix.hpp>
@@ -32,8 +33,8 @@ public:
     glm::quat rotation_3D;
     glm::vec3 camera_3D;
 
-    boost::numeric::ublas::matrix<double> projection_4D;
-    boost::numeric::ublas::vector<double> camera_4D;
+    boost::numeric::ublas::matrix<float> projection_4D;
+    Scene_wireframe_vertex camera_4D;
 
     float xy_rot, yz_rot, zx_rot, xw_rot, yw_rot, zw_rot;
     float fov_y;

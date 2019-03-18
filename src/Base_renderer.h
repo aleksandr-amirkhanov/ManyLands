@@ -10,6 +10,23 @@
 class Base_renderer
 {
 public:
+    struct Renderer_io
+    {
+        Renderer_io()
+            : mouse_pos(0.f, 0.f)
+            , mouse_move(0.f, 0.f)
+            , mouse_down(false)
+            , mouse_wheel(0.f)
+        { }
+
+        glm::vec2 mouse_pos;
+        glm::vec2 mouse_move;
+        bool      mouse_down;
+        bool      mouse_up;
+        bool      mouse_wheel;
+        float     mouse_wheel_y;
+    };
+
     struct Region
     {
     public:
@@ -50,6 +67,14 @@ public:
         {
             return top_ - bottom_;
         }
+        bool contains(glm::vec2 pos)
+        {
+            return contains(pos.x, pos.y);
+        }
+        bool contains(float x, float y)
+        {
+            return (left_ <= x && x <= right_ && bottom_ < y && y < top_);
+        }
 
     private:
         float left_, bottom_, right_, top_;
@@ -62,6 +87,7 @@ public:
                                      float scale_x,
                                      float scale_y);
     virtual void render() = 0;
+    virtual void process_input(const Renderer_io& io) = 0;
 
 protected:
     std::shared_ptr<Scene_state> state_;

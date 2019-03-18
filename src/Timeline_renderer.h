@@ -32,6 +32,12 @@ public:
 
     void set_shader(std::shared_ptr<Screen_shader> screen);
     void render() override;
+    void process_input(const Renderer_io& io) override;
+
+    virtual void set_redering_region(Region region,
+                                     float scale_x,
+                                     float scale_y) override;
+    void set_pictogram_size(float size);
 
 private:
     // Drawing functions
@@ -47,26 +53,34 @@ private:
         std::string dim,
         Curve_stats::Range range);
 
+    void make_selection(const Mouse_selection& s);
     void calculate_switch_points(
         std::vector<float>& out_points,
         const Region& region);
 
     void project_point(
-        boost::numeric::ublas::vector<double>& point,
-        double size,
-        double tesseract_size);
+        Scene_wireframe_vertex& point,
+        float size,
+        float tesseract_size);
     void project_point_array(
-        std::vector<boost::numeric::ublas::vector<double>>& points,
-        double size,
-        double tesseract_size);
+        std::vector<Scene_wireframe_vertex>& points,
+        float size,
+        float tesseract_size);
+
+    void update_regions();
 
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
-    int pictogram_num_;
+    size_t pictogram_num_;
     float pictogram_size_, pictogram_spacing_;
 
     Mouse_selection mouse_selection_;
+    std::unique_ptr<Curve_selection> curve_selection_;
 
     float player_pos_;
+
+    bool track_mouse_;
+
+    Region plot_region_, pictogram_region_;
 };

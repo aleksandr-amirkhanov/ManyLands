@@ -2,13 +2,14 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 
+template<typename T>
 class Matrix_lib
 {
 public:
-    static boost::numeric::ublas::matrix<double>
-    get4DProjectionMatrix(double r, double t, double d, double n, double f)
+    static boost::numeric::ublas::matrix<T>
+    get4DProjectionMatrix(T r, T t, T d, T n, T f)
     {
-        boost::numeric::ublas::matrix<double> projection(5, 5);
+        boost::numeric::ublas::matrix<T> projection(5, 5);
 
         projection(0, 0) = n / r;
         projection(0, 1) = 0;
@@ -43,10 +44,10 @@ public:
         return projection;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    get3DProjectionMatrix(double r, double t, double n, double f)
+    static boost::numeric::ublas::matrix<T>
+    get3DProjectionMatrix(T r, T t, T n, T f)
     {
-        boost::numeric::ublas::matrix<double> projection(4, 4);
+        boost::numeric::ublas::matrix<T> projection(4, 4);
 
         projection(0, 0) = n / r;
         projection(0, 1) = 0;
@@ -71,10 +72,10 @@ public:
         return projection;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getXYRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getXYRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(5, 5);
+        boost::numeric::ublas::matrix<T> rotation(5, 5);
 
         rotation(0, 0) = std::cos(angle);
         rotation(0, 1) = std::sin(angle);
@@ -109,10 +110,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getYZRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getYZRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(5, 5);
+        boost::numeric::ublas::matrix<T> rotation(5, 5);
 
         rotation(0, 0) = 1;
         rotation(0, 1) = 0;
@@ -147,10 +148,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getZXRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getZXRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(5, 5);
+        boost::numeric::ublas::matrix<T> rotation(5, 5);
 
         rotation(0, 0) = std::cos(angle);
         rotation(0, 1) = 0;
@@ -185,10 +186,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getXWRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getXWRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(5, 5);
+        boost::numeric::ublas::matrix<T> rotation(5, 5);
 
         rotation(0, 0) = std::cos(angle);
         rotation(0, 1) = 0;
@@ -223,10 +224,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getYWRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getYWRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(5, 5);
+        boost::numeric::ublas::matrix<T> rotation(5, 5);
 
         rotation(0, 0) = 1;
         rotation(0, 1) = 0;
@@ -261,10 +262,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getZWRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getZWRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(5, 5);
+        boost::numeric::ublas::matrix<T> rotation(5, 5);
 
         rotation(0, 0) = 1;
         rotation(0, 1) = 0;
@@ -299,10 +300,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getXRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getXRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(4, 4);
+        boost::numeric::ublas::matrix<T> rotation(4, 4);
 
         rotation(0, 0) = 1;
         rotation(0, 1) = 0;
@@ -327,10 +328,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getYRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getYRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(4, 4);
+        boost::numeric::ublas::matrix<T> rotation(4, 4);
 
         rotation(0, 0) = std::cos(angle);
         rotation(0, 1) = 0;
@@ -355,10 +356,10 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getZRotationMatrix(double angle)
+    static boost::numeric::ublas::matrix<T>
+    getZRotationMatrix(T angle)
     {
-        boost::numeric::ublas::matrix<double> rotation(4, 4);
+        boost::numeric::ublas::matrix<T> rotation(4, 4);
 
         rotation(0, 0) = std::cos(angle);
         rotation(0, 1) = -std::sin(angle);
@@ -383,23 +384,24 @@ public:
         return rotation;
     }
 
-    static boost::numeric::ublas::matrix<double>
-    getRotationMatrix(double angle, double x, double y, double z)
+    static boost::numeric::ublas::matrix<T>
+    getRotationMatrix(T angle, T x, T y, T z)
     {
-        double c = std::cos(angle);
-        double s = std::sin(angle);
+        T c = std::cos(angle);
+        T s = std::sin(angle);
 
-        boost::numeric::ublas::matrix<double> rotation(4, 4);
+        boost::numeric::ublas::matrix<T> rotation(4, 4);
 
-        double len = double(x) * double(x) + double(y) * double(y) +
-                     double(z) * double(z);
+        T len = static_cast<T>(x) * static_cast<T>(x) +
+                static_cast<T>(y) * static_cast<T>(y) +
+                static_cast<T>(z) * static_cast<T>(z);
 
         len = std::sqrt(len);
         x /= len;
         y /= len;
         z /= len;
 
-        float ic = 1.0 - c;
+        T ic = static_cast<T>(1.0) - c;
         rotation(0, 0) = x * x * ic + c;
         rotation(1, 0) = x * y * ic - z * s;
         rotation(2, 0) = x * z * ic + y * s;
@@ -420,3 +422,5 @@ public:
         return rotation;
     }
 };
+
+typedef Matrix_lib<float> Matrix_lib_f;

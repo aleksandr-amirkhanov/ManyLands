@@ -1,24 +1,39 @@
 #include "Curve.h"
+
+#include "Scene_wireframe_object.h"
+
 // std
 #include <algorithm>
 #include <cmath>
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
 
-void Curve::add_point(Point_type vertex, float time)
+const Color Curve::default_color_ = Color(0, 0, 0, 255);
+
+//******************************************************************************
+// add_point
+//******************************************************************************
+
+void Curve::add_point(Scene_wireframe_vertex vertex, float time)
 {
     // Adding vertex
     get_vertices().push_back(vertex);
 
     // Adding edge
     if(get_vertices().size() > 1)
-        add_edge(get_vertices().size() - 2, get_vertices().size() - 1);
+        add_edge(Scene_wireframe_edge(get_vertices().size() - 2,
+                                      get_vertices().size() - 1,
+                                      default_color_));
 
     // Adding time stamp
     time_stamp_.push_back(time);
 }
 
-boost::numeric::ublas::vector<double> Curve::get_point(float time)
+//******************************************************************************
+// get_point
+//******************************************************************************
+
+Scene_wireframe_vertex Curve::get_point(float time)
 {
     // We assume that points are already sorted by the time stamp value
     if(time <= time_stamp_.front())
@@ -33,7 +48,7 @@ boost::numeric::ublas::vector<double> Curve::get_point(float time)
 
     while(range[1] - range[0] > 1)
     {
-        size_t middle = 0.5 * (range[1] + range[0]);
+        size_t middle = static_cast<size_t>(0.5f * (range[1] + range[0]));
         if(time_stamp_[middle] > time)
             range[1] = middle;
         else
@@ -47,25 +62,37 @@ boost::numeric::ublas::vector<double> Curve::get_point(float time)
            coeff * (get_vertices()[range[1]] - get_vertices()[range[0]]);
 }
 
+//******************************************************************************
+// get_time_stamp
+//******************************************************************************
+
 const std::vector<float>& Curve::get_time_stamp() const
 {
     return time_stamp_;
 }
 
-void Curve::shift_to_origin(double max_edge_length, Point_type& out_shift)
+//******************************************************************************
+// shift_to_origin
+//******************************************************************************
+
+void Curve::shift_to_origin(float max_edge_length, Scene_wireframe_vertex& out_shift)
 {
-    boost::numeric::ublas::vector<double> origin(5);
-    boost::numeric::ublas::vector<double> size(5);
+    Scene_wireframe_vertex origin(5);
+    Scene_wireframe_vertex size(5);
     get_boundaries(origin, size);
 
     translate_vertices(-0.5f * size - origin);
 }
 
-void Curve::get_boundaries(Point_type& origin, Point_type& size) const
+//******************************************************************************
+// get_boundaries
+//******************************************************************************
+
+void Curve::get_boundaries(Scene_wireframe_vertex& origin, Scene_wireframe_vertex& size) const
 {
     // Finding minimum and maximum values of the curve
-    boost::numeric::ublas::vector<double> min(5);
-    boost::numeric::ublas::vector<double> max(5);
+    Scene_wireframe_vertex min(5);
+    Scene_wireframe_vertex max(5);
 
     if(vertices().size() > 0)
     {
@@ -89,7 +116,11 @@ void Curve::get_boundaries(Point_type& origin, Point_type& size) const
     size = max - min;
 }
 
-Curve Curve::get_simpified_curve(const double spacing)
+//******************************************************************************
+// get_simpified_curve
+//******************************************************************************
+
+Curve Curve::get_simpified_curve(const float spacing)
 {
     Curve simplified_curve;
 
@@ -99,11 +130,11 @@ Curve Curve::get_simpified_curve(const double spacing)
         simplified_curve.add_point(get_vertices()[0], get_time_stamp()[0]);
 
     // Ading points that are the the minimum distance from each other
-    double dist = 0; // Distance from the last point of the simplified curve
+    float dist = 0.f; // Distance from the last point of the simplified curve
     for(size_t i = 1; i < num_verts - 1; ++i)
     {
-        auto get_distance = [](boost::numeric::ublas::vector<double> v1,
-                               boost::numeric::ublas::vector<double> v2) {
+        auto get_distance = [](Scene_wireframe_vertex v1,
+                               Scene_wireframe_vertex v2) {
             auto d = v2 - v1;
             return std::sqrt(
                 d(0) * d(0) + d(1) * d(1) + d(2) * d(2) + d(3) * d(3));
@@ -133,21 +164,33 @@ Curve Curve::get_simpified_curve(const double spacing)
     return simplified_curve;
 }
 
+//******************************************************************************
+// update_stats
+//******************************************************************************
+
 void Curve::update_stats()
 {
     calculate_general_stats();
     calculate_annotations();
 }
 
+//******************************************************************************
+// get_stats
+//******************************************************************************
+
 const Curve_stats& Curve::get_stats()
 {
     return stats_;
 }
 
+//******************************************************************************
+// calculate_general_stats
+//******************************************************************************
+
 void Curve::calculate_general_stats()
 {
-    double kernel_size = 10.;
-    double epsilon = 10;
+    float kernel_size = 10.f;
+    float epsilon = 10.f;
 
     stats_ = Curve_stats();
 
@@ -157,15 +200,15 @@ void Curve::calculate_general_stats()
     for(auto& d : stats_.dimensionality)
         d = "xyzw";
 
-    double min_speed = std::numeric_limits<double>::max();
-    double max_speed = std::numeric_limits<double>::min();
+    auto min_speed = std::numeric_limits<float>::max();
+    auto max_speed = std::numeric_limits<float>::min();
 
     // Calculate speed
     for(const auto& e : edges_)
     {
         auto diff = vertices_[e.vert1] - vertices_[e.vert2];
 
-        double s = 0.;
+        auto s = 0.f;
         for(int j = 0; j < 4; ++j)
             s += diff(j) * diff(j);
         s = std::sqrt(s) /
@@ -182,8 +225,8 @@ void Curve::calculate_general_stats()
     stats_.max_speed = max_speed;
 
     // Find how many dimension curve segments have
-    boost::numeric::ublas::vector<double> min(5), max(5);
-    double start_t = 0., end_t = 0.;
+    Scene_wireframe_vertex min(5), max(5);
+    float start_t = 0.f, end_t = 0.f;
     for(size_t i = 0; i < time_stamp_.size(); ++i)
     {
         start_t = time_stamp_[i];
@@ -235,25 +278,17 @@ void Curve::calculate_general_stats()
         Curve_stats::Range r;
         for(size_t i = ind1; i < ind2; ++i)
         {
-            std::get<0>(r.x) =
-                std::min((double)std::get<0>(r.x), vertices_[i](0));
-            std::get<1>(r.x) =
-                std::max((double)std::get<0>(r.x), vertices_[i](0));
+            std::get<0>(r.x) = std::min(std::get<0>(r.x), vertices_[i](0));
+            std::get<1>(r.x) = std::max(std::get<0>(r.x), vertices_[i](0));
 
-            std::get<0>(r.y) =
-                std::min((double)std::get<0>(r.y), vertices_[i](1));
-            std::get<1>(r.y) =
-                std::max((double)std::get<0>(r.y), vertices_[i](1));
+            std::get<0>(r.y) = std::min(std::get<0>(r.y), vertices_[i](1));
+            std::get<1>(r.y) = std::max(std::get<0>(r.y), vertices_[i](1));
 
-            std::get<0>(r.z) =
-                std::min((double)std::get<0>(r.z), vertices_[i](2));
-            std::get<1>(r.z) =
-                std::max((double)std::get<0>(r.z), vertices_[i](2));
+            std::get<0>(r.z) = std::min(std::get<0>(r.z), vertices_[i](2));
+            std::get<1>(r.z) = std::max(std::get<0>(r.z), vertices_[i](2));
 
-            std::get<0>(r.w) =
-                std::min((double)std::get<0>(r.w), vertices_[i](3));
-            std::get<1>(r.w) =
-                std::max((double)std::get<0>(r.w), vertices_[i](3));
+            std::get<0>(r.w) = std::min(std::get<0>(r.w), vertices_[i](3));
+            std::get<1>(r.w) = std::max(std::get<0>(r.w), vertices_[i](3));
         }
         stats_.range.push_back(r);
     };
@@ -268,26 +303,30 @@ void Curve::calculate_general_stats()
         compute_range(stats_.switches_inds.back(), vertices_.size());
 }
 
+//******************************************************************************
+// calculate_annotations
+//******************************************************************************
+
 void Curve::calculate_annotations()
 {
     arrows_.clear();
     markers_.clear();
 
     auto make_center_point = [&](size_t start, size_t end, std::string dim) {
-        const double epsilon = 0.2;
+        const float epsilon = 0.2f;
 
-        Point_type center_pnt(5);
+        Scene_wireframe_vertex center_pnt(5);
         center_pnt <<= 0, 0, 0, 0, 0;
 
-        double start_t = time_stamp_[start];
-        double end_t = time_stamp_[end];
+        auto start_t = time_stamp_[start];
+        auto end_t = time_stamp_[end];
 
-        double avrg_t = 0.5 * (start_t + end_t);
+        auto avrg_t = 0.5f * (start_t + end_t);
 
-        Point_type current_point = get_point(avrg_t);
-        Point_type dir = get_point(avrg_t + epsilon);
+        Scene_wireframe_vertex current_point = get_point(avrg_t);
+        Scene_wireframe_vertex dir = get_point(avrg_t + epsilon);
 
-        Arrow_type a(avrg_t, dim.length());
+        Arrow_type a(avrg_t, static_cast<int>(dim.length()));
         arrows_.push_back(a);
     };
 
@@ -334,6 +373,10 @@ void Curve::calculate_annotations()
     out_arrows = annotations;*/
 }
 
+//******************************************************************************
+// get_arrows
+//******************************************************************************
+
 std::vector<Curve_annotations>
 Curve::get_arrows(const Curve_selection& selection)
 {
@@ -347,7 +390,7 @@ Curve::get_arrows(const Curve_selection& selection)
 
         Curve_annotations annotation;
         annotation.point = get_point(t);
-        annotation.dir = get_point(t + 0.01);
+        annotation.dir = get_point(t + 0.01f);
         annotation.dimensionality = a.get<1>();
 
         annotations.push_back(annotation);
@@ -356,10 +399,14 @@ Curve::get_arrows(const Curve_selection& selection)
     return annotations;
 }
 
-std::vector<Curve::Point_type>
+//******************************************************************************
+// get_markers
+//******************************************************************************
+
+std::vector<Scene_wireframe_vertex>
 Curve::get_markers(const Curve_selection& selection)
 {
-    std::vector<Point_type> res;
+    std::vector<Scene_wireframe_vertex> res;
 
     for(auto& m : markers_)
     {
@@ -368,4 +415,42 @@ Curve::get_markers(const Curve_selection& selection)
     }
 
     return res;
+}
+
+//******************************************************************************
+// translate_vertices
+//******************************************************************************
+
+void Curve::translate_vertices(const Scene_wireframe_vertex& translate)
+{
+    for(auto& v : vertices_)
+        v += translate;
+}
+
+//******************************************************************************
+// scale_vertices
+//******************************************************************************
+
+void Curve::scale_vertices(float scale_factor)
+{
+    for(auto& v : vertices_)
+        v *= scale_factor;
+}
+
+//******************************************************************************
+// scale_vertices
+//******************************************************************************
+
+void Curve::scale_vertices(const Scene_wireframe_vertex& scale_factor)
+{
+    for(auto& v : vertices_)
+    {
+        assert(v.size() == scale_factor.size());
+
+        if(v.size() == scale_factor.size())
+        {
+            for(int i = 0; i < v.size(); i++)
+                v[i] *= scale_factor[i];
+        }
+    }
 }

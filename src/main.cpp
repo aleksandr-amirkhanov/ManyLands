@@ -83,8 +83,8 @@ const bool Enable_keyboard = false,   // Controllers
 
 const float App_scale = 1.f;          // Global app scale
 
-const int Bottom_panel_size = 36 * App_scale;
-int Left_panel_size = 300 * App_scale;
+const int Bottom_panel_size = static_cast<int>(36 * App_scale);
+int Left_panel_size = static_cast<int>(300 * App_scale);
 
 const std::shared_ptr<Scene_state> State = std::make_shared<Scene_state>();
 Scene_renderer Renderer(State);
@@ -97,13 +97,16 @@ const std::shared_ptr<Screen_shader> Screen_shad =
 
 Scene Scene_objs(State);
 
+Base_renderer::Region Scene_region, Timeline_region;
+Base_renderer::Renderer_io Previous_io;
+
 //******************************************************************************
 // Color_to_ImVec4
 //******************************************************************************
 
 ImVec4 Color_to_ImVec4(Color c)
 {
-    return ImVec4(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
+    return ImVec4(c.r_norm(), c.g_norm(), c.b_norm(), c.a_norm());
 }
 
 //******************************************************************************
@@ -137,6 +140,33 @@ void set_dark_theme()
 }
 
 //******************************************************************************
+// process_mouse_input
+//******************************************************************************
+
+void process_mouse_input(const SDL_Event& event)
+{
+    int height = (int)ImGui::GetIO().DisplaySize.y;
+    int mouse_x, mouse_y;
+    SDL_GetMouseState(&mouse_x, &mouse_y);
+    mouse_y = height - mouse_y;
+
+    Base_renderer::Renderer_io io;
+    io.mouse_pos  = glm::vec2(mouse_x, mouse_y);
+    io.mouse_move = glm::vec2(io.mouse_pos.x - Previous_io.mouse_pos.x,
+                              io.mouse_pos.y - Previous_io.mouse_pos.y);
+    io.mouse_down = (event.button.button == SDL_BUTTON_LEFT &&
+                     event.type == SDL_MOUSEBUTTONDOWN);
+    io.mouse_up = (event.type == SDL_MOUSEBUTTONUP);
+    io.mouse_wheel = (event.type == SDL_MOUSEWHEEL);
+    io.mouse_wheel_y = static_cast<float>(event.wheel.y);
+
+    Renderer.process_input(io);
+    Timeline.process_input(io);
+
+    Previous_io = io;
+}
+
+//******************************************************************************
 // mainloop
 //******************************************************************************
 
@@ -161,23 +191,7 @@ void mainloop()
 
         if(!io.WantCaptureMouse)
         {
-            if(   event.type == SDL_MOUSEMOTION
-               && event.button.button == SDL_BUTTON_LEFT)
-            {
-                //event.motion.xrel
-                glm::vec3 axis(event.motion.yrel, event.motion.xrel, 0.f);
-                float length = glm::length(axis);
-                State->rotation_3D =
-                    glm::angleAxis(
-                        glm::radians(0.25f * length),
-                        glm::normalize(axis)) *
-                    State->rotation_3D;
-            }
-
-            if(event.type == SDL_MOUSEWHEEL)
-            {
-                State->camera_3D.z += event.wheel.y * 0.3f;
-            }
+            process_mouse_input(event);
         }
     }
 
@@ -186,10 +200,13 @@ void mainloop()
     ImGui_ImplSDL2_NewFrame(Window);
     ImGui::NewFrame();
 
-    static float fov_y = 45.f * DEG_TO_RAD;
+    static float fov_y = 45.f * static_cast<float>(DEG_TO_RAD);
 
     int width = (int)io.DisplaySize.x;
     int height = (int)io.DisplaySize.y;
+
+    static float timeline_height = 200.f,
+                 pictograms_size = 30.f;
 
     // ImGui windows start
     {
@@ -204,14 +221,18 @@ void mainloop()
                      xw_rot = 0.f,
                      yw_rot = 0.f,
                      zw_rot = 0.f,
-                     fov_4d[3] = { 30.f * DEG_TO_RAD,
-                                   30.f * DEG_TO_RAD,
-                                   30.f * DEG_TO_RAD };
+                     fov_4d[3] = { 30.f * static_cast<float>(DEG_TO_RAD),
+                                   30.f * static_cast<float>(DEG_TO_RAD),
+                                   30.f * static_cast<float>(DEG_TO_RAD) },
+                     fog_dist = 10.f,
+                     fog_range = 2.f;
 
-        ImGui::SetNextWindowSize(ImVec2(Left_panel_size, height));
+        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
+                                        static_cast<float>(height)));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSizeConstraints(
-            ImVec2(0, height), ImVec2(FLT_MAX, height));
+            ImVec2(0.f, static_cast<float>(height)),
+            ImVec2(FLT_MAX, static_cast<float>(height)));
 
         ImGui::Begin(
             "Control panel",
@@ -278,6 +299,10 @@ void mainloop()
                 "Curve##thickness", &curve_thickness, 0.1f, 10.0f);
             ImGui::SliderFloat(
                 "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
+            ImGui::SliderFloat(
+                "Timeline", &timeline_height, 10.f, 1000.0f);
+            ImGui::SliderFloat(
+                "Pictograms", &pictograms_size, 10.f, 100.0f);
 
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
@@ -291,6 +316,9 @@ void mainloop()
             ImGui::ColorEdit3(
                 "Curve fast", (float*)&High_speed_color
             );
+
+            ImGui::SliderFloat("Fog distance", &fog_dist,  0.1f, 10.f);
+            ImGui::SliderFloat("Fog range",    &fog_range, 0.1f, 10.f);
         }
 
         if (ImGui::CollapsingHeader("4D projection",
@@ -319,7 +347,7 @@ void mainloop()
             ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Basics:");
-            const float dist_min = 1.f, dist_max = 20.f;
+            const float dist_min = 0.5f, dist_max = 5.f;
             camera_3D_dist = std::clamp((float)(-State->camera_3D.z),
                                         dist_min,
                                         dist_max);
@@ -356,13 +384,15 @@ void mainloop()
             State->fov_y = fov_y;
         }
 
-        Left_panel_size = ImGui::GetWindowSize().x;
+        Left_panel_size = static_cast<int>(ImGui::GetWindowSize().x);
         ImGui::End();
 
-        ImGui::SetNextWindowSize(ImVec2(width - Left_panel_size,
-                                 Bottom_panel_size));
-        ImGui::SetNextWindowPos(ImVec2(Left_panel_size,
-                                height - Bottom_panel_size));
+        ImGui::SetNextWindowSize(
+            ImVec2(static_cast<float>(width - Left_panel_size),
+                   static_cast<float>(Bottom_panel_size)));
+        ImGui::SetNextWindowPos(
+            ImVec2(static_cast<float>(Left_panel_size),
+                   static_cast<float>(height - Bottom_panel_size)));
         static float animation = 0.f;
         ImGui::Begin(
             "##animation",
@@ -375,8 +405,8 @@ void mainloop()
 
         State->camera_3D.z = -camera_3D_dist;
 
-        State->projection_4D = Matrix_lib::get4DProjectionMatrix(
-            fov_4d[0], fov_4d[1], fov_4d[2], 1, 10);
+        State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(
+            fov_4d[0], fov_4d[1], fov_4d[2], 1.f, 10.f);
 
         State->xy_rot = xy_rot;
         State->yz_rot = yz_rot;
@@ -387,7 +417,10 @@ void mainloop()
 
         // Helper lambda expression
         auto ImVec4_to_Color = [](ImVec4 v) {
-            return Color(v.x * 255, v.y * 255, v.z * 255, v.w * 255);
+            return Color(static_cast<int>(v.x * 255),
+                         static_cast<int>(v.y * 255),
+                         static_cast<int>(v.z * 255),
+                         static_cast<int>(v.w * 255));
         };
 
         State->update_color(Background,       ImVec4_to_Color(Clear_color));
@@ -409,6 +442,7 @@ void mainloop()
 
         Renderer.set_line_thickness(tesseract_thickness, curve_thickness);
         Renderer.set_sphere_diameter(sphere_diameter);
+        Renderer.set_fog(fog_dist, fog_range);
     } // ImGui windows end
 
     // Rendering
@@ -419,30 +453,50 @@ void mainloop()
         0,
         static_cast<int>(io.DisplayFramebufferScale.x * io.DisplaySize.x),
         static_cast<int>(io.DisplayFramebufferScale.y * io.DisplaySize.y));
-    glClearColor(State->get_color(Background).r / 255.f,
-                 State->get_color(Background).g / 255.f,
-                 State->get_color(Background).b / 255.f,
-                 State->get_color(Background).a / 255.f);
+    glClearColor(State->get_color(Background).r_norm(),
+                 State->get_color(Background).g_norm(),
+                 State->get_color(Background).b_norm(),
+                 State->get_color(Background).a_norm());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    int timeline_height =
-        static_cast<int>(static_cast<float>(height - Bottom_panel_size) * 0.4f);
-    Base_renderer::Region timeline_reg(Left_panel_size,
-                                       Bottom_panel_size,
-                                       width,
-                                       timeline_height);
-    Base_renderer::Region scene_reg(Left_panel_size,
-                                    Bottom_panel_size + timeline_height,
-                                    width,
-                                    height);
+    Timeline_region = Base_renderer::Region(
+        static_cast<float>(Left_panel_size),
+        static_cast<float>(Bottom_panel_size),
+        static_cast<float>(width),
+        static_cast<float>(timeline_height));
+    Scene_region = Base_renderer::Region(
+        static_cast<float>(Left_panel_size),
+        static_cast<float>(Bottom_panel_size + timeline_height),
+        static_cast<float>(width),
+        static_cast<float>(height));
 
-    Renderer.set_redering_region(scene_reg,
+    Renderer.set_redering_region(Scene_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
-    Timeline.set_redering_region(timeline_reg,
+    Timeline.set_redering_region(Timeline_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
+
+    Timeline.set_pictogram_size(pictograms_size);
+
+    glm::mat4 proj_ortho = glm::ortho(0.f,
+                                      static_cast<float>(width),
+                                      0.f,
+                                      static_cast<float>(height));
+    glUniformMatrix4fv(Screen_shad->proj_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(proj_ortho));
+    Screen_shader::Screen_geometry separator;
+    Screen_shader::Line_strip line;
+    line.emplace_back(Screen_shader::Line_point(glm::vec2(Left_panel_size, timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    line.emplace_back(Screen_shader::Line_point(glm::vec2(width,           timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    Screen_shad->append_to_geometry(separator, line);
+    
+
+    separator.init_buffers();
+    Screen_shad->draw_geometry(separator);
 
     Renderer.render();
     Timeline.render();

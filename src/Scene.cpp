@@ -7,11 +7,8 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
 
-using namespace boost::numeric::ublas;
-
 Scene::Scene(std::shared_ptr<Scene_state> state)
-    : tesseract_size(200.)
-    , state_(state)
+    : state_(state)
 {
 }
 
@@ -53,23 +50,23 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
         if(vals.size() == 5)
         {
             size_t size = vals.size();
-            double t = std::stod(vals[0]);
-            vector<double> p(5);
-            p <<= std::stod(vals[1]), std::stod(vals[2]), std::stod(vals[3]),
-                std::stod(vals[4]), 1;
+            float t = std::stof(vals[0]);
+            Scene_wireframe_vertex p(5);
+            p <<= std::stof(vals[1]), std::stof(vals[2]), std::stof(vals[3]),
+                std::stof(vals[4]), 1;
 
             curve->add_point(p, t);
         }
     }
 
-    boost::numeric::ublas::vector<double> shift;
-    curve->shift_to_origin(tesseract_size, shift);
+    Scene_wireframe_vertex shift;
+    curve->shift_to_origin(state_->tesseract_size[0], shift);
 
     auto longest_axis_length = [](Curve* c) {
-        boost::numeric::ublas::vector<double> origin, size;
+        Scene_wireframe_vertex origin, size;
         c->get_boundaries(origin, size);
 
-        double max_size = size[0];
+        float max_size = size[0];
         for(int i = 1; i < 4; ++i)
             if(size[i] > max_size)
                 max_size = size[i];
@@ -77,25 +74,25 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
         return max_size;
     };
 
-    boost::numeric::ublas::vector<double> origin, size;
+    Scene_wireframe_vertex origin, size;
     curve->get_boundaries(origin, size);
 
     const int tesseract_scale_mode = 1;
     if(tesseract_scale_mode == 0)
     {
-        double max_size = longest_axis_length(curve.get());
-        curve->scale_vertices(tesseract_size / max_size);
+        auto max_size = longest_axis_length(curve.get());
+        curve->scale_vertices(state_->tesseract_size[0] / max_size);
     }
     else if(tesseract_scale_mode == 1)
     {
-        boost::numeric::ublas::vector<double> scale(5);
-        scale[0] = tesseract_size / size[0];
-        scale[1] = tesseract_size / size[1];
-        scale[2] = tesseract_size / size[2];
-        scale[3] = tesseract_size / size[3];
+        Scene_wireframe_vertex scale(5);
+        scale[0] = state_->tesseract_size[0] / size[0];
+        scale[1] = state_->tesseract_size[0] / size[1];
+        scale[2] = state_->tesseract_size[0] / size[2];
+        scale[3] = state_->tesseract_size[0] / size[3];
         scale[4] = 1;
         curve->scale_vertices(scale);
-        curve->shift_to_origin(tesseract_size, shift);
+        curve->shift_to_origin(state_->tesseract_size[0], shift);
     }
 
     // Save curve origin and size to the class members
@@ -126,16 +123,15 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     return curve;
 }
 
-void Scene::create_tesseract(
-    boost::numeric::ublas::vector<double> shift,
-    const Curve& curve)
+void Scene::create_tesseract(Scene_wireframe_vertex shift,
+                             const Curve& curve)
 {
     assert(state_);
     if(state_ == nullptr)
         return;
 
-    vector<double> origin(4);
-    vector<double> size(4);
+    Scene_wireframe_vertex origin(4);
+    Scene_wireframe_vertex size(4);
     curve.get_boundaries(origin, size);
 
     state_->tesseract = std::make_unique<Tesseract>(
@@ -144,5 +140,5 @@ void Scene::create_tesseract(
         state_->get_color(X_axis),
         state_->get_color(Y_axis),
         state_->get_color(Z_axis),
-        state_->get_color(W_axis) );
+        state_->get_color(W_axis));
 }
