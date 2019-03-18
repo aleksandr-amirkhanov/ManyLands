@@ -56,7 +56,7 @@ endif()
 
 if(EMSCRIPTEN)
     # Emscripten
-    target_link_libraries(ManyLands "-s USE_SDL=2 -s FULL_ES3=1 -s USE_WEBGL2=1 -o ManyLands.html")
+    target_link_libraries(ManyLands "-s USE_SDL=2 -s FULL_ES3=1 -s USE_WEBGL2=1 -o ManyLands.html --shell-file assets/shell_minimal.html")
     set_target_properties(ManyLands PROPERTIES COMPILE_FLAGS "-s USE_SDL=2 -s FULL_ES3=1 -s USE_WEBGL2=1")
     set_target_properties(ManyLands PROPERTIES LINK_FLAGS "-s ALLOW_MEMORY_GROWTH=1 -s BINARYEN_TRAP_MODE='clamp' --preload-file assets")
 else()
