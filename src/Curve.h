@@ -18,9 +18,17 @@ public:
 
     void add_point(Scene_wireframe_vertex vertex, float time);
     Scene_wireframe_vertex get_point(float time);
-    const std::vector<float>& get_time_stamp() const;
-    void shift_to_origin(float max_edge_length, Scene_wireframe_vertex& out_shift);
-    void get_boundaries(Scene_wireframe_vertex& origin, Scene_wireframe_vertex& size) const;
+
+    // Timestamp-related functions
+    const std::vector<float>& time_stamp() const;
+    float t_min() const;
+    float t_max() const;
+    float t_duration() const;
+
+    void shift_to_origin(float max_edge_length,
+                         Scene_wireframe_vertex& out_shift);
+    void get_boundaries(Scene_wireframe_vertex& origin,
+                        Scene_wireframe_vertex& size) const;
     Curve get_simpified_curve(const float spacing);
 
     void update_stats();
@@ -42,7 +50,7 @@ private:
 
     // Annotations
     std::vector<Arrow_type> arrows_;
-    std::vector<size_t> markers_;
+    std::vector<size_t>     markers_;
 
     const static Color default_color_;
 };

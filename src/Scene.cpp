@@ -101,10 +101,10 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
 
     // Set selection
     state_->curve_selection = std::make_unique<Curve_selection>();
-    state_->curve_selection->t_start = curve->get_time_stamp().front();
-    state_->curve_selection->t_end = curve->get_time_stamp().back();
+    state_->curve_selection->t_start = curve->t_min();
+    state_->curve_selection->t_end = curve->t_max();
 
-    if(curve->get_time_stamp().size() > 2)
+    if(curve->time_stamp().size() > 2)
     {
         // Set UI
         float min = state_->curve_selection->t_start;

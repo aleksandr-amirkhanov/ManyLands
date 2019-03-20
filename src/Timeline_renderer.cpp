@@ -74,11 +74,7 @@ void Timeline_renderer::render()
     draw_switches(plot_region_);
     draw_marker(plot_region_);
 
-    if(mouse_selection_.is_active)
-        draw_selection(plot_region_, mouse_selection_);
-
-
-
+    draw_selection(plot_region_, mouse_selection_);
 
     if(state_->curve->get_stats().switches_inds.size() > 0)
     {
@@ -112,9 +108,9 @@ void Timeline_renderer::render()
             Curve_stats::Range range = state_->curve->get_stats().range[i];
             if(i == 0)
             {
-                selection.t_start = state_->curve->get_time_stamp().front();
+                selection.t_start = state_->curve->t_min();
                 selection.t_end =
-                    state_->curve->get_time_stamp()[state_->curve->get_stats()
+                    state_->curve->time_stamp()[state_->curve->get_stats()
                                                  .switches_inds[i]];
 
                 dim = state_->curve->get_stats().dimensionality.front();
@@ -123,8 +119,8 @@ void Timeline_renderer::render()
             {
                 size_t ind = state_->curve->get_stats().switches_inds[i - 1];
 
-                selection.t_start = state_->curve->get_time_stamp()[ind];
-                selection.t_end = state_->curve->get_time_stamp().back();
+                selection.t_start = state_->curve->time_stamp()[ind];
+                selection.t_end = state_->curve->t_max();
 
                 dim = state_->curve->get_stats().dimensionality[ind];
             }
@@ -132,9 +128,9 @@ void Timeline_renderer::render()
             {
                 size_t ind = state_->curve->get_stats().switches_inds[i - 1];
 
-                selection.t_start = state_->curve->get_time_stamp()[ind];
+                selection.t_start = state_->curve->time_stamp()[ind];
                 selection.t_end =
-                    state_->curve->get_time_stamp()[state_->curve->get_stats()
+                    state_->curve->time_stamp()[state_->curve->get_stats()
                                                  .switches_inds[i]];
 
                 dim = state_->curve->get_stats().dimensionality[ind];
@@ -259,8 +255,8 @@ void Timeline_renderer::draw_axes(const Region& region)
     draw_line(glm::vec2(region.left(),  region.bottom()),
               glm::vec2(region.left(),  region.top()));
 
-    const float t_min = state_->curve->get_time_stamp().front();
-    const float t_max = state_->curve->get_time_stamp().back();
+    const float t_min = state_->curve->t_min();
+    const float t_max = state_->curve->t_max();
     const float t_durr = t_max - t_min;
 
     float dist = region.width() / num_section;
@@ -299,8 +295,8 @@ void Timeline_renderer::draw_axes(const Region& region)
 
 void Timeline_renderer::draw_curve(const Region& region)
 {
-    const float t_min = state_->simple_curve->get_time_stamp().front();
-    const float t_max = state_->simple_curve->get_time_stamp().back();
+    const float t_min = state_->simple_curve->t_min();
+    const float t_max = state_->simple_curve->t_max();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
@@ -316,14 +312,14 @@ void Timeline_renderer::draw_curve(const Region& region)
         Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
-        const float t_min  = state_->simple_curve->get_time_stamp().front();
+        const float t_min  = state_->simple_curve->t_min();
 
         const float min_delta_t = width * t_duration / region.width();
         float prev_t = -min_delta_t;
 
         for(size_t i = 0; i < state_->simple_curve->get_vertices().size(); i++)
         {
-            const float t_curr = state_->simple_curve->get_time_stamp()[i];
+            const float t_curr = state_->simple_curve->time_stamp()[i];
             if(t_curr < prev_t + min_delta_t)
                 continue;
 
@@ -363,13 +359,17 @@ void Timeline_renderer::draw_curve(const Region& region)
     };
 
     std::vector<glm::vec4> colors;
-    colors.emplace_back(glm::vec4(0.84f, 0.10f, 0.11f, 1.00f)); // #d7191c X-axis
-    colors.emplace_back(glm::vec4(0.99f, 0.68f, 0.38f, 1.00f)); // #fdae61 Y-axis
-    colors.emplace_back(glm::vec4(0.67f, 0.85f, 0.91f, 1.00f)); // #abd9e9 Z-axis
-    colors.emplace_back(glm::vec4(0.17f, 0.48f, 0.71f, 1.00f)); // #2c7bb6 W-axis
+    // #d7191c X-axis
+    colors.emplace_back(glm::vec4(0.84f, 0.10f, 0.11f, 1.00f));
+    // #fdae61 Y-axis
+    colors.emplace_back(glm::vec4(0.99f, 0.68f, 0.38f, 1.00f));
+    // #abd9e9 Z-axis
+    colors.emplace_back(glm::vec4(0.67f, 0.85f, 0.91f, 1.00f));
+    // #2c7bb6 W-axis
+    colors.emplace_back(glm::vec4(0.17f, 0.48f, 0.71f, 1.00f));
 
     //QPen defocused = pen;
-    glm::vec4 defocused = glm::vec4(0.8f, 0.8f, 0.8f, 1.f); // #cccccc
+    glm::vec4 defocused = glm::vec4(0.9f, 0.9f, 0.9f, 1.f);
 
     for(size_t i = 0; i < 4; ++i)
     {
@@ -418,8 +418,8 @@ void Timeline_renderer::draw_marker(const Region& region)
     const float width = 1.f;
     const glm::vec4 color(1.f, 0.f, 0.f, 1.f);
     
-    float norm_pos = player_pos_ / (state_->curve->get_time_stamp().back() -
-                                    state_->curve->get_time_stamp().front());
+    float norm_pos = player_pos_ / (state_->curve->t_max() -
+                                    state_->curve->t_min());
 
     float x_pos = region.left() + norm_pos * region.width();
 
@@ -438,16 +438,47 @@ void Timeline_renderer::draw_marker(const Region& region)
 void Timeline_renderer::draw_selection(const Region& region,
                                        const Mouse_selection& s)
 {
-    float left = std::clamp(s.start_pnt.x, region.left(), region.right());
-    float right = std::clamp(s.end_pnt.x, region.left(), region.right());
+    if(mouse_selection_.is_active)
+    {   
+        float left  = std::clamp(s.start_pnt.x, region.left(), region.right()),
+              right = std::clamp(s.end_pnt.x,   region.left(), region.right());
 
-    Screen_shader::Rectangle rect(left,
-                                  region.bottom(),
-                                  right,
-                                  region.top(),
-                                  glm::vec4(0.f, 0.68f, 0.94f, 0.20f));
+        Screen_shader::Rectangle rect(left,
+                                      region.bottom(),
+                                      right,
+                                      region.top(),
+                                      glm::vec4(0.f, 0.68f, 0.94f, 0.20f));
 
-    screen_shader_->append_to_geometry(*screen_geom_, rect);
+        screen_shader_->append_to_geometry(*screen_geom_, rect);
+    }
+    else
+    {
+        auto width_ratio = (region.right() - region.left()) /
+            state_->curve->t_duration();
+        auto left = region.left() +
+            state_->curve_selection->t_start * width_ratio;
+        auto right = region.left() +
+            state_->curve_selection->t_end   * width_ratio;
+
+        const glm::vec4 background = glm::vec4(0.f, 0.f, 0.f, 0.07f);
+
+        Screen_shader::Rectangle lrect(
+            region.left(),
+            region.bottom(),
+            left,
+            region.top(),
+            background);
+
+        Screen_shader::Rectangle rrect(
+            right,
+            region.bottom(),
+            region.right(),
+            region.top(),
+            background);
+
+        screen_shader_->append_to_geometry(*screen_geom_, lrect);
+        screen_shader_->append_to_geometry(*screen_geom_, rrect);
+    }
 }
 
 //******************************************************************************
@@ -526,8 +557,8 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
                 const auto& v1 = curve.vertices()[e.vert1];
                 const auto& v2 = curve.vertices()[e.vert2];
 
-                float t1 = curve.get_time_stamp()[e.vert1];
-                float t2 = curve.get_time_stamp()[e.vert2];
+                float t1 = curve.time_stamp()[e.vert1];
+                float t2 = curve.time_stamp()[e.vert2];
 
                 if(seleciton.in_range(t1) && seleciton.in_range(t2))
                 {
@@ -550,7 +581,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         for(auto& e : curve.edges())
         {
             const auto& v1 = curve.vertices()[e.vert1];
-            float t = curve.get_time_stamp()[e.vert1];
+            float t = curve.time_stamp()[e.vert1];
             if(seleciton.in_range(t))
             {
                 speed = std::max(speed, curve.get_stats().speed[e.vert1]);
@@ -655,23 +686,36 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     if(cube)
     {
         // Draw a cube
-        project_point_array(cube->get_vertices(), size, state_->tesseract_size[0]);
+        project_point_array(
+            cube->get_vertices(),
+            size,
+            state_->tesseract_size[0]);
         fill_wireframe_obj(*cube.get(), get_curve_speed(*state_->curve.get()));
         // draw_wireframe_obj(*cube.get());
     }
     else if(square)
     {
         // Draw a plain
-        project_point_array(square->get_vertices(), size, state_->tesseract_size[0]);
-        fill_wireframe_obj(*square.get(), get_curve_speed(*state_->curve.get()));
+        project_point_array(
+            square->get_vertices(),
+            size,
+            state_->tesseract_size[0]);
+        fill_wireframe_obj(
+            *square.get(),
+            get_curve_speed(*state_->curve.get()));
         // draw_wireframe_obj(*square.get());
     }
 
     if(tesseract)
     {
         // Draw a tesseract
-        project_point_array(tesseract->get_vertices(), size, state_->tesseract_size[0]);
-        fill_wireframe_obj(*tesseract.get(), get_curve_speed(*state_->curve.get()));
+        project_point_array(
+            tesseract->get_vertices(),
+            size,
+            state_->tesseract_size[0]);
+        fill_wireframe_obj(
+            *tesseract.get(),
+            get_curve_speed(*state_->curve.get()));
         // draw_wireframe_obj(*tesseract.get());
     }
 
@@ -698,15 +742,20 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
 
 void Timeline_renderer::make_selection(const Mouse_selection& s)
 {
+    const float mouse_epsilon = 3.5f;
+
     if(state_->curve == nullptr)
         return;
 
-    if(s.start_pnt == s.end_pnt)
+    // Measuring the distance between start and the end point is helpful for
+    // selecting from mobile devices
+    if(glm::length(s.start_pnt - s.end_pnt) < mouse_epsilon)
     {
-        //state_->curve_selection.release();
+        // Reset selection
         state_->curve_selection = std::make_unique<Curve_selection>();
-        state_->curve_selection->t_start = state_->curve->get_time_stamp().front();
-        state_->curve_selection->t_end = state_->curve->get_time_stamp().back();
+        state_->curve_selection->t_start =
+            state_->curve->t_min();
+        state_->curve_selection->t_end = state_->curve->t_max();
         return;
     }
 
@@ -720,17 +769,17 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
     {
         // The selection was done from left to right
         x_min = get_local_coord(s.start_pnt.x);
-        x_max = get_local_coord(s.end_pnt.x);
+        x_max = get_local_coord(s.end_pnt.x  );
     }
     else
     {
         // The selection was done from right to left
-        x_min = get_local_coord(s.end_pnt.x);
+        x_min = get_local_coord(s.end_pnt.x  );
         x_max = get_local_coord(s.start_pnt.x);
     }
 
-    auto t_start  = state_->curve->get_time_stamp().front();
-    auto t_end    = state_->curve->get_time_stamp().back();
+    auto t_start  = state_->curve->t_min();
+    auto t_end    = state_->curve->t_max();
     auto t_length = t_end - t_start;
 
     // FIXME: the current approach works only if the curve is defined by points
@@ -748,17 +797,17 @@ void Timeline_renderer::calculate_switch_points(
     std::vector<float>& out_points,
     const Region& region)
 {
-    if(state_->curve->get_time_stamp().size() == 0)
+    if(state_->curve->time_stamp().size() == 0)
         return;
 
-    float t_min = state_->curve->get_time_stamp().front();
-    float t_max = state_->curve->get_time_stamp().back();
+    float t_min = state_->curve->t_min();
+    float t_max = state_->curve->t_max();
     float t_duration = t_max - t_min;
 
     for(auto s : state_->curve->get_stats().switches_inds)
     {
         float x_pos = region.left() +
-                      region.width() * state_->curve->get_time_stamp()[s] /
+                      region.width() * state_->curve->time_stamp()[s] /
                       t_duration;
         out_points.push_back(x_pos);
     }

@@ -63,12 +63,39 @@ Scene_wireframe_vertex Curve::get_point(float time)
 }
 
 //******************************************************************************
-// get_time_stamp
+// time_stamp
 //******************************************************************************
 
-const std::vector<float>& Curve::get_time_stamp() const
+const std::vector<float>& Curve::time_stamp() const
 {
     return time_stamp_;
+}
+
+//******************************************************************************
+// t_min
+//******************************************************************************
+
+float Curve::t_min() const
+{
+    return time_stamp_.front();
+}
+
+//******************************************************************************
+// t_max
+//******************************************************************************
+
+float Curve::t_max() const
+{
+    return time_stamp_.back();
+}
+
+//******************************************************************************
+// t_duration
+//******************************************************************************
+
+float Curve::t_duration() const
+{
+    return (t_max() - t_min());
 }
 
 //******************************************************************************
@@ -127,7 +154,7 @@ Curve Curve::get_simpified_curve(const float spacing)
     const size_t num_verts = get_vertices().size();
     // We always add the first points
     if(num_verts > 0)
-        simplified_curve.add_point(get_vertices()[0], get_time_stamp()[0]);
+        simplified_curve.add_point(get_vertices()[0], time_stamp()[0]);
 
     // Ading points that are the the minimum distance from each other
     float dist = 0.f; // Distance from the last point of the simplified curve
@@ -146,7 +173,7 @@ Curve Curve::get_simpified_curve(const float spacing)
         {
             dist = 0;
             // Ok, it's time to add a curve point
-            simplified_curve.add_point(get_vertices()[i], get_time_stamp()[i]);
+            simplified_curve.add_point(get_vertices()[i], time_stamp()[i]);
         }
         else
         {
@@ -158,7 +185,7 @@ Curve Curve::get_simpified_curve(const float spacing)
     if(num_verts > 1)
     {
         simplified_curve.add_point(
-            get_vertices()[num_verts - 1], get_time_stamp()[num_verts - 1]);
+            get_vertices()[num_verts - 1], time_stamp()[num_verts - 1]);
     }
 
     return simplified_curve;

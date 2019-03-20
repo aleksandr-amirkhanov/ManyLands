@@ -76,7 +76,6 @@ private:
     float pictogram_size_, pictogram_spacing_;
 
     Mouse_selection mouse_selection_;
-    std::unique_ptr<Curve_selection> curve_selection_;
 
     float player_pos_;
 
