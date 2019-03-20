@@ -19,7 +19,7 @@ endif()
 
 if(WIN32)
     add_compile_definitions(NOMINMAX)
-	# We add the definition below to suppress warning from boost library
+    # We add the definition below to suppress warning from boost library
     add_compile_definitions(_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 endif()
 
@@ -56,7 +56,7 @@ endif()
 
 if(EMSCRIPTEN)
     # Emscripten
-    target_link_libraries(ManyLands "-s USE_SDL=2 -s FULL_ES3=1 -s USE_WEBGL2=1 -o ManyLands.html --shell-file assets/shell_minimal.html")
+    target_link_libraries(ManyLands "-s USE_SDL=2 -s FULL_ES3=1 -s USE_WEBGL2=1 -o ManyLands.html --shell-file assets/shell_minimal.html -s \"EXPORTED_FUNCTIONS=['_main', '_js_load_ode']\" -s \"EXTRA_EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']\"")
     set_target_properties(ManyLands PROPERTIES COMPILE_FLAGS "-s USE_SDL=2 -s FULL_ES3=1 -s USE_WEBGL2=1")
     set_target_properties(ManyLands PROPERTIES LINK_FLAGS "-s ALLOW_MEMORY_GROWTH=1 -s BINARYEN_TRAP_MODE='clamp' --preload-file assets")
 else()
