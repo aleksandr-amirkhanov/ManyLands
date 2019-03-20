@@ -314,7 +314,7 @@ void Scene_renderer::process_input(const Base_renderer::Renderer_io& io)
     }
 
     if(io.mouse_wheel && region_.contains(io.mouse_pos))
-        state_->camera_3D.z += io.mouse_wheel_y * 0.2f;
+        state_->camera_3D.z += io.mouse_wheel_y * 0.05f;
 }
 
 //******************************************************************************

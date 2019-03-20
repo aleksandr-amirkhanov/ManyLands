@@ -41,11 +41,12 @@ public:
 
 private:
     // Drawing functions
-    void draw_axes(     const Region& region);
-    void draw_curve(    const Region& region);
-    void draw_switches( const Region& region);
-    void draw_marker(   const Region& region);
-    void draw_selection(const Region& region, const Mouse_selection& s);
+    void draw_axes(      const Region& region);
+    void draw_curve(     const Region& region);
+    void draw_switches(  const Region& region);
+    void draw_marker(    const Region& region);
+    void draw_selection( const Region& region, const Mouse_selection& s);
+    void draw_pictograms(const Region& region);
     void draw_pictogram(
         const glm::vec2& center,
         float size,

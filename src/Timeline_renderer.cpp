@@ -19,7 +19,7 @@
 
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_num_(0)
-    , pictogram_size_(50.f)
+    , pictogram_size_(0.f)
     , pictogram_spacing_(0.f)
     , player_pos_(0.f)
     , track_mouse_(false)
@@ -53,9 +53,9 @@ void Timeline_renderer::render()
 
     glUseProgram(screen_shader_->program_id);
 
-    glViewport(static_cast<GLint>(display_scale_x_ * region_.left()),
-               static_cast<GLint>(display_scale_y_ * region_.bottom()),
-               static_cast<GLsizei>(display_scale_x_ * region_.width()),
+    glViewport(static_cast<GLint>  (display_scale_x_ * region_.left()   ),
+               static_cast<GLint>(  display_scale_y_ * region_.bottom() ),
+               static_cast<GLsizei>(display_scale_x_ * region_.width()  ),
                static_cast<GLsizei>(display_scale_y_ * region_.height()));
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
@@ -73,99 +73,8 @@ void Timeline_renderer::render()
     draw_curve(plot_region_);
     draw_switches(plot_region_);
     draw_marker(plot_region_);
-
     draw_selection(plot_region_, mouse_selection_);
-
-    if(state_->curve->get_stats().switches_inds.size() > 0)
-    {
-        // Draw pictograms
-        pictogram_num_ = state_->curve->get_stats().switches_inds.size() + 1;
-
-        std::vector<float> switch_points;
-        calculate_switch_points(switch_points, plot_region_);
-
-        std::vector<float> switch_center;
-        if(switch_points.size() > 0)
-        {
-            switch_center.push_back(
-                0.5f * (plot_region_.left() + switch_points[0]));
-
-            for(size_t i = 1; i < switch_points.size(); ++i)
-            {
-                switch_center.push_back(
-                    0.5f * (switch_points[i - 1] + switch_points[i]));
-            }
-
-            switch_center.push_back(
-                0.5f * (switch_points.back() + plot_region_.right()));
-        }
-
-        float x_pos = pictogram_size_ + pictogram_spacing_;
-        for(int i = 0; i < pictogram_num_; ++i)
-        {
-            Curve_selection selection;
-            std::string dim;
-            Curve_stats::Range range = state_->curve->get_stats().range[i];
-            if(i == 0)
-            {
-                selection.t_start = state_->curve->t_min();
-                selection.t_end =
-                    state_->curve->time_stamp()[state_->curve->get_stats()
-                                                 .switches_inds[i]];
-
-                dim = state_->curve->get_stats().dimensionality.front();
-            }
-            else if(i == pictogram_num_ - 1)
-            {
-                size_t ind = state_->curve->get_stats().switches_inds[i - 1];
-
-                selection.t_start = state_->curve->time_stamp()[ind];
-                selection.t_end = state_->curve->t_max();
-
-                dim = state_->curve->get_stats().dimensionality[ind];
-            }
-            else
-            {
-                size_t ind = state_->curve->get_stats().switches_inds[i - 1];
-
-                selection.t_start = state_->curve->time_stamp()[ind];
-                selection.t_end =
-                    state_->curve->time_stamp()[state_->curve->get_stats()
-                                                 .switches_inds[i]];
-
-                dim = state_->curve->get_stats().dimensionality[ind];
-            }
-
-            draw_pictogram(
-                glm::vec2(x_pos,
-                          pictogram_region_.bottom() +
-                          0.5f * pictogram_region_.height()),
-                pictogram_size_,
-                selection,
-                dim,
-                range);
-
-            /*pen.setWidthF(1.);
-            pen.setColor(QColor(0, 0, 0, 80));
-            painter.setPen(pen);
-            painter.setBrush(QBrush());
-
-            glm::vec2 pictogram_p(
-                x_pos, pictogram_region_.center().y() - pictogram_size_);
-            glm::vec2 switch_p(switch_center[i], plot_region_.bottom());
-
-            QPainterPath path;
-            path.moveTo(switch_p);
-            path.cubicTo(
-                QPointF(switch_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
-                QPointF(
-                    pictogram_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
-                pictogram_p);
-            painter.drawPath(path);*/
-
-            x_pos += 2 * pictogram_size_ + pictogram_spacing_;
-        }
-    }
+    draw_pictograms(plot_region_);
 
     if(screen_geom_->data_array.size() > 0)
     {
@@ -478,6 +387,104 @@ void Timeline_renderer::draw_selection(const Region& region,
 
         screen_shader_->append_to_geometry(*screen_geom_, lrect);
         screen_shader_->append_to_geometry(*screen_geom_, rrect);
+    }
+}
+
+//******************************************************************************
+// draw_pictograms
+//******************************************************************************
+
+void Timeline_renderer::draw_pictograms(const Region& region)
+{
+    if(state_->curve->get_stats().switches_inds.size() == 0)
+        return;
+    
+    // Draw pictograms
+    pictogram_num_ = state_->curve->get_stats().switches_inds.size() + 1;
+
+    std::vector<float> switch_points;
+    calculate_switch_points(switch_points, plot_region_);
+
+    std::vector<float> switch_center;
+    if(switch_points.size() > 0)
+    {
+        switch_center.push_back(
+            0.5f * (plot_region_.left() + switch_points[0]));
+
+        for(size_t i = 1; i < switch_points.size(); ++i)
+        {
+            switch_center.push_back(
+                0.5f * (switch_points[i - 1] + switch_points[i]));
+        }
+
+        switch_center.push_back(
+            0.5f * (switch_points.back() + plot_region_.right()));
+    }
+
+    float x_pos = 0.5f * pictogram_size_ + pictogram_spacing_;
+    for(int i = 0; i < pictogram_num_; ++i)
+    {
+        Curve_selection selection;
+        std::string dim;
+        Curve_stats::Range range = state_->curve->get_stats().range[i];
+        if(i == 0)
+        {
+            selection.t_start = state_->curve->t_min();
+            selection.t_end =
+                state_->curve->time_stamp()[state_->curve->get_stats()
+                                                .switches_inds[i]];
+
+            dim = state_->curve->get_stats().dimensionality.front();
+        }
+        else if(i == pictogram_num_ - 1)
+        {
+            size_t ind = state_->curve->get_stats().switches_inds[i - 1];
+
+            selection.t_start = state_->curve->time_stamp()[ind];
+            selection.t_end = state_->curve->t_max();
+
+            dim = state_->curve->get_stats().dimensionality[ind];
+        }
+        else
+        {
+            size_t ind = state_->curve->get_stats().switches_inds[i - 1];
+
+            selection.t_start = state_->curve->time_stamp()[ind];
+            selection.t_end =
+                state_->curve->time_stamp()[state_->curve->get_stats()
+                                                .switches_inds[i]];
+
+            dim = state_->curve->get_stats().dimensionality[ind];
+        }
+
+        draw_pictogram(
+            glm::vec2(x_pos,
+                        pictogram_region_.bottom() +
+                        0.5f * pictogram_region_.height()),
+            pictogram_size_,
+            selection,
+            dim,
+            range);
+
+        /*pen.setWidthF(1.);
+        pen.setColor(QColor(0, 0, 0, 80));
+        painter.setPen(pen);
+        painter.setBrush(QBrush());
+
+        glm::vec2 pictogram_p(
+            x_pos, pictogram_region_.center().y() - pictogram_size_);
+        glm::vec2 switch_p(switch_center[i], plot_region_.bottom());
+
+        QPainterPath path;
+        path.moveTo(switch_p);
+        path.cubicTo(
+            QPointF(switch_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
+            QPointF(
+                pictogram_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
+            pictogram_p);
+        painter.drawPath(path);*/
+
+        x_pos += pictogram_size_ + pictogram_spacing_;
     }
 }
 
@@ -825,9 +832,9 @@ void Timeline_renderer::project_point(
     if(point.size() < 4)
         return;
 
-    const auto axis_size = 2 * size * std::sin(static_cast<float>(PI / 8));
+    const auto axis_size = size * std::sin(static_cast<float>(PI / 8));
     const auto dist_to_origin =
-        size - 4 * size * std::pow(static_cast<float>(std::sin(PI / 8)), 2);
+        0.5f * size - 2 * size * std::pow(static_cast<float>(std::sin(PI / 8)), 2);
 
     Scene_wireframe_vertex origin(2);
     origin(0) = dist_to_origin * std::cos(static_cast<float>(7 * PI / 8));
@@ -873,12 +880,12 @@ void Timeline_renderer::update_regions()
     const float margin = 10.f;
 
     plot_region_ = Region(margin,
-                          2 * pictogram_size_ + 2 * margin,
+                          pictogram_size_ + 2 * margin,
                           region_.width() - margin,
                           region_.height() - margin);
 
     pictogram_region_ = Region(margin,
                                margin,
                                region_.width() - margin,
-                               2 * pictogram_size_);
+                               pictogram_size_);
 }

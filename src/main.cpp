@@ -206,7 +206,7 @@ void mainloop()
     int height = (int)io.DisplaySize.y;
 
     static float timeline_height = 200.f,
-                 pictograms_size = 30.f;
+                 pictograms_size = 60.f;
 
     // ImGui windows start
     {
