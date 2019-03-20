@@ -247,7 +247,7 @@ void mainloop()
             EM_ASM(
                 var input = document.createElement('input');
                 input.type = 'file';
-                input.onchange = e => { 
+                input.onchange = e => {
                     var file = e.target.files[0];
                     var textType = /text.*/;
                     if (file.type.match(textType)) {
@@ -316,7 +316,7 @@ void mainloop()
             ImGui::SliderFloat4(
                 "Tesseract size", tesseract_size, 1.f, 500.f);
 
-            ImGui::Separator();            
+            ImGui::Separator();
 
             ImGui::Text("Style:");
             ImGui::Text("Set theme");
@@ -386,7 +386,7 @@ void mainloop()
                                         dist_max);
             ImGui::SliderFloat("Distance", &camera_3D_dist, dist_min, dist_max);
             ImGui::SliderAngle("Field of view", &fov_y, 1.f, 180.f);
-               
+
             static float euler[3];
             static bool active = false;
             if(!active)
@@ -394,7 +394,7 @@ void mainloop()
                                           euler[0],
                                           euler[1],
                                           euler[2]);
-                
+
             ImGui::Separator();
             ImGui::Text("Rotations (Euler angles):");
             active = false;
@@ -526,7 +526,7 @@ void mainloop()
     line.emplace_back(Screen_shader::Line_point(glm::vec2(Left_panel_size, timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
     line.emplace_back(Screen_shader::Line_point(glm::vec2(width,           timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
     Screen_shad->append_to_geometry(separator, line);
-    
+
 
     separator.init_buffers();
     Screen_shad->draw_geometry(separator);
@@ -657,7 +657,7 @@ int main(int, char**)
     // Font
     ImGui::GetStyle().ScaleAllSizes(App_scale);
     ImGui::GetStyle().WindowRounding = 0.f;
-    io.Fonts->AddFontFromFileTTF("assets/Roboto-Regular.ttf", 14.f * App_scale); 
+    io.Fonts->AddFontFromFileTTF("assets/Roboto-Regular.ttf", 14.f * App_scale);
 
     set_bright_theme();
 

@@ -459,7 +459,7 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
 
         // We are interested only in some interval of the curve
         if(state_->curve_selection &&
-           !state_->curve_selection->in_range(c.get_time_stamp()[e.vert1]))
+           !state_->curve_selection->in_range(c.time_stamp()[e.vert1]))
         {
             continue;
         }
