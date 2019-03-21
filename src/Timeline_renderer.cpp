@@ -421,7 +421,10 @@ void Timeline_renderer::draw_pictograms(const Region& region)
             0.5f * (switch_points.back() + plot_region_.right()));
     }
 
-    float x_pos = 0.5f * pictogram_size_ + pictogram_spacing_;
+    float required_width =
+        pictogram_num_ * pictogram_size_ + pictogram_spacing_;
+
+    float x_pos = region.left() + 0.5f * ( region.width() - required_width);
     for(int i = 0; i < pictogram_num_; ++i)
     {
         Curve_selection selection;

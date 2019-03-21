@@ -278,7 +278,7 @@ void mainloop()
 
             SDL_SysWMinfo wm_info;
             SDL_VERSION(&wm_info.version);
-            SDL_GetWindowWMInfo(Window, &wm_info);
+            SDL_GetWindowWMInfo(MainWindow, &wm_info);
 
             OPENFILENAMEA ofn;
             ZeroMemory( &fn, sizeof( fn ) );
