@@ -64,8 +64,8 @@ bool done = false;
 
 SDL_DisplayMode Current;
 SDL_WindowFlags Window_flags;
-SDL_Window* MainWindow;
-SDL_GLContext Gl_context;
+SDL_Window*     MainWindow;
+SDL_GLContext   Gl_context;
 
 bool Show_tesseract = true,
      Show_curve     = true;
@@ -240,7 +240,6 @@ void mainloop()
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
         ImGui::Text("%.1f FPS", io.Framerate);
-
 
         if(ImGui::Button("Load ODE"))
         {
@@ -548,7 +547,7 @@ extern "C"
 //******************************************************************************
 void js_load_ode()
 {
-    std::string filename = "user_ode.txt";
+    const std::string filename = "user_ode.txt";
     Scene_objs.load_ode(filename);
 
     // The file has to removed to be able to load a new file with the same name
