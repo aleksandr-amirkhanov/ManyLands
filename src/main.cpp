@@ -206,7 +206,7 @@ void mainloop()
     int height = (int)io.DisplaySize.y;
 
     static float timeline_height = 200.f,
-                 pictograms_size = 60.f;
+                 pictograms_size = 30.f;
 
     // ImGui windows start
     {
@@ -299,8 +299,8 @@ void mainloop()
 #endif
             if(!filename.empty())
                 Scene_objs.load_ode(filename);
-        }
 #endif
+        }
 
         if (ImGui::CollapsingHeader("Rendering",
             ImGuiTreeNodeFlags_DefaultOpen))

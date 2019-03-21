@@ -8,6 +8,8 @@
 #include <glm/gtc/type_ptr.hpp>
 // std
 #include <vector>
+#include <tuple>
+#include <complex>
 // boost
 #include <boost/geometry.hpp>
 // CDT
@@ -20,7 +22,7 @@
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_num_(0)
     , pictogram_size_(0.f)
-    , pictogram_spacing_(0.f)
+    , pictogram_spacing_(1.5f)
     , player_pos_(0.f)
     , track_mouse_(false)
 {
@@ -91,6 +93,19 @@ void Timeline_renderer::process_input(const Renderer_io& io)
 {
     glm::vec2 mouse_pos = io.mouse_pos -
                           glm::vec2(region_.left(), region_.bottom());
+
+    pictogram_mouse_pos_ = mouse_pos;
+
+    // TODO: the code beolow is temporal and should be moved a special function
+    pictogram_mouse_pos_[0] = std::clamp(
+        pictogram_mouse_pos_[0],
+        0.f,
+        pictogram_region_.right());
+    pictogram_mouse_pos_[1] = std::clamp(
+        pictogram_mouse_pos_[1],
+        0.f,
+        pictogram_region_.top());
+
 
     if(io.mouse_down && plot_region_.contains(mouse_pos))
     {
@@ -421,10 +436,79 @@ void Timeline_renderer::draw_pictograms(const Region& region)
             0.5f * (switch_points.back() + plot_region_.right()));
     }
 
+
+
+
+
+
     float required_width =
         pictogram_num_ * pictogram_size_ + pictogram_spacing_;
 
     float x_pos = region.left() + 0.5f * ( region.width() - required_width);
+    
+    typedef std::tuple<float, float> pos_and_scale_type;
+    std::vector<pos_and_scale_type> pos_and_scale;
+    for(int i = 0; i < pictogram_num_; ++i)
+    {
+        pos_and_scale.push_back(pos_and_scale_type(x_pos, 1.f));
+        x_pos += pictogram_size_ + pictogram_spacing_;
+    }
+
+
+
+
+
+    // Input
+    const float magnification_scale = 2.f,
+                magnification_area = 4 * (pictogram_size_ + pictogram_spacing_),
+                x_min = -0.5f,
+                x_max =  0.5f;
+
+    // Mouse position
+    const float mouse_x = pictogram_mouse_pos_.x;
+
+    // Computing the requried magnification area
+    const float required_area =
+        magnification_area * (magnification_scale - 1) *
+        magnification_func_area(x_min, x_max);
+
+    for(auto& ps : pos_and_scale)
+    {
+        float& pictog_x = std::get<0>(ps);
+        float& pictog_s = std::get<1>(ps);
+
+        if(std::abs(pictog_x - mouse_x) > 0.5f * magnification_area)
+        {
+            if(pictog_x < mouse_x)
+                pictog_x -= 0.5f * required_area;
+            else
+                pictog_x += 0.5f * required_area;
+        }
+        else
+        {
+            auto x_diff = (pictog_x - mouse_x) / (magnification_area);
+            auto magnification =
+                1 + (magnification_scale - 1.f) * magnification_func(x_diff);
+
+            // Apply scale            
+            pictog_s = magnification;
+            
+            // Compute and apply the displacement
+            float disp_coeff =
+                std::sin(static_cast<float>(std::abs(x_diff) * PI));
+            float displacement = disp_coeff * 0.5f * required_area;
+
+            if(x_diff > 0)
+                pictog_x += displacement;
+            else
+                pictog_x -= displacement;
+        }
+    }
+
+
+
+
+
     for(int i = 0; i < pictogram_num_; ++i)
     {
         Curve_selection selection;
@@ -461,10 +545,10 @@ void Timeline_renderer::draw_pictograms(const Region& region)
         }
 
         draw_pictogram(
-            glm::vec2(x_pos,
-                        pictogram_region_.bottom() +
-                        0.5f * pictogram_region_.height()),
-            pictogram_size_,
+            glm::vec2(std::get<0>(pos_and_scale[i]),
+                      pictogram_region_.bottom() +
+                      0.5f * pictogram_region_.height()),
+            std::get<1>(pos_and_scale[i]) * pictogram_size_,
             selection,
             dim,
             range);
@@ -486,8 +570,6 @@ void Timeline_renderer::draw_pictograms(const Region& region)
                 pictogram_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
             pictogram_p);
         painter.drawPath(path);*/
-
-        x_pos += pictogram_size_ + pictogram_spacing_;
     }
 }
 
@@ -883,12 +965,31 @@ void Timeline_renderer::update_regions()
     const float margin = 10.f;
 
     plot_region_ = Region(margin,
-                          pictogram_size_ + 2 * margin,
+                          0.5f * region_.height() + margin,
                           region_.width() - margin,
                           region_.height() - margin);
 
     pictogram_region_ = Region(margin,
                                margin,
                                region_.width() - margin,
-                               pictogram_size_);
+                               0.5f * region_.height() - margin);
+}
+
+//******************************************************************************
+// magnification_func
+//******************************************************************************
+
+float Timeline_renderer::magnification_func(float x)
+{
+    // y = (cos(pi * x)) ^ 2
+    return std::pow(std::cos(static_cast<float>(PI) * x), 2);
+}
+
+//******************************************************************************
+// magnification_func_area
+//******************************************************************************
+ 
+float Timeline_renderer::magnification_func_area(float x_start, float x_end)
+{
+    return 0.5f * (x_end - x_start);
 }

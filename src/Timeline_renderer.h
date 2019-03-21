@@ -70,11 +70,15 @@ private:
 
     void update_regions();
 
+    float magnification_func(float x);
+    float magnification_func_area(float x_start, float x_end);
+
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
     size_t pictogram_num_;
     float pictogram_size_, pictogram_spacing_;
+    glm::vec2 pictogram_mouse_pos_;
 
     Mouse_selection mouse_selection_;
 
