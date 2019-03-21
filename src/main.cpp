@@ -64,8 +64,8 @@ bool done = false;
 
 SDL_DisplayMode Current;
 SDL_WindowFlags Window_flags;
-SDL_Window* Window;
-SDL_GLContext Gl_context;
+SDL_Window*     MainWindow;
+SDL_GLContext   Gl_context;
 
 bool Show_tesseract = true,
      Show_curve     = true;
@@ -184,7 +184,7 @@ void mainloop()
         }
         if (   event.type == SDL_WINDOWEVENT
             && event.window.event == SDL_WINDOWEVENT_CLOSE
-            && event.window.windowID == SDL_GetWindowID(Window))
+            && event.window.windowID == SDL_GetWindowID(MainWindow))
         {
             done = true;
         }
@@ -197,7 +197,7 @@ void mainloop()
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(Window);
+    ImGui_ImplSDL2_NewFrame(MainWindow);
     ImGui::NewFrame();
 
     static float fov_y = 45.f * static_cast<float>(DEG_TO_RAD);
@@ -241,9 +241,9 @@ void mainloop()
 
         ImGui::Text("%.1f FPS", io.Framerate);
 
-#if __EMSCRIPTEN__
         if(ImGui::Button("Load ODE"))
         {
+#if __EMSCRIPTEN__
             EM_ASM(
                 var input = document.createElement('input');
                 input.type = 'file';
@@ -271,12 +271,9 @@ void mainloop()
                 };
                 input.click();
             );
-        }
 #else
-        if(ImGui::Button("Load ODE"))
-        {
-            std::string filename;
 #ifdef _WIN32
+            std::string filename;
             char fn[MAX_PATH];
 
             SDL_SysWMinfo wm_info;
@@ -298,7 +295,7 @@ void mainloop()
 
             filename = std::string(fn);
 #else
-            filename = "assets/model2-default.txt";
+            const std::string filename = "assets/model2-default.txt";
 #endif
             if(!filename.empty())
                 Scene_objs.load_ode(filename);
@@ -480,7 +477,7 @@ void mainloop()
 
     // Rendering
     ImGui::Render();
-    SDL_GL_MakeCurrent(Window, Gl_context);
+    SDL_GL_MakeCurrent(MainWindow, Gl_context);
     glViewport(
         0,
         0,
@@ -535,7 +532,7 @@ void mainloop()
     Timeline.render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(Window);
+    SDL_GL_SwapWindow(MainWindow);
 }
 
 #if __EMSCRIPTEN__
@@ -550,7 +547,7 @@ extern "C"
 //******************************************************************************
 void js_load_ode()
 {
-    std::string filename = "user_ode.txt";
+    const std::string filename = "user_ode.txt";
     Scene_objs.load_ode(filename);
 
     // The file has to removed to be able to load a new file with the same name
@@ -610,14 +607,15 @@ int main(int, char**)
     Window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL |
                                      SDL_WINDOW_RESIZABLE |
                                      SDL_WINDOW_ALLOW_HIGHDPI);
-    Window = SDL_CreateWindow(
+
+    MainWindow = SDL_CreateWindow(
         "ManyLands",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         1280,
         720,
         Window_flags);
-    Gl_context = SDL_GL_CreateContext(Window);
+    Gl_context = SDL_GL_CreateContext(MainWindow);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
 #if defined(WIN32)
@@ -651,7 +649,7 @@ int main(int, char**)
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer bindings
-    ImGui_ImplSDL2_InitForOpenGL(Window, Gl_context);
+    ImGui_ImplSDL2_InitForOpenGL(MainWindow, Gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Font
@@ -684,7 +682,7 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(Gl_context);
-    SDL_DestroyWindow(Window);
+    SDL_DestroyWindow(MainWindow);
     SDL_Quit();
 #endif
 
