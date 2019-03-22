@@ -12,6 +12,7 @@
 #include <vector>
 #include <tuple>
 #include <complex>
+#include <cmath>
 // boost
 #include <boost/geometry.hpp>
 // CDT
@@ -335,18 +336,26 @@ void Timeline_renderer::draw_curve(const Region& region)
 void Timeline_renderer::draw_switches(const Region& region)
 {
     const float width = 1.f;
-    const glm::vec4 color(0.f, 0.f, 0.f, 0.27f);
+    const glm::vec4 color(0.f, 0.f, 0.f, 1.f);
+    const float dash = 2.f,
+                gap  = 7.f;
 
     std::vector<float> points;
     calculate_switch_points(points, region);
     for(auto p : points)
     {
-        Screen_shader::Line_strip line;
-        line.emplace_back(Screen_shader::Line_point(
-            glm::vec2(p, region.top()), width, color));
-        line.emplace_back(Screen_shader::Line_point(
-            glm::vec2(p, region.bottom()), width, color));
-        screen_shader_->append_to_geometry(*screen_geom_, line);
+        // HACK: we need to shift the x postion for 0.5 to enable the pixel 
+        // perfect rendering 
+        float p_rounded = std::round(p) + 0.5f;
+        for(float h = region.bottom(); h <= region.top(); h += dash + gap)
+        {
+            Screen_shader::Line_strip line;
+            line.emplace_back(Screen_shader::Line_point(
+                glm::vec2(p_rounded, h), width, color));
+            line.emplace_back(Screen_shader::Line_point(
+                glm::vec2(p_rounded, h + dash), width, color));
+            screen_shader_->append_to_geometry(*screen_geom_, line);
+        }
     }
 }
 

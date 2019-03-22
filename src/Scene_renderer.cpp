@@ -87,7 +87,9 @@ void Scene_renderer::render()
         100.f);
     auto camera_mat = glm::translate(glm::mat4(1.f), state_->camera_3D);
     glm::vec3 light_pos(0.f, 0.f, 70.f);
-    auto world_mat = glm::toMat4(glm::lerp(state_->rotation_3D, glm::quat(), static_cast<float>(unfold_3D)));
+    auto world_mat = glm::toMat4(glm::lerp(state_->rotation_3D,
+                                           glm::quat(),
+                                           static_cast<float>(unfold_3D)));
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
     glUniformMatrix4fv(diffuse_shader_->proj_mat_id,
