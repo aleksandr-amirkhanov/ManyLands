@@ -4,6 +4,10 @@
 
 const Color Cube::default_color_ = Color(0, 0, 0, 255);
 
+//******************************************************************************
+// Cube
+//******************************************************************************
+
 Cube::Cube(Scene_wireframe_vertex v1,
            Scene_wireframe_vertex v2,
            Scene_wireframe_vertex v3,
@@ -17,6 +21,10 @@ Cube::Cube(Scene_wireframe_vertex v1,
         default_color_,
         default_color_)
 {}
+
+//******************************************************************************
+// Cube
+//******************************************************************************
 
 Cube::Cube(
     Scene_wireframe_vertex v1,
@@ -55,6 +63,10 @@ Cube::Cube(
     add_edge(Scene_wireframe_edge(2, 6, depth_col));
     add_edge(Scene_wireframe_edge(3, 7, depth_col));
 }
+
+//******************************************************************************
+// split
+//******************************************************************************
 
 std::vector<Square> Cube::split(std::vector<Cube>& cubes)
 {

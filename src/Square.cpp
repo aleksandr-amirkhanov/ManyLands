@@ -2,6 +2,10 @@
 
 const Color Square::default_color_ = Color(0, 0, 0, 255);
 
+//******************************************************************************
+// Square
+//******************************************************************************
+
 Square::Square(Scene_wireframe_vertex v1,
                Scene_wireframe_vertex v2,
                Scene_wireframe_vertex v3,
@@ -17,6 +21,10 @@ Square::Square(Scene_wireframe_vertex v1,
     add_edge(Scene_wireframe_edge(2, 3, default_color_));
     add_edge(Scene_wireframe_edge(3, 0, default_color_));
 }
+
+//******************************************************************************
+// Square
+//******************************************************************************
 
 Square::Square(Scene_wireframe_vertex v1,
                Scene_wireframe_vertex v2,

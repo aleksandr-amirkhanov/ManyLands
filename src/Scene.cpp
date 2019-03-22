@@ -7,10 +7,18 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
 
+//******************************************************************************
+// Scene
+//******************************************************************************
+
 Scene::Scene(std::shared_ptr<Scene_state> state)
     : state_(state)
 {
 }
+
+//******************************************************************************
+// load_ode
+//******************************************************************************
 
 void Scene::load_ode(std::string filename)
 {
@@ -33,6 +41,10 @@ void Scene::load_ode(std::string filename)
     // update_marker();
     // update_plot();
 }
+
+//******************************************************************************
+// load_curve
+//******************************************************************************
 
 std::shared_ptr<Curve> Scene::load_curve(std::string filename)
 {
@@ -122,6 +134,10 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
 
     return curve;
 }
+
+//******************************************************************************
+// create_tesseract
+//******************************************************************************
 
 void Scene::create_tesseract(Scene_wireframe_vertex shift,
                              const Curve& curve)

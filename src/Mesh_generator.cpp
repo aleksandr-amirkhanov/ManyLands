@@ -8,6 +8,10 @@
 
 #include <cassert>
 
+//******************************************************************************
+// cylinder
+//******************************************************************************
+
 Mesh Mesh_generator::cylinder(
     unsigned int num_verts,
     float start_diameter,
@@ -27,6 +31,10 @@ Mesh Mesh_generator::cylinder(
         cylinder_mesh);
     return cylinder_mesh;
 }
+
+//******************************************************************************
+// cylinder
+//******************************************************************************
 
 void Mesh_generator::cylinder(
     unsigned int num_verts,
@@ -102,6 +110,10 @@ void Mesh_generator::cylinder(
     mesh.objects.push_back(object);
 }
 
+//******************************************************************************
+// sphere
+//******************************************************************************
+
 Mesh Mesh_generator::sphere(
     unsigned int segments,
     unsigned int rings,
@@ -113,6 +125,10 @@ Mesh Mesh_generator::sphere(
     sphere(segments, rings, diameter, position, color, sphere_mesh);
     return sphere_mesh;
 }
+
+//******************************************************************************
+// sphere
+//******************************************************************************
 
 void Mesh_generator::sphere(
     unsigned int segments,

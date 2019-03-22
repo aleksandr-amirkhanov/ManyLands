@@ -2,6 +2,10 @@
 // glm
 #include <glm/glm.hpp>
 
+//******************************************************************************
+// initialize
+//******************************************************************************
+
 void Diffuse_shader::initialize()
 {
 #ifdef __EMSCRIPTEN__
@@ -25,6 +29,10 @@ void Diffuse_shader::initialize()
     normal_attrib_id = glGetAttribLocation(program_id, "normal");
     color_attrib_id  = glGetAttribLocation(program_id,  "color");
 }
+
+//******************************************************************************
+// append_to_geometry
+//******************************************************************************
 
 void Diffuse_shader::append_to_geometry(Mesh_geometry& geom, const Mesh& m)
 {
@@ -97,6 +105,10 @@ void Diffuse_shader::append_to_geometry(Mesh_geometry& geom, const Mesh& m)
         }
     }
 }
+
+//******************************************************************************
+// draw_geometry
+//******************************************************************************
 
 void Diffuse_shader::draw_geometry(
     const std::unique_ptr<Mesh_geometry>& geom)
