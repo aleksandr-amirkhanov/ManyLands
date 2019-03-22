@@ -74,19 +74,19 @@ void Timeline_renderer::render()
                        GL_FALSE,
                        glm::value_ptr(proj_ortho));
 
+    std::vector<Compas_state> pos_and_scale =
+        get_compases_state(pictogram_region_);
+
     // On-screen rendering
+    
+    highlight_hovered_region(plot_region_, pos_and_scale);
+    draw_selection(plot_region_, mouse_selection_);
 
     draw_axes(plot_region_);
     draw_curve(plot_region_);
     draw_switches(plot_region_);
     draw_marker(plot_region_);
-    draw_selection(plot_region_, mouse_selection_);
-
-    std::vector<Compas_state> pos_and_scale =
-        get_compases_state(pictogram_region_);
     draw_pictograms(pictogram_region_, pos_and_scale);
-
-    highlight_hovered_region(plot_region_, pos_and_scale);
 
     if(screen_geom_->data_array.size() > 0)
     {
@@ -780,10 +780,10 @@ void Timeline_renderer::highlight_hovered_region(
             intensity = 0;
 
         glm::vec4 color(
-            0.8f,
-            0.8f,
+            1.f,
+            1.f,
             0.f,
-            0.3f * std::pow(intensity, 4));
+            0.4f * std::pow(intensity, 4));
 
         Screen_shader::Rectangle rect(
             points[i],
