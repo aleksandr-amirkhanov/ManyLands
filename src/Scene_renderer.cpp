@@ -479,7 +479,10 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
     }
     // TODO: fix the line below
     //gui_.Renderer->add_mesh(curve_mesh, opacity < 1.);
-    diffuse_shader_->append_to_geometry(*back_geometry_.get(), curve_mesh);
+    if(opacity < 1.f)
+        diffuse_shader_->append_to_geometry(*front_geometry_.get(), curve_mesh);
+    else
+        diffuse_shader_->append_to_geometry(*back_geometry_.get(), curve_mesh);
 
 
     /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
