@@ -206,7 +206,7 @@ void mainloop()
     int height = (int)io.DisplaySize.y;
 
     static float timeline_height = 200.f,
-                 pictograms_size = 40.f,
+                 pictograms_size = 50.f,
                  pictogram_scale = 2.f,
                  splitter        = 0.5f;
     

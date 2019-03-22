@@ -22,8 +22,7 @@
 //******************************************************************************
 
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
-    : pictogram_num_(0)
-    , pictogram_size_(0.f)
+    : pictogram_size_(0.f)
     , pictogram_spacing_(1.5f)
     , player_pos_(0.f)
     , track_mouse_(false)
@@ -82,7 +81,10 @@ void Timeline_renderer::render()
     draw_switches(plot_region_);
     draw_marker(plot_region_);
     draw_selection(plot_region_, mouse_selection_);
-    draw_pictograms(pictogram_region_);
+
+    std::vector<Compas_state> pos_and_scale =
+        get_compases_state(pictogram_region_);
+    draw_pictograms(pictogram_region_, pos_and_scale);
 
     if(screen_geom_->data_array.size() > 0)
     {
@@ -423,13 +425,15 @@ void Timeline_renderer::draw_selection(const Region& region,
 // draw_pictograms
 //******************************************************************************
 
-void Timeline_renderer::draw_pictograms(const Region& region)
+void Timeline_renderer::draw_pictograms(
+    const Region& region,
+    const std::vector<Compas_state>& compases_state)
 {
     if(state_->curve->get_stats().switches_inds.size() == 0)
         return;
     
     // Draw pictograms
-    pictogram_num_ = state_->curve->get_stats().switches_inds.size() + 1;
+    size_t pictogram_num = state_->curve->get_stats().switches_inds.size() + 1;
 
     std::vector<float> switch_points;
     calculate_switch_points(switch_points, plot_region_);
@@ -450,89 +454,8 @@ void Timeline_renderer::draw_pictograms(const Region& region)
             0.5f * (switch_points.back() + plot_region_.right()));
     }
 
-    // Find preliminary positions of compases
-
-    float required_width =
-        pictogram_num_ * pictogram_size_ + pictogram_spacing_;
-
-    float x_pos = region.left() + 0.5f * ( region.width() - required_width);
-    
-    typedef std::tuple<float, float> pos_and_scale_type;
-    std::vector<pos_and_scale_type> pos_and_scale;
-    for(int i = 0; i < pictogram_num_; ++i)
-    {
-        pos_and_scale.push_back(pos_and_scale_type(x_pos, 1.f));
-        x_pos += pictogram_size_ + pictogram_spacing_;
-    }
-
-    // The peripheral area defines the area in which compases will zoom ir / out
-    const float peripheral_area = 0.5f * pictogram_size_;
-
-    // Compute the scale variable
-    float scale = pictogram_scale_;
-    if(!region.contains(mouse_pos_))
-    {
-        scale = 1.f;
-    }
-    else
-    {
-        // Define the pictogram line
-        float h = (region.bottom() + 0.5f * region.height());
-        glm::vec2 line_start(std::get<0>(pos_and_scale.front()), h);
-        glm::vec2 line_end(std::get<0>(pos_and_scale.back()),  h);
-
-        // Find the closes point on the line from the mouse position and
-        // measuring distance
-        auto closest_point = glm::closestPointOnLine(
-            mouse_pos_, line_start, line_end);
-        const float dist_to_line = glm::length(closest_point - mouse_pos_);
-    
-        auto coeff = std::clamp(dist_to_line - pictogram_size_,
-                                0.f,
-                                peripheral_area) / peripheral_area;
-
-        scale = pictogram_scale_ - coeff * (pictogram_scale_ - 1.f);
-    }
-
-    // Compute the desired magnification area
-    const float magnification_area = pictogram_magnification_region_ *
-        (pictogram_size_ + pictogram_spacing_);
-
-    // Compute the requried magnification area
-    const float required_area =
-        magnification_area * (scale - 1) *
-        magnification_func_area(-0.5f, 0.5f);
-
-    // Cache the mouse position
-    const float mouse_x = mouse_pos_.x;
-
-    // Apply scalele to compases and move them
-    for(auto& ps : pos_and_scale)
-    {
-        float& pictog_x = std::get<0>(ps);
-        float& pictog_s = std::get<1>(ps);
-
-        if(std::abs(pictog_x - mouse_x) > 0.5f * magnification_area)
-        {
-            pictog_x += pictog_x > mouse_x ?  0.5f * required_area
-                                           : -0.5f * required_area;
-        }
-        else
-        {
-            auto x_diff = (pictog_x - mouse_x) / (magnification_area);                
-
-            // Apply scale            
-            pictog_s = 1 + (scale - 1.f) * magnification_func(x_diff);
-            
-            // Compute and apply the displacement
-            float coeff = std::sin(static_cast<float>(std::abs(x_diff) * PI));
-            float disp = coeff * 0.5f * required_area;
-            pictog_x += x_diff > 0.f ? disp : -disp;
-        }
-    }
-
     // Draw pictograms
-    for(int i = 0; i < pictogram_num_; ++i)
+    for(int i = 0; i < pictogram_num; ++i)
     {
         Curve_selection selection;
         std::string dim;
@@ -546,7 +469,7 @@ void Timeline_renderer::draw_pictograms(const Region& region)
 
             dim = state_->curve->get_stats().dimensionality.front();
         }
-        else if(i == pictogram_num_ - 1)
+        else if(i == pictogram_num - 1)
         {
             size_t ind = state_->curve->get_stats().switches_inds[i - 1];
 
@@ -568,10 +491,10 @@ void Timeline_renderer::draw_pictograms(const Region& region)
         }
 
         draw_pictogram(
-            glm::vec2(std::get<0>(pos_and_scale[i]),
+            glm::vec2(compases_state[i].x_pos,
                       region.bottom() +
                       0.5f * region.height()),
-            std::get<1>(pos_and_scale[i]) * pictogram_size_,
+            compases_state[i].scale * pictogram_size_,
             selection,
             dim,
             range);
@@ -849,6 +772,98 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     Curve c = *state_->simple_curve.get();
     project_point_array(c.get_vertices(), size, state_->tesseract_size[0]);
     draw_curve(c);
+}
+
+//******************************************************************************
+// get_compases_state
+//******************************************************************************
+
+std::vector<Timeline_renderer::Compas_state>
+Timeline_renderer::get_compases_state(const Region& region)
+{
+    size_t pictogram_num = state_->curve->get_stats().switches_inds.size() + 1;
+
+    // Find preliminary positions of compases
+
+    float required_width =
+        pictogram_num * pictogram_size_ + pictogram_spacing_;
+
+    float x_pos = region.left() + 0.5f * ( region.width() - required_width);
+    
+    std::vector<Compas_state> pos_and_scale;
+    for(int i = 0; i < pictogram_num; ++i)
+    {
+        pos_and_scale.emplace_back(Compas_state(x_pos, 1.f));
+        x_pos += pictogram_size_ + pictogram_spacing_;
+    }
+
+    // The peripheral area defines the area in which compases will zoom ir / out
+    const float peripheral_area = 0.5f * pictogram_size_;
+
+    // Compute the scale variable
+    float scale = pictogram_scale_;
+    if(!region.contains(mouse_pos_))
+    {
+        scale = 1.f;
+    }
+    else
+    {
+        // Define the pictogram line
+        float h = (region.bottom() + 0.5f * region.height());
+        glm::vec2 line_start(pos_and_scale.front().x_pos, h);
+        glm::vec2 line_end(  pos_and_scale.back().x_pos,  h);
+
+        // Find the closes point on the line from the mouse position and
+        // measuring distance
+        auto closest_point = glm::closestPointOnLine(
+            mouse_pos_, line_start, line_end);
+        const float dist_to_line = glm::length(closest_point - mouse_pos_);
+    
+        auto coeff = std::clamp(dist_to_line - pictogram_size_,
+                                0.f,
+                                peripheral_area) / peripheral_area;
+
+        scale = pictogram_scale_ - coeff * (pictogram_scale_ - 1.f);
+    }
+
+    // Compute the desired magnification area
+    const float magnification_area = pictogram_magnification_region_ *
+        (pictogram_size_ + pictogram_spacing_);
+
+    // Compute the requried magnification area
+    const float required_area =
+        magnification_area * (scale - 1) *
+        magnification_func_area(-0.5f, 0.5f);
+
+    // Cache the mouse position
+    const float mouse_x = mouse_pos_.x;
+
+    // Apply scalele to compases and move them
+    for(auto& ps : pos_and_scale)
+    {
+        float& pictog_x = ps.x_pos;
+        float& pictog_s = ps.scale;
+
+        if(std::abs(pictog_x - mouse_x) > 0.5f * magnification_area)
+        {
+            pictog_x += pictog_x > mouse_x ?  0.5f * required_area
+                                           : -0.5f * required_area;
+        }
+        else
+        {
+            auto x_diff = (pictog_x - mouse_x) / (magnification_area);                
+
+            // Apply scale            
+            pictog_s = 1 + (scale - 1.f) * magnification_func(x_diff);
+            
+            // Compute and apply the displacement
+            float coeff = std::sin(static_cast<float>(std::abs(x_diff) * PI));
+            float disp = coeff * 0.5f * required_area;
+            pictog_x += x_diff > 0.f ? disp : -disp;
+        }
+    }
+
+    return pos_and_scale;
 }
 
 //******************************************************************************

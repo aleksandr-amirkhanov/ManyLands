@@ -25,6 +25,17 @@ private:
         bool is_active;
     };
 
+    struct Compas_state
+    {
+        Compas_state(float x_pos, float scale)
+        {
+            this->x_pos = x_pos;
+            this->scale = scale;
+        }
+
+        float x_pos, scale;
+    };
+
     Timeline_renderer() = delete;
 
 public:
@@ -49,13 +60,16 @@ private:
     void draw_switches(  const Region& region);
     void draw_marker(    const Region& region);
     void draw_selection( const Region& region, const Mouse_selection& s);
-    void draw_pictograms(const Region& region);
+    void draw_pictograms(const Region& region,
+                         const std::vector<Compas_state>& compases_state);
     void draw_pictogram(
         const glm::vec2& center,
         float size,
         const Curve_selection& seleciton,
         std::string dim,
         Curve_stats::Range range);
+
+    std::vector<Compas_state> get_compases_state(const Region& region);
 
     void make_selection(const Mouse_selection& s);
     void calculate_switch_points(
@@ -78,8 +92,6 @@ private:
 
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
-
-    size_t pictogram_num_;
 
     float pictogram_size_, pictogram_spacing_, pictogram_scale_;
     size_t pictogram_magnification_region_;
