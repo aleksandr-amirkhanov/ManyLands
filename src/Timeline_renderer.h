@@ -97,18 +97,16 @@ private:
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
+    // Pictograms (also known as compases)
     float pictogram_size_, pictogram_spacing_, pictogram_scale_;
     size_t pictogram_magnification_region_;
 
     glm::vec2 mouse_pos_;
-
+    bool track_mouse_;
     Mouse_selection mouse_selection_;
 
     float player_pos_;
 
-    bool track_mouse_;
-
-    Region plot_region_, pictogram_region_;
-    
+    Region plot_region_, pictogram_region_;    
     float splitter_;
 };

@@ -103,7 +103,6 @@ void Timeline_renderer::process_input(const Renderer_io& io)
 {
     mouse_pos_ = io.mouse_pos - glm::vec2(region_.left(), region_.bottom());
 
-
     if(io.mouse_down && plot_region_.contains(mouse_pos_))
     {
         track_mouse_ = true;
