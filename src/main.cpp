@@ -207,7 +207,7 @@ void mainloop()
 
     static float timeline_height = 200.f,
                  pictograms_size = 50.f,
-                 pictogram_scale = 2.f,
+                 pictogram_scale = 1.5f,
                  splitter        = 0.5f;
     
     static int pictogram_region = 4;

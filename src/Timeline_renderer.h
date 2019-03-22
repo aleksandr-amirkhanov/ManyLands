@@ -69,6 +69,10 @@ private:
         std::string dim,
         Curve_stats::Range range);
 
+    void highlight_hovered_region(
+        const Region& region,
+        const std::vector<Compas_state>& compases_state);
+
     std::vector<Compas_state> get_compases_state(const Region& region);
 
     void make_selection(const Mouse_selection& s);

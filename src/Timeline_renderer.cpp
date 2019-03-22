@@ -86,6 +86,8 @@ void Timeline_renderer::render()
         get_compases_state(pictogram_region_);
     draw_pictograms(pictogram_region_, pos_and_scale);
 
+    highlight_hovered_region(plot_region_, pos_and_scale);
+
     if(screen_geom_->data_array.size() > 0)
     {
         screen_geom_->init_buffers();
@@ -435,25 +437,6 @@ void Timeline_renderer::draw_pictograms(
     // Draw pictograms
     size_t pictogram_num = state_->curve->get_stats().switches_inds.size() + 1;
 
-    std::vector<float> switch_points;
-    calculate_switch_points(switch_points, plot_region_);
-
-    std::vector<float> switch_center;
-    if(switch_points.size() > 0)
-    {
-        switch_center.push_back(
-            0.5f * (plot_region_.left() + switch_points[0]));
-
-        for(size_t i = 1; i < switch_points.size(); ++i)
-        {
-            switch_center.push_back(
-                0.5f * (switch_points[i - 1] + switch_points[i]));
-        }
-
-        switch_center.push_back(
-            0.5f * (switch_points.back() + plot_region_.right()));
-    }
-
     // Draw pictograms
     for(int i = 0; i < pictogram_num; ++i)
     {
@@ -772,6 +755,45 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     Curve c = *state_->simple_curve.get();
     project_point_array(c.get_vertices(), size, state_->tesseract_size[0]);
     draw_curve(c);
+}
+
+//******************************************************************************
+// highlight_hovered_region
+//******************************************************************************
+
+void Timeline_renderer::highlight_hovered_region(
+    const Region& region,
+    const std::vector<Compas_state>& compases_state)
+{
+    std::vector<float> points;
+    calculate_switch_points(points, region);
+
+    // Add first and last points for convenience
+    points.insert(points.begin(), region.left());
+    points.push_back(region.right());
+
+    for(size_t i = 0; i < compases_state.size(); ++i)
+    {
+        float intensity = (compases_state[i].scale - 1.f) /
+                          (pictogram_scale_ - 1.f);
+        if(intensity < 0)
+            intensity = 0;
+
+        glm::vec4 color(
+            0.8f,
+            0.8f,
+            0.f,
+            0.3f * std::pow(intensity, 4));
+
+        Screen_shader::Rectangle rect(
+            points[i],
+            region.bottom(),
+            points[i + 1],
+            region.top(),
+            color);
+
+        screen_shader_->append_to_geometry(*screen_geom_, rect);
+    }
 }
 
 //******************************************************************************
