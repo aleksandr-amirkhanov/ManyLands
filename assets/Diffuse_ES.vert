@@ -16,7 +16,7 @@ void main()
     vert = vertex.xyz;
     vertNormal = normalMatrix * normal;
     col = color;
-	viewSpace = mvMatrix * vec4(vertex);
+    viewSpace = mvMatrix * vec4(vertex);
 	
     gl_Position = projMatrix * mvMatrix * vertex;
 }

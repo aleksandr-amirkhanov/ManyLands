@@ -23,7 +23,7 @@ void main()
     fogFactor       = clamp(fogFactor, 0.0, 1.0);
 
     if(fogRange[0] < fogRange[1])
-        fragColor = mix(vec4(1), c, fogFactor);
+        fragColor = vec4(mix(vec3(1), c.xyz, fogFactor), c.w);
     else
         fragColor = c;
 }
