@@ -67,13 +67,13 @@ public:
         {
             return top_ - bottom_;
         }
-        bool contains(glm::vec2 pos)
+        bool contains(glm::vec2 pos) const
         {
             return contains(pos.x, pos.y);
         }
-        bool contains(float x, float y)
+        bool contains(float x, float y) const
         {
-            return (left_ <= x && x <= right_ && bottom_ < y && y < top_);
+            return (left_ <= x && x <= right_ && bottom_ <= y && y <= top_);
         }
 
     private:

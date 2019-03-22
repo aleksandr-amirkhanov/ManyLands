@@ -6,6 +6,8 @@
 #include "Scene_wireframe_object.h"
 // glm
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/closest_point.hpp>
 // std
 #include <vector>
 #include <tuple>
@@ -25,6 +27,10 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     , pictogram_spacing_(1.5f)
     , player_pos_(0.f)
     , track_mouse_(false)
+    , splitter_(0.5f)
+    , pictogram_scale_(1.f)
+    , pictogram_magnification_region_(4)
+    , mouse_pos_(0.f, 0.f)
 {
     set_state(state);
 }
@@ -76,7 +82,7 @@ void Timeline_renderer::render()
     draw_switches(plot_region_);
     draw_marker(plot_region_);
     draw_selection(plot_region_, mouse_selection_);
-    draw_pictograms(plot_region_);
+    draw_pictograms(pictogram_region_);
 
     if(screen_geom_->data_array.size() > 0)
     {
@@ -91,28 +97,15 @@ void Timeline_renderer::render()
 
 void Timeline_renderer::process_input(const Renderer_io& io)
 {
-    glm::vec2 mouse_pos = io.mouse_pos -
-                          glm::vec2(region_.left(), region_.bottom());
-
-    pictogram_mouse_pos_ = mouse_pos;
-
-    // TODO: the code beolow is temporal and should be moved a special function
-    pictogram_mouse_pos_[0] = std::clamp(
-        pictogram_mouse_pos_[0],
-        0.f,
-        pictogram_region_.right());
-    pictogram_mouse_pos_[1] = std::clamp(
-        pictogram_mouse_pos_[1],
-        0.f,
-        pictogram_region_.top());
+    mouse_pos_ = io.mouse_pos - glm::vec2(region_.left(), region_.bottom());
 
 
-    if(io.mouse_down && plot_region_.contains(mouse_pos))
+    if(io.mouse_down && plot_region_.contains(mouse_pos_))
     {
         track_mouse_ = true;
         mouse_selection_.is_active = true;
-        mouse_selection_.start_pnt = mouse_pos;
-        mouse_selection_.end_pnt = mouse_pos;
+        mouse_selection_.start_pnt = mouse_pos_;
+        mouse_selection_.end_pnt = mouse_pos_;
     }
 
     if(io.mouse_up)
@@ -125,7 +118,7 @@ void Timeline_renderer::process_input(const Renderer_io& io)
 
     if(track_mouse_ && glm::length(io.mouse_move) > 0)
     {
-        mouse_selection_.end_pnt = mouse_pos;
+        mouse_selection_.end_pnt = mouse_pos_;
     }
 }
 
@@ -142,6 +135,17 @@ void Timeline_renderer::set_redering_region(Region region,
 }
 
 //******************************************************************************
+// set_splitter
+//
+// Set splitter that defines the ratio between timelines and compases
+//******************************************************************************
+
+void Timeline_renderer::set_splitter(float splitter)
+{
+    splitter_ = splitter;
+}
+
+//******************************************************************************
 // set_pictogram_size
 //******************************************************************************
 
@@ -149,6 +153,16 @@ void Timeline_renderer::set_pictogram_size(float size)
 {
     pictogram_size_ = size;
     update_regions();
+}
+
+//******************************************************************************
+// set_pictogram_scale
+//******************************************************************************
+
+void Timeline_renderer::set_pictogram_magnification(float scale, int region_size)
+{
+    pictogram_scale_ = scale;
+    pictogram_magnification_region_ = region_size;
 }
 
 //******************************************************************************
@@ -436,10 +450,7 @@ void Timeline_renderer::draw_pictograms(const Region& region)
             0.5f * (switch_points.back() + plot_region_.right()));
     }
 
-
-
-
-
+    // Find preliminary positions of compases
 
     float required_width =
         pictogram_num_ * pictogram_size_ + pictogram_spacing_;
@@ -454,24 +465,48 @@ void Timeline_renderer::draw_pictograms(const Region& region)
         x_pos += pictogram_size_ + pictogram_spacing_;
     }
 
+    // The peripheral area defines the area in which compases will zoom ir / out
+    const float peripheral_area = 0.5f * pictogram_size_;
 
+    // Compute the scale variable
+    float scale = pictogram_scale_;
+    if(!region.contains(mouse_pos_))
+    {
+        scale = 1.f;
+    }
+    else
+    {
+        // Define the pictogram line
+        float h = (region.bottom() + 0.5f * region.height());
+        glm::vec2 line_start(std::get<0>(pos_and_scale.front()), h);
+        glm::vec2 line_end(std::get<0>(pos_and_scale.back()),  h);
 
+        // Find the closes point on the line from the mouse position and
+        // measuring distance
+        auto closest_point = glm::closestPointOnLine(
+            mouse_pos_, line_start, line_end);
+        const float dist_to_line = glm::length(closest_point - mouse_pos_);
+    
+        auto coeff = std::clamp(dist_to_line - pictogram_size_,
+                                0.f,
+                                peripheral_area) / peripheral_area;
 
+        scale = pictogram_scale_ - coeff * (pictogram_scale_ - 1.f);
+    }
 
-    // Input
-    const float magnification_scale = 2.f,
-                magnification_area = 4 * (pictogram_size_ + pictogram_spacing_),
-                x_min = -0.5f,
-                x_max =  0.5f;
+    // Compute the desired magnification area
+    const float magnification_area = pictogram_magnification_region_ *
+        (pictogram_size_ + pictogram_spacing_);
 
-    // Mouse position
-    const float mouse_x = pictogram_mouse_pos_.x;
-
-    // Computing the requried magnification area
+    // Compute the requried magnification area
     const float required_area =
-        magnification_area * (magnification_scale - 1) *
-        magnification_func_area(x_min, x_max);
+        magnification_area * (scale - 1) *
+        magnification_func_area(-0.5f, 0.5f);
 
+    // Cache the mouse position
+    const float mouse_x = mouse_pos_.x;
+
+    // Apply scalele to compases and move them
     for(auto& ps : pos_and_scale)
     {
         float& pictog_x = std::get<0>(ps);
@@ -479,36 +514,24 @@ void Timeline_renderer::draw_pictograms(const Region& region)
 
         if(std::abs(pictog_x - mouse_x) > 0.5f * magnification_area)
         {
-            if(pictog_x < mouse_x)
-                pictog_x -= 0.5f * required_area;
-            else
-                pictog_x += 0.5f * required_area;
+            pictog_x += pictog_x > mouse_x ?  0.5f * required_area
+                                           : -0.5f * required_area;
         }
         else
         {
-            auto x_diff = (pictog_x - mouse_x) / (magnification_area);
-            auto magnification =
-                1 + (magnification_scale - 1.f) * magnification_func(x_diff);
+            auto x_diff = (pictog_x - mouse_x) / (magnification_area);                
 
             // Apply scale            
-            pictog_s = magnification;
+            pictog_s = 1 + (scale - 1.f) * magnification_func(x_diff);
             
             // Compute and apply the displacement
-            float disp_coeff =
-                std::sin(static_cast<float>(std::abs(x_diff) * PI));
-            float displacement = disp_coeff * 0.5f * required_area;
-
-            if(x_diff > 0)
-                pictog_x += displacement;
-            else
-                pictog_x -= displacement;
+            float coeff = std::sin(static_cast<float>(std::abs(x_diff) * PI));
+            float disp = coeff * 0.5f * required_area;
+            pictog_x += x_diff > 0.f ? disp : -disp;
         }
     }
 
-
-
-
-
+    // Draw pictograms
     for(int i = 0; i < pictogram_num_; ++i)
     {
         Curve_selection selection;
@@ -546,8 +569,8 @@ void Timeline_renderer::draw_pictograms(const Region& region)
 
         draw_pictogram(
             glm::vec2(std::get<0>(pos_and_scale[i]),
-                      pictogram_region_.bottom() +
-                      0.5f * pictogram_region_.height()),
+                      region.bottom() +
+                      0.5f * region.height()),
             std::get<1>(pos_and_scale[i]) * pictogram_size_,
             selection,
             dim,
@@ -559,7 +582,7 @@ void Timeline_renderer::draw_pictograms(const Region& region)
         painter.setBrush(QBrush());
 
         glm::vec2 pictogram_p(
-            x_pos, pictogram_region_.center().y() - pictogram_size_);
+            x_pos, region..center().y() - pictogram_size_);
         glm::vec2 switch_p(switch_center[i], plot_region_.bottom());
 
         QPainterPath path;
@@ -965,14 +988,14 @@ void Timeline_renderer::update_regions()
     const float margin = 10.f;
 
     plot_region_ = Region(margin,
-                          0.5f * region_.height() + margin,
+                          splitter_ * region_.height() + margin,
                           region_.width() - margin,
                           region_.height() - margin);
 
     pictogram_region_ = Region(margin,
                                margin,
                                region_.width() - margin,
-                               0.5f * region_.height() - margin);
+                               splitter_ * region_.height() - margin);
 }
 
 //******************************************************************************

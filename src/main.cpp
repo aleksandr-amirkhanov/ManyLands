@@ -206,7 +206,11 @@ void mainloop()
     int height = (int)io.DisplaySize.y;
 
     static float timeline_height = 200.f,
-                 pictograms_size = 30.f;
+                 pictograms_size = 40.f,
+                 pictogram_scale = 2.f,
+                 splitter        = 0.5f;
+    
+    static int pictogram_region = 4;
 
     // ImGui windows start
     {
@@ -330,10 +334,22 @@ void mainloop()
             ImGui::SliderFloat(
                 "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
             ImGui::SliderFloat(
+                "Splitter", &splitter, 0.05f, 0.95f);
+            ImGui::SliderFloat(
                 "Timeline", &timeline_height, 10.f, 1000.0f);
             ImGui::SliderFloat(
                 "Pictograms", &pictograms_size, 10.f, 100.0f);
 
+            ImGui::Separator();
+            ImGui::Text("Pictogram magnification");
+            ImGui::SliderFloat(
+                "Scale", &pictogram_scale, 0.5f, 10.f);
+            ImGui::SliderInt(
+                "Region", &pictogram_region, 1, 10);
+
+            ImGui::Separator();
+
+            ImGui::Text("Colors:");
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
             ImGui::ColorEdit3("Y-axis", (float*)&Y_axis_color);
@@ -508,7 +524,10 @@ void mainloop()
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
 
+    Timeline.set_splitter(splitter);
+
     Timeline.set_pictogram_size(pictograms_size);
+    Timeline.set_pictogram_magnification(pictogram_scale, pictogram_region);
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(width),

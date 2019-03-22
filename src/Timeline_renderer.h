@@ -37,7 +37,10 @@ public:
     virtual void set_redering_region(Region region,
                                      float scale_x,
                                      float scale_y) override;
+    void set_splitter(float splitter);
+
     void set_pictogram_size(float size);
+    void set_pictogram_magnification(float scale, int region_size);
 
 private:
     // Drawing functions
@@ -77,8 +80,11 @@ private:
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
 
     size_t pictogram_num_;
-    float pictogram_size_, pictogram_spacing_;
-    glm::vec2 pictogram_mouse_pos_;
+
+    float pictogram_size_, pictogram_spacing_, pictogram_scale_;
+    size_t pictogram_magnification_region_;
+
+    glm::vec2 mouse_pos_;
 
     Mouse_selection mouse_selection_;
 
@@ -87,4 +93,6 @@ private:
     bool track_mouse_;
 
     Region plot_region_, pictogram_region_;
+    
+    float splitter_;
 };
