@@ -26,11 +26,11 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_size_(0.f)
     , pictogram_spacing_(1.5f)
     , player_pos_(0.f)
-    , track_mouse_(false)
     , splitter_(0.5f)
     , pictogram_scale_(1.f)
     , pictogram_magnification_region_(4)
     , mouse_pos_(0.f, 0.f)
+    , track_mouse_(false)
 {
     set_state(state);
 }
@@ -80,7 +80,8 @@ void Timeline_renderer::render()
 
     // On-screen rendering
     
-    highlight_hovered_region(plot_region_, pos_and_scale);
+    if(!pictogram_mouse_down)
+        highlight_hovered_region(plot_region_, pos_and_scale);
     draw_selection(plot_region_, mouse_selection_);
 
     draw_axes(plot_region_);
@@ -112,7 +113,7 @@ void Timeline_renderer::process_input(const Renderer_io& io)
         mouse_selection_.end_pnt = mouse_pos_;
     }
 
-    if(io.mouse_up)
+    if(track_mouse_ && io.mouse_up)
     {
         track_mouse_ = false;
         mouse_selection_.is_active = false;
@@ -123,6 +124,77 @@ void Timeline_renderer::process_input(const Renderer_io& io)
     if(track_mouse_ && glm::length(io.mouse_move) > 0)
     {
         mouse_selection_.end_pnt = mouse_pos_;
+    }
+
+    if(io.mouse_down && pictogram_region_.contains(mouse_pos_))
+    {
+        pictogram_mouse_down = true;
+    }
+
+    if(pictogram_mouse_down && io.mouse_up)
+    {
+        pictogram_mouse_down = false;
+    }
+
+    if(pictogram_mouse_down)
+    {
+        std::vector<Compas_state> pos_and_scale =
+            get_compases_state(pictogram_region_);
+
+        size_t pictog_ind = 0;
+        {
+            float max_scale = std::numeric_limits<float>::min();
+            for(size_t i = 0; i < pos_and_scale.size(); ++i)
+            {
+                if(max_scale < pos_and_scale[i].scale) 
+                {
+                    max_scale = pos_and_scale[i].scale;
+                    pictog_ind = i;
+                }
+            }
+        }
+
+        std::string view;
+        if(pictog_ind == state_->curve->get_stats().switches_inds.size())
+        {
+            view = state_->curve->get_stats().dimensionality.back();
+        }
+        else
+        {
+            int vert_ind =
+                state_->curve->get_stats().switches_inds[pictog_ind] - 1;
+            view = state_->curve->get_stats().dimensionality[vert_ind];
+        }
+
+        Curve_selection selection;
+        if(pictog_ind == 0)
+        {
+            selection.t_start = state_->curve->t_min();
+            selection.t_end =
+                state_->curve->time_stamp()[state_->curve->get_stats()
+                                             .switches_inds.front()];
+        }
+        else if(pictog_ind == state_->curve->get_stats().switches_inds.size())
+        {
+            selection.t_start =
+                state_->curve->time_stamp()[state_->curve->get_stats()
+                                             .switches_inds.back()];
+            selection.t_end = state_->curve->t_max();
+        }
+        else
+        {
+            selection.t_start =
+                state_->curve->time_stamp()[state_->curve->get_stats()
+                                             .switches_inds[pictog_ind - 1]];
+            selection.t_end =
+                state_->curve->time_stamp()[state_->curve->get_stats()
+                                             .switches_inds[pictog_ind]];
+        }
+
+        state_->curve_selection = std::make_unique<Curve_selection>(selection);
+
+        //emit change_view(view);
+        //emit(update_curve_selection(selection));
     }
 }
 
