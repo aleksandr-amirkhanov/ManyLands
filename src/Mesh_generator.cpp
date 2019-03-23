@@ -120,9 +120,12 @@ void Mesh_generator::cylinder_v2(
     glm::vec4 color,
     Mesh& mesh)
 {
+    assert(num_verts >= 3);
+    auto dir = end_point - start_point;
+    const auto norm_dir = glm::normalize(dir);
     // avoid very sharp angles
-    // FIXME: don't know why 0.1, should be e.g., -0.8????
-    if(glm::dot(start_dir, end_dir) < 0.1f)
+    if(glm::dot(start_dir, norm_dir) < 0.2f ||
+       glm::dot(end_dir, norm_dir) < 0.2f)
     {
         return cylinder(
             num_verts,
@@ -133,15 +136,13 @@ void Mesh_generator::cylinder_v2(
             color,
             mesh);
     }
-    assert(num_verts >= 3);
 
     mesh.colors.push_back(color);
 
-    auto dir = end_point - start_point;
     float length = glm::length(dir);
 
     const glm::vec3 up_vec(0.f, 0.f, 1.f);
-    auto rotation = glm::rotation(glm::normalize(up_vec), glm::normalize(dir));
+    auto rotation = glm::rotation(glm::normalize(up_vec), norm_dir);
 
     const size_t first_vert = mesh.vertices.size();
     const size_t first_norm = mesh.normals.size();
