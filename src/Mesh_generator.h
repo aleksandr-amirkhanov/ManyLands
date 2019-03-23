@@ -26,6 +26,27 @@ void cylinder(
     glm::vec4 color,
     Mesh& mesh);
 
+Mesh cylinder_v2(
+    unsigned int num_verts,
+    float start_diameter,
+    float end_diameter,
+    glm::vec3 start_point,
+    glm::vec3 end_point,
+    glm::vec3 start_dir,
+    glm::vec3 end_dir,
+    glm::vec4 color);
+
+void cylinder_v2(
+    unsigned int num_verts,
+    float start_diameter,
+    float end_diameter,
+    glm::vec3 start_point,
+    glm::vec3 end_point,
+    glm::vec3 start_dir,
+    glm::vec3 end_dir,
+    glm::vec4 color,
+    Mesh& mesh);
+
 Mesh sphere(
     unsigned int segments,
     unsigned int rings,
@@ -40,4 +61,5 @@ void sphere(
     glm::vec3 position,
     glm::vec4 color,
     Mesh& mesh);
+
 } // namespace Mesh_generator
