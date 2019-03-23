@@ -452,6 +452,31 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
 
     // Curve
     Mesh curve_mesh;
+    std::vector<glm::vec3> point_directions(c.vertices().size());
+    { // first
+        const auto& a = c.get_vertices()[0];
+        const auto& b = c.get_vertices()[1];
+        point_directions.front() = glm::normalize(
+            glm::vec3(b[0], b[1], b[2]) - glm::vec3(a[0], a[1], a[2]));
+    }
+    for(size_t i = 1; i < c.vertices().size() - 1; ++i)
+    {
+        const auto& p1 = c.vertices()[i - 1];
+        const auto& p2 = c.vertices()[i];
+        const auto& p3 = c.vertices()[i + 1];
+        const glm::vec3 dir1 = glm::normalize(
+            glm::vec3(p2[0], p2[1], p2[2]) - glm::vec3(p1[0], p1[1], p1[2]));
+        const glm::vec3 dir2 = glm::normalize(
+            glm::vec3(p3[0], p3[1], p3[2]) - glm::vec3(p2[0], p2[1], p2[2]));
+        point_directions[i] = glm::normalize(dir1 + dir2);
+    }
+    { // last
+        const auto& a = c.vertices()[c.vertices().size() - 2];
+        const auto& b = c.vertices()[c.vertices().size() - 1];
+        point_directions.back() = glm::normalize(
+            glm::vec3(b[0], b[1], b[2]) - glm::vec3(a[0], a[1], a[2]));
+    }
+
     for(size_t i = 0; i < c.edges().size(); ++i)
     {
         const auto& e = c.edges()[i];
@@ -470,12 +495,14 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
         float speed_coeff = (stats.speed[i] - stats.min_speed) /
                             (stats.max_speed - stats.min_speed);
 
-        Mesh_generator::cylinder(
+        Mesh_generator::cylinder_v2(
             5,
             curve_thickness_ / current(3),
             curve_thickness_ / next(3),
             glm::vec3(current(0), current(1), current(2)),
             glm::vec3(next(0), next(1), next(2)),
+            point_directions[i],
+            point_directions[i + 1],
             get_speed_color(speed_coeff),
             curve_mesh);
     }
