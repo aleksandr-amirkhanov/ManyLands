@@ -16,9 +16,9 @@ Mesh Mesh_generator::cylinder(
     unsigned int num_verts,
     float start_diameter,
     float end_diameter,
-    glm::vec3 start_point,
-    glm::vec3 end_point,
-    glm::vec4 color)
+    const glm::vec3& start_point,
+    const glm::vec3& end_point,
+    const glm::vec4& color)
 {
     Mesh cylinder_mesh;
     cylinder(
@@ -40,9 +40,9 @@ void Mesh_generator::cylinder(
     unsigned int num_verts,
     float start_diameter,
     float end_diameter,
-    glm::vec3 start_point,
-    glm::vec3 end_point,
-    glm::vec4 color,
+    const glm::vec3& start_point,
+    const glm::vec3& end_point,
+    const glm::vec4& color,
     Mesh& mesh)
 {
     assert(num_verts >= 3);
@@ -113,19 +113,19 @@ void Mesh_generator::cylinder_v2(
     unsigned int num_verts,
     float start_diameter,
     float end_diameter,
-    glm::vec3 start_point,
-    glm::vec3 end_point,
-    glm::vec3 start_dir,
-    glm::vec3 end_dir,
-    glm::vec4 color,
+    const glm::vec3& start_point,
+    const glm::vec3& end_point,
+    const glm::vec3& start_dir,
+    const glm::vec3& end_dir,
+    const glm::vec4& color,
     Mesh& mesh)
 {
     assert(num_verts >= 3);
     auto dir = end_point - start_point;
     const auto norm_dir = glm::normalize(dir);
     // avoid very sharp angles
-    if(glm::dot(start_dir, norm_dir) < 0.2f ||
-       glm::dot(end_dir, norm_dir) < 0.2f)
+    if(glm::dot(start_dir, norm_dir) < 0.1f ||
+       glm::dot(end_dir, norm_dir) < 0.1f)
     {
         return cylinder(
             num_verts,
@@ -216,11 +216,11 @@ Mesh Mesh_generator::cylinder_v2(
     unsigned int num_verts,
     float start_diameter,
     float end_diameter,
-    glm::vec3 start_point,
-    glm::vec3 end_point,
-    glm::vec3 start_dir,
-    glm::vec3 end_dir,
-    glm::vec4 color)
+    const glm::vec3& start_point,
+    const glm::vec3& end_point,
+    const glm::vec3& start_dir,
+    const glm::vec3& end_dir,
+    const glm::vec4& color)
 {
     Mesh cylinder_mesh;
     cylinder_v2(
@@ -244,8 +244,8 @@ Mesh Mesh_generator::sphere(
     unsigned int segments,
     unsigned int rings,
     float diameter,
-    glm::vec3 position,
-    glm::vec4 color)
+    const glm::vec3& position,
+    const glm::vec4& color)
 {
     Mesh sphere_mesh;
     sphere(segments, rings, diameter, position, color, sphere_mesh);
@@ -260,8 +260,8 @@ void Mesh_generator::sphere(
     unsigned int segments,
     unsigned int rings,
     float diameter,
-    glm::vec3 position,
-    glm::vec4 color,
+    const glm::vec3& position,
+    const glm::vec4& color,
     Mesh& mesh)
 {
     mesh.colors.push_back(color);
