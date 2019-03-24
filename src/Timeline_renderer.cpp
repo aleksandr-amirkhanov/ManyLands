@@ -560,24 +560,6 @@ void Timeline_renderer::draw_pictograms(
             selection,
             dim,
             range);
-
-        /*pen.setWidthF(1.);
-        pen.setColor(QColor(0, 0, 0, 80));
-        painter.setPen(pen);
-        painter.setBrush(QBrush());
-
-        glm::vec2 pictogram_p(
-            x_pos, region..center().y() - pictogram_size_);
-        glm::vec2 switch_p(switch_center[i], plot_region_.bottom());
-
-        QPainterPath path;
-        path.moveTo(switch_p);
-        path.cubicTo(
-            QPointF(switch_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
-            QPointF(
-                pictogram_p.x(), 0.5 * (switch_p.y() + pictogram_p.y())),
-            pictogram_p);
-        painter.drawPath(path);*/
     }
 }
 

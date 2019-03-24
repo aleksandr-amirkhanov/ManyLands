@@ -561,15 +561,16 @@ void mainloop()
                  State->get_color(Background).a_norm());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    const auto separator_thickness(4.f);
 
     Timeline_region = Base_renderer::Region(
         static_cast<float>(Left_panel_size),
         static_cast<float>(Bottom_panel_size),
         static_cast<float>(width),
-        static_cast<float>(timeline_height));
+        static_cast<float>(timeline_height - 0.5f * separator_thickness));
     Scene_region = Base_renderer::Region(
         static_cast<float>(Left_panel_size),
-        static_cast<float>(Bottom_panel_size + timeline_height),
+        static_cast<float>(0.5f * separator_thickness + timeline_height),
         static_cast<float>(width),
         static_cast<float>(height));
 
@@ -595,8 +596,14 @@ void mainloop()
                        glm::value_ptr(proj_ortho));
     Screen_shader::Screen_geometry separator;
     Screen_shader::Line_strip line;
-    line.emplace_back(Screen_shader::Line_point(glm::vec2(Left_panel_size, timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
-    line.emplace_back(Screen_shader::Line_point(glm::vec2(width,           timeline_height), 4.f, glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    line.emplace_back(Screen_shader::Line_point(
+        glm::vec2(Left_panel_size, timeline_height),
+        4.f,
+        glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    line.emplace_back(Screen_shader::Line_point
+    (glm::vec2(width, timeline_height),
+        4.f,
+        glm::vec4(0.f, 0.f, 0.f, 0.15f)));
     Screen_shad->append_to_geometry(separator, line);
 
 
