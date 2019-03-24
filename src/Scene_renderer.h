@@ -67,17 +67,17 @@ private:
     glm::vec2 fog_range_;
 
     std::shared_ptr<Diffuse_shader> diffuse_shader_;
-    // TODO: the 'screen_shader_' is currently not used. Delete it?
     std::shared_ptr<Screen_shader> screen_shader_;
 
     std::unique_ptr<Diffuse_shader::Mesh_geometry> back_geometry_,
                                                    front_geometry_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geometry_;
 
-
     bool optimize_performance_;
     int visibility_mask_;
     const int number_of_animations_;
 
     bool track_mouse_;
+
+    bool filter_arrow_annotations_;
 };

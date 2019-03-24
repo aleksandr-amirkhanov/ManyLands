@@ -30,6 +30,7 @@ Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
     , optimize_performance_(true)
     , visibility_mask_(0)
     , track_mouse_(false)
+    , filter_arrow_annotations_(true)
 {
     set_state(state);
 }
@@ -619,22 +620,55 @@ std::vector<float> Scene_renderer::split_animation(float animation,
 
 void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
 {
-    // TODO: port the method
+    // Parameters
+    const float min_arrow_dist(0.1f);
+    const float arrow_spacing(6.f);
+    const float arrow_size(8.f);
+    const glm::vec4 color(0.f, 0.f, 0.f, 1.0f);
 
     auto annot_arrows = c.get_arrows(*state_->curve_selection.get());
     auto annot_dots = c.get_markers(*state_->curve_selection.get());
 
+    // This variable points either to the filtered or original arrows
+    std::vector<Curve_annotations>* annot_ptr;
 
-    // TODO: filter arrow points to reduce their density in the screen space
+    // If necessary, filter the annotations
+    std::vector<Curve_annotations> filtered_annotations;
+    if(filter_arrow_annotations_)
+    {
+        annot_ptr = &filtered_annotations;
+
+        for(size_t i = 0; i < annot_arrows.size(); ++i)
+        {
+            auto& current = annot_arrows[i];
+            double dist = std::numeric_limits<double>::max();
+
+            for(size_t j = i + 1; j < annot_arrows.size(); ++j)
+            {
+                auto& next = annot_arrows[j];
+
+                auto v = next.point - current.point;
+                double length =
+                    std::sqrt(v(0) * v(0) + v(1) * v(1) + v(2) * v(2));
+
+                dist = std::min(length, dist);
+            }
+
+            if(dist > min_arrow_dist)
+            {
+                filtered_annotations.push_back(current);
+            }
+        }
+    }
+    else
+    {
+        annot_ptr = &annot_arrows;
+    }
 
     // Draw annotation points
-    for(auto& a : annot_arrows)
+
+    for(auto& a : *annot_ptr)
     {
-        // Parameters
-
-        const float arrow_spacing = 6.f;
-        const float arrow_size = 8.f;
-
         // Copy and project point
 
         glm::vec4 point(a.point(0), a.point(1), a.point(2), 1.f);
@@ -662,8 +696,6 @@ void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
             glm::vec4 right_side =
                 glm::rotateZ(dir, glm::radians(-30.f)) * size;     
 
-            const glm::vec4 color(0.f, 0.f, 0.f, 1.0f);
-            
             Screen_shader::Line_strip line;
             line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x -  left_side.x, pos.y -  left_side.y), 1.f, color));
             line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x,                pos.y               ), 1.f, color));
@@ -694,12 +726,10 @@ void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
         }
     }
 
-    // Draw annotation arrows
-    /*for(auto& a : annot_arrows)
-        gui_.Renderer->add_annotation(a);
+    // TODO: add drawing the annotation points
 
     // Draw annotation dots
-    for(auto& a : annot_dots)
+    /*for(auto& a : annot_dots)
         draw_point(a, QColor(0, 0, 0), 3.);*/
 }
 
