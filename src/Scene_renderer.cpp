@@ -621,10 +621,13 @@ std::vector<float> Scene_renderer::split_animation(float animation,
 void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
 {
     // Parameters
-    const float min_arrow_dist(0.1f);
-    const float arrow_spacing(6.f);
-    const float arrow_size(8.f);
-    const glm::vec4 color(0.f, 0.f, 0.f, 1.0f);
+    const float min_arrow_dist(0.1f),
+                arrow_spacing(6.f),
+                arrow_size(8.f),
+                sphere_diam(4.f);
+
+    const glm::vec4 arrow_color(0.f, 0.f, 0.f, 1.f),
+                    sphere_color(0.f, 0.f, 0.f, 1.f);
 
     auto annot_arrows = c.get_arrows(*state_->curve_selection.get());
     auto annot_dots = c.get_markers(*state_->curve_selection.get());
@@ -697,9 +700,9 @@ void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
                 glm::rotateZ(dir, glm::radians(-30.f)) * size;     
 
             Screen_shader::Line_strip line;
-            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x -  left_side.x, pos.y -  left_side.y), 1.f, color));
-            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x,                pos.y               ), 1.f, color));
-            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x - right_side.x, pos.y - right_side.y), 1.f, color));
+            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x -  left_side.x, pos.y -  left_side.y), 1.f, arrow_color));
+            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x,                pos.y               ), 1.f, arrow_color));
+            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x - right_side.x, pos.y - right_side.y), 1.f, arrow_color));
             screen_shader_->append_to_geometry(*screen_geometry_.get(), line);
         };
 
@@ -726,11 +729,20 @@ void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
         }
     }
 
-    // TODO: add drawing the annotation points
+    // Draw switch points
 
-    // Draw annotation dots
-    /*for(auto& a : annot_dots)
-        draw_point(a, QColor(0, 0, 0), 3.);*/
+    for(auto& a : annot_dots)
+    {
+        Mesh mesh;
+        Mesh_generator::sphere(
+            5,
+            5,
+            sphere_diam / a(3),
+            glm::vec3(a(0), a(1), a(2)),
+            sphere_color,
+            mesh);
+        diffuse_shader_->append_to_geometry(*back_geometry_.get(), mesh);
+    }
 }
 
 //******************************************************************************
