@@ -25,7 +25,6 @@
 Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     : pictogram_size_(0.f)
     , pictogram_spacing_(1.5f)
-    , player_pos_(0.f)
     , splitter_(0.5f)
     , pictogram_scale_(1.f)
     , pictogram_magnification_region_(4)
@@ -87,7 +86,8 @@ void Timeline_renderer::render()
     draw_axes(plot_region_);
     draw_curve(plot_region_);
     draw_switches(plot_region_);
-    draw_marker(plot_region_);
+    if(state_->is_timeplayer_active)
+        draw_marker(plot_region_);
     draw_pictograms(pictogram_region_, pos_and_scale);
 
     if(screen_geom_->data_array.size() > 0)
@@ -161,7 +161,7 @@ void Timeline_renderer::process_input(const Renderer_io& io)
         }
         else
         {
-            int vert_ind =
+            auto vert_ind =
                 state_->curve->get_stats().switches_inds[pictog_ind] - 1;
             view = state_->curve->get_stats().dimensionality[vert_ind];
         }
@@ -437,13 +437,12 @@ void Timeline_renderer::draw_switches(const Region& region)
 
 void Timeline_renderer::draw_marker(const Region& region)
 {
-    const float width = 1.f;
-    const glm::vec4 color(1.f, 0.f, 0.f, 1.f);
+    // Parameters
+    const float width(3.f);
+    const glm::vec4 color(1.f, 0.f, 0.f, 0.5f);
     
-    float norm_pos = player_pos_ / (state_->curve->t_max() -
-                                    state_->curve->t_min());
-
-    float x_pos = region.left() + norm_pos * region.width();
+    float x_pos = region.left() + state_->timeplayer_pos * region.width();
+    x_pos = std::round(x_pos) + 0.5f;
 
     Screen_shader::Line_strip line;
     line.emplace_back(Screen_shader::Line_point(

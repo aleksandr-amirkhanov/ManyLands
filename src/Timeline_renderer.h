@@ -104,9 +104,7 @@ private:
     glm::vec2 mouse_pos_;
     bool track_mouse_;
     bool pictogram_mouse_down;
-    Mouse_selection mouse_selection_;
-
-    float player_pos_;
+    Mouse_selection mouse_selection_;    
 
     Region plot_region_, pictogram_region_;    
     float splitter_;

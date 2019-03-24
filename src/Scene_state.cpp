@@ -24,6 +24,8 @@ Scene_state::Scene_state()
     , yw_rot(0.f)
     , zw_rot(0.f)
     , fov_y(0.f)
+    , is_timeplayer_active(true)
+    , timeplayer_pos(0.f)
 {
     tesseract_size[0] = tesseract_size[1] = tesseract_size[2] =
         tesseract_size[3] = 1;

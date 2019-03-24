@@ -48,9 +48,15 @@ public:
     void update_color(int color_id, const Color& color);
 
     float unfolding_anim;
+
+    // Timeplayer
+    bool is_timeplayer_active;
+    float timeplayer_pos;
+
     bool show_tesseract,
          show_curve,
          use_simple_dali_cross;
+
     std::array<float, 4> tesseract_size;
 
 private:

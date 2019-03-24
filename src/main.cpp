@@ -16,7 +16,9 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 // std
+#include <chrono>
 #include <stdio.h>
+#include <math.h>
 #include <memory.h>
 // glm
 #include <glm/glm.hpp>
@@ -78,7 +80,7 @@ ImVec4 Clear_color,
        Low_speed_color,
        High_speed_color;
 
-const bool Enable_keyboard = false,   // Controllers
+const bool Enable_keyboard = true,   // Controllers
            Enable_gamepad  = false;
 
 const float App_scale = 1.f;          // Global app scale
@@ -99,6 +101,13 @@ Scene Scene_objs(State);
 
 Base_renderer::Region Scene_region, Timeline_region;
 Base_renderer::Renderer_io Previous_io;
+
+std::chrono::time_point<std::chrono::system_clock> Last_timepoint;
+
+// Timeplayer
+auto Is_player_active(false),
+     Do_show_timepoint(true);
+auto Player_speed(0.1f);
 
 //******************************************************************************
 // Color_to_ImVec4
@@ -167,11 +176,31 @@ void process_mouse_input(const SDL_Event& event)
 }
 
 //******************************************************************************
+// update_timer
+//******************************************************************************
+
+void update_timer()
+{
+    auto current = std::chrono::system_clock::now();
+    std::chrono::duration<double> delta_t = current - Last_timepoint;
+    Last_timepoint = current;
+ 
+    if(Is_player_active)
+    {
+        State->timeplayer_pos = std::fmod(
+            State->timeplayer_pos +
+            static_cast<float>(delta_t.count()) * Player_speed, 1.f);
+    }
+}
+
+//******************************************************************************
 // mainloop
 //******************************************************************************
 
 void mainloop()
 {
+    update_timer();
+
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
     SDL_Event event;
@@ -304,6 +333,33 @@ void mainloop()
             if(!filename.empty())
                 Scene_objs.load_ode(filename);
 #endif
+        }
+
+        if (ImGui::CollapsingHeader("Player",
+            ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            static auto time(0.f);
+            if(!Is_player_active)
+            {
+                if(ImGui::Button("Start"))
+                {
+                    Is_player_active = true;
+                }
+            }
+            else
+            {
+                if(ImGui::Button("Stop"))
+                {
+                    Is_player_active = false;
+                }
+            
+            }
+            
+            ImGui::Checkbox("Show timepoint", &State->is_timeplayer_active);
+            if(!State->is_timeplayer_active) Is_player_active = false;
+
+            ImGui::SliderFloat("Time", &State->timeplayer_pos, 0.f, 1.f);
+            ImGui::SliderFloat("Speed", &Player_speed, 0.f, 0.5f);
         }
 
         if (ImGui::CollapsingHeader("Rendering",
@@ -689,6 +745,8 @@ int main(int, char**)
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);
 #else
+
+    Last_timepoint = std::chrono::system_clock::now();
     // Main loop
     while(!done)
     {

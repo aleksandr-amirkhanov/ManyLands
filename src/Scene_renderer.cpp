@@ -460,7 +460,7 @@ void Scene_renderer::draw_tesseract(Scene_wireframe_object& t)
 
 void Scene_renderer::draw_curve(Curve& c, float opacity)
 {
-    const float marker_size = 3.f; //gui_.markerSize->value();
+    const float marker_size = 8.f; //gui_.markerSize->value();
 
     auto log_speed = [](float speed) {
         return std::log2(3 * speed + 1) / 2;
@@ -543,19 +543,22 @@ void Scene_renderer::draw_curve(Curve& c, float opacity)
         diffuse_shader_->append_to_geometry(*back_geometry_.get(), curve_mesh);
 
 
-    /*boost::numeric::ublas::vector<double> marker = c.get_point(player_pos_);
+    if(state_->is_timeplayer_active)
+    {
+        auto marker =
+            c.get_point(c.t_min() + state_->timeplayer_pos * c.t_duration());
 
-    Mesh marker_mesh;
-    Mesh_generator::sphere(
-        16,
-        16,
-        marker_size / marker(3),
-        glm::vec3(marker(0), marker(1), marker(2)),
-        glm::vec4(1, 0, 0, 1),
-        marker_mesh);
+        Mesh marker_mesh;
+        Mesh_generator::sphere(
+            5,
+            5,
+            marker_size / marker(3),
+            glm::vec3(marker(0), marker(1), marker(2)),
+            glm::vec4(1, 0, 0, 1),
+            marker_mesh);
 
-    //gui_.Renderer->add_mesh(marker_mesh);
-    back_geometry_.push_back(std::make_unique<Geometry_engine>(marker_mesh));*/
+        diffuse_shader_->append_to_geometry(*back_geometry_.get(), marker_mesh);
+    }
 }
 
 //******************************************************************************
