@@ -36,6 +36,7 @@
 #include "Consts.h"
 #include "Matrix_lib.h"
 #include "Tesseract.h"
+#include "Text_renderer.h"
 #include "Timeline_renderer.h"
 #include "Diffuse_shader.h"
 #include "Screen_shader.h"
@@ -96,6 +97,8 @@ const std::shared_ptr<Diffuse_shader> Diffuse_shad =
     std::make_shared<Diffuse_shader>();
 const std::shared_ptr<Screen_shader> Screen_shad =
     std::make_shared<Screen_shader>();
+const std::shared_ptr<Text_renderer> Text_ren =
+    std::make_shared<Text_renderer>();
 
 Scene Scene_objs(State);
 
@@ -548,7 +551,6 @@ void mainloop()
     } // ImGui windows end
 
     // Rendering
-    ImGui::Render();
     SDL_GL_MakeCurrent(MainWindow, Gl_context);
     glViewport(
         0,
@@ -580,6 +582,7 @@ void mainloop()
     Timeline.set_redering_region(Timeline_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
+    Timeline.set_text_renderer(Text_ren);
 
     Timeline.set_splitter(splitter);
 
@@ -606,12 +609,16 @@ void mainloop()
         glm::vec4(0.f, 0.f, 0.f, 0.15f)));
     Screen_shad->append_to_geometry(separator, line);
 
-
     separator.init_buffers();
     Screen_shad->draw_geometry(separator);
 
+    Text_ren->clear();
+
     Renderer.render();
     Timeline.render();
+
+    Text_ren->render(width, height);
+    ImGui::Render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(MainWindow);

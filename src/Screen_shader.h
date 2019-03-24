@@ -76,7 +76,7 @@ public:
     void append_to_geometry(Screen_geometry& geom, const Rectangle& rect);
     void append_to_geometry(Screen_geometry& geom, const Triangle& triangle);
 
-    // Please do not forget to call the `init_buffers` method before drawing the
+    // Please do not forget to call the 'init_buffers' method before drawing the
     // geometry
     void draw_geometry(const Screen_geometry& geom);
 

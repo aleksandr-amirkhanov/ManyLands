@@ -44,6 +44,16 @@ void Timeline_renderer::set_shader(std::shared_ptr<Screen_shader> screen)
 }
 
 //******************************************************************************
+// set_text_renderer
+//******************************************************************************
+
+void Timeline_renderer::set_text_renderer(
+    std::shared_ptr<Text_renderer> tex_ren)
+{
+    text_renderer_ = tex_ren;
+}
+
+//******************************************************************************
 // render
 //******************************************************************************
 
@@ -292,14 +302,23 @@ void Timeline_renderer::draw_axes(const Region& region)
                       glm::vec2(x_sub_pos, region.bottom() - hitch_length / 2));
         }
 
-        /*painter.drawText(
-            QRectF(
-                x_pos - spacing / 2,
-                region_.bottom() + hitch_length,
-                spacing,
-                spacing),
-            Qt::AlignHCenter | Qt::AlignTop,
-            QString::number(t_min + i * t_durr / num_section, 'f', 0));*/
+        // Draw text
+        // TODO: the current method to draw text is very unflexible, it is good
+        // to replace it to something better
+        char buff[100];
+        std::snprintf(
+            buff,
+            sizeof buff, "%.0f",
+            t_min + i * t_durr / num_section);
+        std::string output_text(buff);
+
+        const auto symbol_width(6.f * display_scale_x_);
+        const auto displacement = output_text.size() * 0.5f * symbol_width;
+
+        text_renderer_->add_text(
+            region_,
+            glm::vec2(x_pos - displacement, plot_region_.bottom() - hitch_length),
+            std::string(buff));
     }
 }
 

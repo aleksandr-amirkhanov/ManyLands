@@ -1,9 +1,10 @@
 #pragma once
-// Local
+// local
 #include "Base_renderer.h"
 #include "Geometry_engine.h"
 #include "Scene_state.h"
 #include "Screen_shader.h"
+#include "Text_renderer.h"
 // std
 #include <memory.h>
 // glm
@@ -42,6 +43,7 @@ public:
     Timeline_renderer(std::shared_ptr<Scene_state> state);
 
     void set_shader(std::shared_ptr<Screen_shader> screen);
+    void set_text_renderer(std::shared_ptr<Text_renderer> tex_ren);
     void render() override;
     void process_input(const Renderer_io& io) override;
 
@@ -96,6 +98,8 @@ private:
 
     std::shared_ptr<Screen_shader> screen_shader_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geom_;
+
+    std::shared_ptr<Text_renderer> text_renderer_;
 
     // Pictograms (also known as compases)
     float pictogram_size_, pictogram_spacing_, pictogram_scale_;
