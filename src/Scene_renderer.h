@@ -39,7 +39,8 @@ private:
 
     void draw_tesseract(Scene_wireframe_object& t);
     void draw_curve(Curve& c, float opacity);
-    void draw_annotations(Curve& c);
+    void draw_annotations(Curve& c, const glm::mat4& projection);
+
     void move_curves_to_3D_plots(float coeff, std::vector<Curve>& curves);
     void move_curves_to_2D_plots(float coeff, std::vector<Curve>& curves);
     void tesseract_unfolding(
@@ -71,6 +72,7 @@ private:
 
     std::unique_ptr<Diffuse_shader::Mesh_geometry> back_geometry_,
                                                    front_geometry_;
+    std::unique_ptr<Screen_shader::Screen_geometry> screen_geometry_;
 
 
     bool optimize_performance_;

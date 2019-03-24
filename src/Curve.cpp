@@ -408,6 +408,7 @@ std::vector<Curve_annotations>
 Curve::get_arrows(const Curve_selection& selection)
 {
     std::vector<Curve_annotations> annotations;
+
     for(auto& a : arrows_)
     {
         float t = a.get<0>();

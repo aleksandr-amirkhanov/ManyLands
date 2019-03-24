@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/quaternion.hpp>
 // ImGui
 #include "imgui.h"
@@ -50,6 +51,8 @@ void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
 
 void Scene_renderer::render()
 {
+    // Scene rendering ---------------------------------------------------------
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
@@ -63,6 +66,7 @@ void Scene_renderer::render()
 
     back_geometry_  = std::make_unique<Diffuse_shader::Mesh_geometry>();
     front_geometry_ = std::make_unique<Diffuse_shader::Mesh_geometry>();
+    screen_geometry_ = std::make_unique<Screen_shader::Screen_geometry>();
 
     glUseProgram(diffuse_shader_->program_id);
 
@@ -91,6 +95,9 @@ void Scene_renderer::render()
                                            glm::quat(),
                                            static_cast<float>(unfold_3D)));
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
+
+    // Chache the Model-view-projection matrix for arrow drawing
+    auto mvp_mat = proj_mat * camera_mat * world_mat;
 
     glUniformMatrix4fv(diffuse_shader_->proj_mat_id,
                        1,
@@ -155,7 +162,7 @@ void Scene_renderer::render()
         if(state_->show_curve)
         {
             draw_curve(projected_c, 1.);
-            draw_annotations(projected_c);
+            draw_annotations(projected_c, mvp_mat);
         }
     }
     else
@@ -224,7 +231,7 @@ void Scene_renderer::render()
 
                     draw_curve(c, visibility_coeff(i) * (1.f - hide_3D));
                     if(visibility_coeff(i) == 1. && hide_3D < 0.5)
-                        draw_annotations(c);
+                        draw_annotations(c, mvp_mat);
                 }
             }
         }
@@ -274,7 +281,7 @@ void Scene_renderer::render()
                 for(auto& c : curves_2D)
                 {
                     draw_curve(c, 1.);
-                    draw_annotations(c);
+                    draw_annotations(c, mvp_mat);
                 }
             }
         }
@@ -290,6 +297,27 @@ void Scene_renderer::render()
         front_geometry_->init_buffers();
         diffuse_shader_->draw_geometry(front_geometry_);
     }
+
+    // On screen rendering -----------------------------------------------------
+
+    glUseProgram(screen_shader_->program_id);
+
+    glViewport(static_cast<GLint>  (display_scale_x_ * region_.left()   ),
+               static_cast<GLint>(  display_scale_y_ * region_.bottom() ),
+               static_cast<GLsizei>(display_scale_x_ * region_.width()  ),
+               static_cast<GLsizei>(display_scale_y_ * region_.height()));
+
+    glm::mat4 proj_ortho = glm::ortho(0.f,
+                                      static_cast<float>(region_.width()),
+                                      0.f,
+                                      static_cast<float>(region_.height()));
+    glUniformMatrix4fv(screen_shader_->proj_mat_id,
+                       1,
+                       GL_FALSE,
+                       glm::value_ptr(proj_ortho));
+
+    screen_geometry_->init_buffers();
+    screen_shader_->draw_geometry(*screen_geometry_.get());
 }
 
 //******************************************************************************
@@ -589,15 +617,85 @@ std::vector<float> Scene_renderer::split_animation(float animation,
 // draw_annotations
 //******************************************************************************
 
-void Scene_renderer::draw_annotations(Curve& c)
+void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
 {
     // TODO: port the method
 
-    /*auto annot_arrows = c.get_arrows(*curve_selection_.get());
-    auto annot_dots = c.get_markers(*curve_selection_.get());
+    auto annot_arrows = c.get_arrows(*state_->curve_selection.get());
+    auto annot_dots = c.get_markers(*state_->curve_selection.get());
+
+
+    // TODO: filter arrow points to reduce their density in the screen space
+
+    // Draw annotation points
+    for(auto& a : annot_arrows)
+    {
+        // Parameters
+
+        const float arrow_spacing = 6.f;
+        const float arrow_size = 8.f;
+
+        // Copy and project point
+
+        glm::vec4 point(a.point(0), a.point(1), a.point(2), 1.f);
+        point = projection * point;
+        for(char i = 0; i < 3; ++i)
+            point[i] /= point[3];
+
+        glm::vec4 dir(a.dir(0), a.dir(1), a.dir(2), 1.f);
+        dir = projection * dir;
+        for(char i = 0; i < 3; ++i)
+            dir[i] /= dir[3];
+
+        glm::vec4 scale(region_.width() / 2,  region_.height() / 2, 0.f, 0.f);
+        glm::vec4 disp( region_.width() / 2,  region_.height() / 2, 0.f, 0.f);
+        point = point * scale + disp;
+        dir   = dir   * scale + disp;
+
+        dir = dir - point;
+        dir = glm::normalize(dir);
+
+        auto draw_arrow = [&](glm::vec4 pos, glm::vec4 dir, float size)
+        {
+            glm::vec4 left_side =
+                glm::rotateZ(dir, glm::radians(30.f)) * size;
+            glm::vec4 right_side =
+                glm::rotateZ(dir, glm::radians(-30.f)) * size;     
+
+            const glm::vec4 color(0.f, 0.f, 0.f, 1.0f);
+            
+            Screen_shader::Line_strip line;
+            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x -  left_side.x, pos.y -  left_side.y), 1.f, color));
+            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x,                pos.y               ), 1.f, color));
+            line.emplace_back(Screen_shader::Line_point(glm::vec2(pos.x - right_side.x, pos.y - right_side.y), 1.f, color));
+            screen_shader_->append_to_geometry(*screen_geometry_.get(), line);
+        };
+
+        switch(a.dimensionality)
+        {
+        case 1:
+            draw_arrow(point, dir, arrow_size);
+            break;
+        case 2:
+            draw_arrow(point + dir * 0.5f * arrow_spacing, dir, arrow_size);
+            draw_arrow(point - dir * 0.5f * arrow_spacing, dir, arrow_size);
+            break;
+        case 3:
+            draw_arrow(point, dir, arrow_size);
+            draw_arrow(point - dir * arrow_spacing, dir, arrow_size);
+            draw_arrow(point + dir * arrow_spacing, dir, arrow_size);
+            break;
+        case 4:
+            draw_arrow(point - dir * 1.5f * arrow_spacing, dir, arrow_size);
+            draw_arrow(point - dir * 0.5f * arrow_spacing, dir, arrow_size);
+            draw_arrow(point + dir * 0.5f * arrow_spacing, dir, arrow_size);
+            draw_arrow(point + dir * 1.5f * arrow_spacing, dir, arrow_size);
+            break;
+        }
+    }
 
     // Draw annotation arrows
-    for(auto& a : annot_arrows)
+    /*for(auto& a : annot_arrows)
         gui_.Renderer->add_annotation(a);
 
     // Draw annotation dots
