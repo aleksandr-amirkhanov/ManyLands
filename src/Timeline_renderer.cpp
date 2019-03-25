@@ -29,6 +29,7 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     , pictogram_scale_(1.f)
     , pictogram_magnification_region_(4)
     , mouse_pos_(0.f, 0.f)
+    , is_mouse_inside_(false)
     , track_mouse_(false)
 {
     set_state(state);
@@ -41,6 +42,16 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
 void Timeline_renderer::set_shader(std::shared_ptr<Screen_shader> screen)
 {
     screen_shader_ = screen;
+}
+
+//******************************************************************************
+// set_text_renderer
+//******************************************************************************
+
+void Timeline_renderer::set_text_renderer(
+    std::shared_ptr<Text_renderer> tex_ren)
+{
+    text_renderer_ = tex_ren;
 }
 
 //******************************************************************************
@@ -103,6 +114,7 @@ void Timeline_renderer::render()
 
 void Timeline_renderer::process_input(const Renderer_io& io)
 {
+    is_mouse_inside_ = region_.contains(io.mouse_pos);
     mouse_pos_ = io.mouse_pos - glm::vec2(region_.left(), region_.bottom());
 
     if(io.mouse_down && plot_region_.contains(mouse_pos_))
@@ -192,9 +204,6 @@ void Timeline_renderer::process_input(const Renderer_io& io)
         }
 
         state_->curve_selection = std::make_unique<Curve_selection>(selection);
-
-        //emit change_view(view);
-        //emit(update_curve_selection(selection));
     }
 }
 
@@ -292,14 +301,23 @@ void Timeline_renderer::draw_axes(const Region& region)
                       glm::vec2(x_sub_pos, region.bottom() - hitch_length / 2));
         }
 
-        /*painter.drawText(
-            QRectF(
-                x_pos - spacing / 2,
-                region_.bottom() + hitch_length,
-                spacing,
-                spacing),
-            Qt::AlignHCenter | Qt::AlignTop,
-            QString::number(t_min + i * t_durr / num_section, 'f', 0));*/
+        // Draw text
+        // TODO: the current method to draw text is very unflexible, it is good
+        // to replace it to something better
+        char buff[100];
+        std::snprintf(
+            buff,
+            sizeof buff, "%.0f",
+            t_min + i * t_durr / num_section);
+        std::string output_text(buff);
+
+        const auto symbol_width(6.f * display_scale_x_);
+        const auto displacement = output_text.size() * 0.5f * symbol_width;
+
+        text_renderer_->add_text(
+            region_,
+            glm::vec2(x_pos - displacement, plot_region_.bottom() - hitch_length),
+            std::string(buff));
     }
 }
 
@@ -885,7 +903,7 @@ Timeline_renderer::get_compases_state(const Region& region)
 
     // Compute the scale variable
     float scale = pictogram_scale_;
-    if(!region.contains(mouse_pos_))
+    if(!is_mouse_inside_)
     {
         scale = 1.f;
     }
