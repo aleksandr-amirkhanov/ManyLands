@@ -58,7 +58,8 @@ private:
     void plots_unfolding(
         float coeff,
         std::vector<Square>& plots_2D,
-        std::vector<Curve>& curves_2D);    
+        std::vector<Curve>& curves_2D);
+    void draw_labels_in_2D(const glm::mat4& projection);
 
     std::vector<float> split_animation(float animation_pos, int sections);
 
@@ -85,4 +86,7 @@ private:
     bool track_mouse_;
 
     bool filter_arrow_annotations_;
+
+    std::vector<boost::numeric::ublas::vector<double>> label_points_;
+    bool show_labels_;
 };

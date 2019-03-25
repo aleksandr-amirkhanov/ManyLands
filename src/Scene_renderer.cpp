@@ -31,6 +31,7 @@ Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
     , visibility_mask_(0)
     , track_mouse_(false)
     , filter_arrow_annotations_(true)
+    , show_labels_(true)
 {
     set_state(state);
 }
@@ -77,6 +78,8 @@ void Scene_renderer::render()
     back_geometry_  = std::make_unique<Diffuse_shader::Mesh_geometry>();
     front_geometry_ = std::make_unique<Diffuse_shader::Mesh_geometry>();
     screen_geometry_ = std::make_unique<Screen_shader::Screen_geometry>();
+
+    label_points_.clear();
 
     glUseProgram(diffuse_shader_->program_id);
 
@@ -275,11 +278,9 @@ void Scene_renderer::render()
                     draw_2D_plot(p);
             }
 
-            // TODO: uncomment the line below (rewrite it first ;) )!
-            /*gui_.Renderer->set_label_positions(
-                plots_2D[0].get_vertices()[3],
-                plots_2D[3].get_vertices()[0],
-                plots_2D[5].get_vertices()[1]);*/
+            label_points_.push_back(plots_2D[0].get_vertices()[3]);
+            label_points_.push_back(plots_2D[3].get_vertices()[0]);
+            label_points_.push_back(plots_2D[5].get_vertices()[1]);
 
             // Draw 2D curves
             if(state_->show_curve)
@@ -328,6 +329,9 @@ void Scene_renderer::render()
 
     if(state_->show_legend)
         draw_legend(region_);
+
+    if(show_labels_ && unfold_3D > 0.66f)
+        draw_labels_in_2D(mvp_mat);
 
     screen_geometry_->init_buffers();
     screen_shader_->draw_geometry(*screen_geometry_.get());
@@ -1186,4 +1190,98 @@ void Scene_renderer::plots_unfolding(
 
         transform_3D_plot(curves_2D[5], rot, disp);
     }
+}
+
+//******************************************************************************
+// plots_unfolding
+//******************************************************************************
+
+void Scene_renderer::draw_labels_in_2D(const glm::mat4& projection)
+{
+    // Draw labels in 2D
+    if(label_points_.size() != 3)
+        return;
+
+    glm::vec4 upper_left(
+        label_points_[0](0), label_points_[0](1), label_points_[0](2), 1.f);
+    glm::vec4 bottom_left(
+        label_points_[1](0), label_points_[1](1), label_points_[1](2), 1.f);
+    glm::vec4 bottom_right(
+        label_points_[2](0), label_points_[2](1), label_points_[2](2), 1.f);
+
+    upper_left = projection * upper_left;
+    bottom_left = projection * bottom_left;
+    bottom_right = projection * bottom_right;
+
+    for(char i = 0; i < 3; ++i)
+    {
+        upper_left[i]   /= upper_left[3];
+        bottom_left[i]  /= bottom_left[3];
+        bottom_right[i] /= bottom_right[3];
+    }
+
+    glm::vec4 scale(region_.width() / 2, region_.height() / 2, 0.f, 0.f);
+    glm::vec4 disp(region_.width() / 2, region_.height() / 2, 0.f, 0.f);
+    upper_left = upper_left * scale + disp;
+    bottom_left = bottom_left * scale + disp;
+    bottom_right = bottom_right * scale + disp;
+
+    std::vector<glm::vec4> points;
+    auto horiz_dir = bottom_right - bottom_left;
+
+    auto lenght = glm::length(horiz_dir);
+
+    glm::vec4 horiz_disp(-3.f, -0.025f * lenght, 0.f, 0.f);
+    for(int i = 0; i < 3; ++i)
+        points.push_back(
+            bottom_left + horiz_dir * static_cast<float>((2.f * i + 1.f) / 6.f) + horiz_disp);
+
+    auto vert_dir = upper_left - bottom_left;
+    glm::vec4 vert_disp(-0.08f * lenght - 3.f, 6.f, 0.f, 0.f);
+    for(int i = 0; i < 3; ++i)
+        points.push_back(
+            bottom_left + vert_dir * static_cast<float>((2.f * i + 1.f) / 6.f) + vert_disp);
+
+
+    text_renderer_->add_text(
+        region_,
+        glm::vec2(
+            points[0].x,
+            points[0].y),
+        std::string("X"));
+
+    text_renderer_->add_text(
+        region_,
+        glm::vec2(
+            points[1].x,
+            points[1].y),
+        std::string("W"));
+
+    text_renderer_->add_text(
+        region_,
+        glm::vec2(
+            points[2].x,
+            points[2].y),
+        std::string("Y"));
+
+    text_renderer_->add_text(
+        region_,
+        glm::vec2(
+            points[3].x,
+            points[3].y),
+        std::string("Z"));
+
+    text_renderer_->add_text(
+        region_,
+        glm::vec2(
+            points[4].x,
+            points[4].y),
+        std::string("Y"));
+
+    text_renderer_->add_text(
+        region_,
+        glm::vec2(
+            points[5].x,
+            points[5].y),
+        std::string("W"));
 }

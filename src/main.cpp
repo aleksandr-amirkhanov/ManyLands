@@ -707,6 +707,9 @@ int main(int, char**)
     if(Enable_keyboard) io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     if(Enable_gamepad ) io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
+    // Disable saving the ini-file
+    io.IniFilename = NULL;
+    
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
