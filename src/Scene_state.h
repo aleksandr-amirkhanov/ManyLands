@@ -55,6 +55,7 @@ public:
 
     bool show_tesseract,
          show_curve,
+         show_legend,
          use_simple_dali_cross;
 
     std::array<float, 4> tesseract_size;

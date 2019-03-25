@@ -326,7 +326,8 @@ void Scene_renderer::render()
                        GL_FALSE,
                        glm::value_ptr(proj_ortho));
 
-    draw_legend(region_);
+    if(state_->show_legend)
+        draw_legend(region_);
 
     screen_geometry_->init_buffers();
     screen_shader_->draw_geometry(*screen_geometry_.get());

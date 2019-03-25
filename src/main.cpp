@@ -70,9 +70,6 @@ SDL_WindowFlags Window_flags;
 SDL_Window*     MainWindow;
 SDL_GLContext   Gl_context;
 
-bool Show_tesseract = true,
-     Show_curve     = true;
-
 ImVec4 Clear_color,
        X_axis_color,
        Y_axis_color,
@@ -369,9 +366,11 @@ void mainloop()
             ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Scene:");
-            ImGui::Checkbox("Tesseract##visibility", &Show_tesseract);
+            ImGui::Checkbox("Tesseract##visibility", &State->show_tesseract);
             ImGui::SameLine();
-            ImGui::Checkbox("Curve##visibility", &Show_curve);
+            ImGui::Checkbox("Curve##visibility", &State->show_curve);
+            ImGui::SameLine();
+            ImGui::Checkbox("Legend##visibility", &State->show_legend);
 
             ImGui::SliderFloat4(
                 "Tesseract size", tesseract_size, 1.f, 500.f);
@@ -498,14 +497,13 @@ void mainloop()
         ImGui::SetNextWindowPos(
             ImVec2(static_cast<float>(Left_panel_size),
                    static_cast<float>(height - Bottom_panel_size)));
-        static float animation = 0.f;
         ImGui::Begin(
             "##animation",
             0,
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoResize);
         ImGui::PushItemWidth(-1);
-        ImGui::SliderFloat("##label", &animation, 0.f, 1.f);
+        ImGui::SliderFloat("##label", &State->unfolding_anim, 0.f, 1.f);
         ImGui::End();
 
         State->camera_3D.z = -camera_3D_dist;
@@ -541,9 +539,6 @@ void mainloop()
                   tesseract_size),
                   std::end(tesseract_size),
                   std::begin(State->tesseract_size));
-        State->unfolding_anim  = animation;
-        State->show_tesseract  = Show_tesseract;
-        State->show_curve      = Show_curve;
 
         Renderer.set_line_thickness(tesseract_thickness, curve_thickness);
         Renderer.set_sphere_diameter(sphere_diameter);
