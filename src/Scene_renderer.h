@@ -6,6 +6,7 @@
 #include "Diffuse_shader.h"
 #include "Screen_shader.h"
 #include "Scene_wireframe_object.h"
+#include "Text_renderer.h"
 // std
 #include <memory.h>
 // boost
@@ -22,6 +23,7 @@ public:
 
     void set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
                      std::shared_ptr<Screen_shader> screen);
+    void set_text_renderer(std::shared_ptr<Text_renderer> tex_ren);
     void render() override;
     void process_input(const Renderer_io& io) override;
 
@@ -40,6 +42,7 @@ private:
     void draw_tesseract(Scene_wireframe_object& t);
     void draw_curve(Curve& c, float opacity);
     void draw_annotations(Curve& c, const glm::mat4& projection);
+    void draw_legend(const Region& region);
 
     void move_curves_to_3D_plots(float coeff, std::vector<Curve>& curves);
     void move_curves_to_2D_plots(float coeff, std::vector<Curve>& curves);
@@ -68,6 +71,8 @@ private:
 
     std::shared_ptr<Diffuse_shader> diffuse_shader_;
     std::shared_ptr<Screen_shader> screen_shader_;
+
+    std::shared_ptr<Text_renderer> text_renderer_;
 
     std::unique_ptr<Diffuse_shader::Mesh_geometry> back_geometry_,
                                                    front_geometry_;

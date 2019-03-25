@@ -582,6 +582,8 @@ void mainloop()
     Timeline.set_redering_region(Timeline_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
+    
+    Renderer.set_text_renderer(Text_ren);
     Timeline.set_text_renderer(Text_ren);
 
     Timeline.set_splitter(splitter);

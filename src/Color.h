@@ -16,16 +16,6 @@ public:
     float b_norm() const;
     float a_norm() const;
 
-    /*
-    TODO: remove this code
-    void copy(const Color& other)
-    {
-        this->r_ = other.r_;
-        this->g_ = other.g_;
-        this->b_ = other.b_;
-        this->a_ = other.a_;
-    }*/
-
 private:
     int r_, g_, b_, a_; // Red, green, blue, alpha
 };

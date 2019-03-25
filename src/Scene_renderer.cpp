@@ -47,6 +47,15 @@ void Scene_renderer::set_shaders(std::shared_ptr<Diffuse_shader> diffuse,
 }
 
 //******************************************************************************
+// set_text_renderer
+//******************************************************************************
+
+void Scene_renderer::set_text_renderer(std::shared_ptr<Text_renderer> tex_ren)
+{
+    text_renderer_ = tex_ren;
+}
+
+//******************************************************************************
 // render
 //******************************************************************************
 
@@ -316,6 +325,8 @@ void Scene_renderer::render()
                        1,
                        GL_FALSE,
                        glm::value_ptr(proj_ortho));
+
+    draw_legend(region_);
 
     screen_geometry_->init_buffers();
     screen_shader_->draw_geometry(*screen_geometry_.get());
@@ -746,6 +757,78 @@ void Scene_renderer::draw_annotations(Curve& c, const glm::mat4& projection)
             mesh);
         diffuse_shader_->append_to_geometry(*back_geometry_.get(), mesh);
     }
+}
+
+//******************************************************************************
+// draw_legend
+//******************************************************************************
+
+void Scene_renderer::draw_legend(const Region& region)
+{
+    // Parameters
+
+    const auto rect_size(20.f),
+               spacing(7.5f);
+    const glm::vec4 col(1.f, 0.f, 0.f, 1.f);
+
+    auto draw_axis_legened = [&](
+        char pos,
+        const std::string& text,
+        glm::vec4 color)
+    {
+        // Make background
+
+        const auto x = region.width()  - (pos + 1) * (rect_size + spacing);
+        const auto y = region.height() - rect_size - spacing;
+
+        screen_shader_->append_to_geometry(
+        *screen_geometry_.get(),
+        Screen_shader::Rectangle(
+            x,
+            y,
+            x + rect_size,
+            y + rect_size,
+            color));
+
+        // Output text
+
+
+        const auto symbol_width(6.f * display_scale_x_);
+        const auto symbol_half_height(8.5f * display_scale_x_);
+        const auto x_displacement = text.size() * 0.5f * symbol_width;
+
+        text_renderer_->add_text(
+            region_,
+            glm::vec2(
+                x + 0.5f * rect_size - x_displacement,
+                y + 0.5f * rect_size + symbol_half_height),
+            text);
+    };
+
+    auto color_to_vec4 = [](const Color& c)
+    {
+        return glm::vec4(c.r_norm(), c.g_norm(), c.b_norm(), c.a_norm());
+    };
+
+    draw_axis_legened(
+        3,
+        "x",
+        color_to_vec4(state_->get_color(X_axis)));
+
+    draw_axis_legened(
+        2,
+        "y",
+        color_to_vec4(state_->get_color(Y_axis)));
+
+    draw_axis_legened(
+        1,
+        "z",
+        color_to_vec4(state_->get_color(Z_axis)));
+
+    draw_axis_legened(
+        0,
+        "w",
+        color_to_vec4(state_->get_color(W_axis)));
 }
 
 //******************************************************************************
