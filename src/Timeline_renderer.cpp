@@ -29,6 +29,7 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     , pictogram_scale_(1.f)
     , pictogram_magnification_region_(4)
     , mouse_pos_(0.f, 0.f)
+    , is_mouse_inside_(false)
     , track_mouse_(false)
 {
     set_state(state);
@@ -113,6 +114,7 @@ void Timeline_renderer::render()
 
 void Timeline_renderer::process_input(const Renderer_io& io)
 {
+    is_mouse_inside_ = region_.contains(io.mouse_pos);
     mouse_pos_ = io.mouse_pos - glm::vec2(region_.left(), region_.bottom());
 
     if(io.mouse_down && plot_region_.contains(mouse_pos_))
@@ -202,9 +204,6 @@ void Timeline_renderer::process_input(const Renderer_io& io)
         }
 
         state_->curve_selection = std::make_unique<Curve_selection>(selection);
-
-        //emit change_view(view);
-        //emit(update_curve_selection(selection));
     }
 }
 
@@ -904,7 +903,7 @@ Timeline_renderer::get_compases_state(const Region& region)
 
     // Compute the scale variable
     float scale = pictogram_scale_;
-    if(!region.contains(mouse_pos_))
+    if(!is_mouse_inside_)
     {
         scale = 1.f;
     }
