@@ -311,7 +311,7 @@ void Timeline_renderer::draw_axes(const Region& region)
             t_min + i * t_durr / num_section);
         std::string output_text(buff);
 
-        const auto symbol_width(6.f * display_scale_x_);
+        const auto symbol_width(6.f);
         const auto displacement = output_text.size() * 0.5f * symbol_width;
 
         text_renderer_->add_text(

@@ -794,8 +794,8 @@ void Scene_renderer::draw_legend(const Region& region)
         // Output text
 
 
-        const auto symbol_width(6.f * display_scale_x_);
-        const auto symbol_half_height(8.5f * display_scale_x_);
+        const auto symbol_width(6.f);
+        const auto symbol_half_height(8.5f);
         const auto x_displacement = text.size() * 0.5f * symbol_width;
 
         text_renderer_->add_text(
