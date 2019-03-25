@@ -50,6 +50,7 @@
     <a href="../">Go back</a>&nbsp;to the main page.&nbsp;
     <i>ManyLands: A Journey Across 4D Phase Space of Trajectories.<i>
     <hr/>
+    <button onclick="uploadFile()">Load ODE</button>
     <figure style="overflow:visible;" id="spinner"><div class="spinner"></div><center style="margin-top:0.5em"><strong>emscripten</strong></center></figure>
     <div class="emscripten" id="status">Downloading...</div>
     <div class="emscripten">
@@ -66,6 +67,34 @@
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
       var spinnerElement = document.getElementById('spinner');
+
+      function uploadFile() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = e => {
+          var file = e.target.files[0];
+          var textType = /text.*/;
+          if (file.type.match(textType)) {
+            var reader = new FileReader();
+            reader.onload = function () {
+              Module['FS_createDataFile'](
+                '/',
+                'user_ode.txt',
+                reader.result,
+                true,
+                true);
+
+              var js_load_ode = Module.cwrap(
+                'js_load_ode',
+                'null',
+                ['null']);
+              js_load_ode();
+            };
+            reader.readAsText(file);
+          }
+        };
+        input.click();
+      }
 
       var Module = {
         preRun: [],

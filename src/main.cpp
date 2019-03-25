@@ -278,31 +278,7 @@ void mainloop()
         {
 #if __EMSCRIPTEN__
             EM_ASM(
-                var input = document.createElement('input');
-                input.type = 'file';
-                input.onchange = e => {
-                    var file = e.target.files[0];
-                    var textType = /text.*/;
-                    if (file.type.match(textType)) {
-                        var reader = new FileReader();
-                        reader.onload = function () {
-                            Module['FS_createDataFile'](
-                                '/',
-                                'user_ode.txt',
-                                reader.result,
-                                true,
-                                true);
-
-                            var js_load_ode = Module.cwrap(
-                                'js_load_ode',
-                                'null',
-                                ['null']);
-                            js_load_ode();
-                        };
-                        reader.readAsText(file);
-                    }
-                };
-                input.click();
+                uploadFile();
             );
 #else
 #ifdef _WIN32
