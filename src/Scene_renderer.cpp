@@ -362,6 +362,64 @@ void Scene_renderer::process_input(const Base_renderer::Renderer_io& io)
 
     if(io.mouse_wheel && region_.contains(io.mouse_pos))
         state_->camera_3D.z += io.mouse_wheel_y * 0.05f;
+
+    if(io.key_pressed)
+    {
+        switch(io.key)
+        {
+        case Base_renderer::Renderer_io::Key_0:
+            visibility_mask_ = 0;
+            break;
+        case Base_renderer::Renderer_io::Key_1:
+            visibility_mask_ ^= 1 << 0;
+            break;
+        case Base_renderer::Renderer_io::Key_2:
+            visibility_mask_ ^= 1 << 1;
+            break;
+        case Base_renderer::Renderer_io::Key_3:
+            visibility_mask_ ^= 1 << 2;
+            break;
+        case Base_renderer::Renderer_io::Key_4:
+            visibility_mask_ ^= 1 << 3;
+            break;
+        case Base_renderer::Renderer_io::Key_5:
+            visibility_mask_ ^= 1 << 4;
+            break;
+        case Base_renderer::Renderer_io::Key_6:
+            visibility_mask_ ^= 1 << 5;
+            break;
+        case Base_renderer::Renderer_io::Key_7:
+            visibility_mask_ ^= 1 << 6;
+            break;
+        case Base_renderer::Renderer_io::Key_8:
+            visibility_mask_ ^= 1 << 7;
+            break;
+        case Base_renderer::Renderer_io::Key_F1:
+            visibility_mask_ = 1 << 0;
+            break;
+        case Base_renderer::Renderer_io::Key_F2:
+            visibility_mask_ = 1 << 1;
+            break;
+        case Base_renderer::Renderer_io::Key_F3:
+            visibility_mask_ = 1 << 2;
+            break;
+        case Base_renderer::Renderer_io::Key_F4:
+            visibility_mask_ = 1 << 3;
+            break;
+        case Base_renderer::Renderer_io::Key_F5:
+            visibility_mask_ = 1 << 4;
+            break;
+        case Base_renderer::Renderer_io::Key_F6:
+            visibility_mask_ = 1 << 5;
+            break;
+        case Base_renderer::Renderer_io::Key_F7:
+            visibility_mask_ = 1 << 6;
+            break;
+        case Base_renderer::Renderer_io::Key_F8:
+            visibility_mask_ = 1 << 7;
+            break;
+        }
+    }
 }
 
 //******************************************************************************

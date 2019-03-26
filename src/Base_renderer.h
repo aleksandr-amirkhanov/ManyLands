@@ -12,6 +12,25 @@ class Base_renderer
 public:
     struct Renderer_io
     {
+        enum Key {
+            Key_0,
+            Key_1,
+            Key_2,
+            Key_3,
+            Key_4,
+            Key_5,
+            Key_6,
+            Key_7,
+            Key_8,
+            Key_F1,
+            Key_F2,
+            Key_F3,
+            Key_F4,
+            Key_F5,
+            Key_F6,
+            Key_F7,
+            Key_F8
+        };
         Renderer_io()
             : mouse_pos(0.f, 0.f)
             , mouse_move(0.f, 0.f)
@@ -25,6 +44,9 @@ public:
         bool      mouse_up;
         bool      mouse_wheel;
         float     mouse_wheel_y;
+
+        bool key_pressed;
+        Key key;
     };
 
     struct Region

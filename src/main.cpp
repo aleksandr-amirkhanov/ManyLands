@@ -169,6 +169,71 @@ void process_mouse_input(const SDL_Event& event)
     io.mouse_wheel = (event.type == SDL_MOUSEWHEEL);
     io.mouse_wheel_y = static_cast<float>(event.wheel.y);
 
+    if(event.type == SDL_KEYDOWN)
+    {
+        io.key_pressed = true;
+        switch(event.key.keysym.sym)
+        {
+            case SDLK_0:
+                io.key = Base_renderer::Renderer_io::Key_0;
+                break;
+            case SDLK_1:
+                io.key = Base_renderer::Renderer_io::Key_1;
+                break;
+            case SDLK_2:
+                io.key = Base_renderer::Renderer_io::Key_2;
+                break;
+            case SDLK_3:
+                io.key = Base_renderer::Renderer_io::Key_3;
+                break;
+            case SDLK_4:
+                io.key = Base_renderer::Renderer_io::Key_4;
+                break;
+            case SDLK_5:
+                io.key = Base_renderer::Renderer_io::Key_5;
+                break;
+            case SDLK_6:
+                io.key = Base_renderer::Renderer_io::Key_6;
+                break;
+            case SDLK_7:
+                io.key = Base_renderer::Renderer_io::Key_7;
+                break;
+            case SDLK_8:
+                io.key = Base_renderer::Renderer_io::Key_8;
+                break;
+            case SDLK_F1:
+                io.key = Base_renderer::Renderer_io::Key_F1;
+                break;
+            case SDLK_F2:
+                io.key = Base_renderer::Renderer_io::Key_F2;
+                break;
+            case SDLK_F3:
+                io.key = Base_renderer::Renderer_io::Key_F3;
+                break;
+            case SDLK_F4:
+                io.key = Base_renderer::Renderer_io::Key_F4;
+                break;
+            case SDLK_F5:
+                io.key = Base_renderer::Renderer_io::Key_F5;
+                break;
+            case SDLK_F6:
+                io.key = Base_renderer::Renderer_io::Key_F6;
+                break;
+            case SDLK_F7:
+                io.key = Base_renderer::Renderer_io::Key_F7;
+                break;
+            case SDLK_F8:
+                io.key = Base_renderer::Renderer_io::Key_F8;
+                break;
+            default:
+                break;
+        }
+    }
+    else
+    {
+        io.key_pressed = false;
+    }
+
     Renderer.process_input(io);
     Timeline.process_input(io);
 
