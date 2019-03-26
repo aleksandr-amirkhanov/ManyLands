@@ -376,8 +376,7 @@ void mainloop()
         ImGui::SameLine();
         ImGui::Checkbox("Scale tesseract", &State->scale_tesseract);
 
-        if (ImGui::CollapsingHeader("Player",
-            ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("Player"))
         {
             static auto time(0.f);
             if(!Is_player_active)
@@ -403,8 +402,7 @@ void mainloop()
             ImGui::SliderFloat("Speed", &Player_speed, 0.f, 0.5f);
         }
 
-        if (ImGui::CollapsingHeader("Rendering",
-            ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("Rendering"))
         {
             ImGui::Text("Visibility:");
             ImGui::Checkbox("Tesseract##visibility", &State->show_tesseract);
@@ -426,7 +424,7 @@ void mainloop()
                 "Spheres", &sphere_diameter, 0.1f, 10.0f);
 
             ImGui::Separator();
-            ImGui::Text("Layout");
+            ImGui::Text("Layout:");
 
             ImGui::SliderFloat(
                 "Splitter", &splitter, 0.05f, 0.95f);
@@ -436,7 +434,7 @@ void mainloop()
                 "Pictograms", &pictograms_size, 10.f, 100.0f);
 
             ImGui::Separator();
-            ImGui::Text("Pictogram magnification");
+            ImGui::Text("Pictogram magnification:");
             ImGui::SliderFloat(
                 "Scale", &pictogram_scale, 0.5f, 10.f);
             ImGui::SliderInt(
@@ -446,7 +444,7 @@ void mainloop()
 
             ImGui::Text("Colors:");
 
-            ImGui::Text("Set theme");
+            ImGui::Text("Set theme:");
             ImGui::SameLine();
             if(ImGui::Button("Bright")) set_bright_theme();
             ImGui::SameLine();
@@ -472,8 +470,7 @@ void mainloop()
             ImGui::SliderFloat("Range##fog",    &fog_range, 0.1f, 10.f);
         }
 
-        if (ImGui::CollapsingHeader("4D projection",
-            ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("4D projection"))
         {
             ImGui::Text("Field of view:");
             ImGui::SliderAngle("Height", &fov_4d[0], 1.f, 180.f);
@@ -494,8 +491,17 @@ void mainloop()
             }
         }
 
-        if (ImGui::CollapsingHeader("Cameras",
-            ImGuiTreeNodeFlags_DefaultOpen))
+        static float euler[3];
+        static bool active = false;
+        if(!active)
+        {
+            glm::extractEulerAngleXYZ(glm::toMat4(State->rotation_3D),
+                                        euler[0],
+                                        euler[1],
+                                        euler[2]);
+        }
+
+        if (ImGui::CollapsingHeader("Cameras"))
         {
             ImGui::Text("Basics:");
             const float dist_min = 0.5f, dist_max = 5.f;
@@ -503,15 +509,9 @@ void mainloop()
                                         dist_min,
                                         dist_max);
             ImGui::SliderFloat("Distance", &camera_3D_dist, dist_min, dist_max);
-            ImGui::SliderAngle("Field of view", &fov_y, 1.f, 180.f);
+            State->camera_3D.z = -camera_3D_dist;
 
-            static float euler[3];
-            static bool active = false;
-            if(!active)
-                glm::extractEulerAngleXYZ(glm::toMat4(State->rotation_3D),
-                                          euler[0],
-                                          euler[1],
-                                          euler[2]);
+            ImGui::SliderAngle("Field of view", &fov_y, 1.f, 180.f);
 
             ImGui::Separator();
             ImGui::Text("Rotations (Euler angles):");
@@ -527,13 +527,12 @@ void mainloop()
                 for(int i = 0; i < 3; ++i)
                     euler[i] = 0.f;
             }
-
-            State->rotation_3D = glm::eulerAngleXYZ(euler[0],
-                                                    euler[1],
-                                                    euler[2]);
-
-            State->fov_y = fov_y;
         }
+
+        State->rotation_3D = glm::eulerAngleXYZ(euler[0],
+                                                euler[1],
+                                                euler[2]);
+        State->fov_y = fov_y;
 
         Left_panel_size = static_cast<int>(ImGui::GetWindowSize().x);
         ImGui::End();
@@ -552,8 +551,6 @@ void mainloop()
         ImGui::PushItemWidth(-1);
         ImGui::SliderFloat("##label", &State->unfolding_anim, 0.f, 1.f);
         ImGui::End();
-
-        State->camera_3D.z = -camera_3D_dist;
 
         State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(
             fov_4d[0], fov_4d[1], fov_4d[2], 1.f, 10.f);
