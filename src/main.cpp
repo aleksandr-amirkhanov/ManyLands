@@ -105,8 +105,7 @@ Base_renderer::Renderer_io Previous_io;
 std::chrono::time_point<std::chrono::system_clock> Last_timepoint;
 
 // Timeplayer
-auto Is_player_active(false),
-     Do_show_timepoint(true);
+auto Is_player_active(false);
 auto Player_speed(0.1f);
 
 //******************************************************************************
@@ -374,6 +373,8 @@ void mainloop()
                 Scene_objs.load_ode(filename);
 #endif
         }
+        ImGui::SameLine();
+        ImGui::Checkbox("Scale tesseract", &State->scale_tesseract);
 
         if (ImGui::CollapsingHeader("Player",
             ImGuiTreeNodeFlags_DefaultOpen))
@@ -394,7 +395,7 @@ void mainloop()
                 }
             
             }
-            
+            ImGui::SameLine();
             ImGui::Checkbox("Show timepoint", &State->is_timeplayer_active);
             if(!State->is_timeplayer_active) Is_player_active = false;
 
@@ -405,7 +406,7 @@ void mainloop()
         if (ImGui::CollapsingHeader("Rendering",
             ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::Text("Scene:");
+            ImGui::Text("Visibility:");
             ImGui::Checkbox("Tesseract##visibility", &State->show_tesseract);
             ImGui::SameLine();
             ImGui::Checkbox("Curve##visibility", &State->show_curve);
@@ -414,24 +415,19 @@ void mainloop()
 
             ImGui::Checkbox("Simple Dali", &State->use_simple_dali_cross);
 
-            ImGui::Checkbox("Scale tesseract", &State->scale_tesseract);
-
             ImGui::Separator();
+            ImGui::Text("Geometry thickness:");
 
-            ImGui::Text("Style:");
-            ImGui::Text("Set theme");
-            ImGui::SameLine();
-            if(ImGui::Button("Bright"))
-                set_bright_theme();
-            ImGui::SameLine();
-            if(ImGui::Button("Dark"))
-                set_dark_theme();
             ImGui::SliderFloat(
                 "Tesseract##thickness", &tesseract_thickness, 0.1f, 10.0f);
             ImGui::SliderFloat(
                 "Curve##thickness", &curve_thickness, 0.1f, 10.0f);
             ImGui::SliderFloat(
-                "Sphere diameter", &sphere_diameter, 0.1f, 10.0f);
+                "Spheres", &sphere_diameter, 0.1f, 10.0f);
+
+            ImGui::Separator();
+            ImGui::Text("Layout");
+
             ImGui::SliderFloat(
                 "Splitter", &splitter, 0.05f, 0.95f);
             ImGui::SliderFloat(
@@ -449,6 +445,13 @@ void mainloop()
             ImGui::Separator();
 
             ImGui::Text("Colors:");
+
+            ImGui::Text("Set theme");
+            ImGui::SameLine();
+            if(ImGui::Button("Bright")) set_bright_theme();
+            ImGui::SameLine();
+            if(ImGui::Button("Dark"))   set_dark_theme();
+            
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
             ImGui::ColorEdit3("Y-axis", (float*)&Y_axis_color);
@@ -462,8 +465,11 @@ void mainloop()
                 "Curve fast", (float*)&High_speed_color
             );
 
-            ImGui::SliderFloat("Fog distance", &fog_dist,  0.1f, 10.f);
-            ImGui::SliderFloat("Fog range",    &fog_range, 0.1f, 10.f);
+            ImGui::Separator();
+
+            ImGui::Text("Fog:");
+            ImGui::SliderFloat("Distance##fog", &fog_dist,  0.1f, 10.f);
+            ImGui::SliderFloat("Range##fog",    &fog_range, 0.1f, 10.f);
         }
 
         if (ImGui::CollapsingHeader("4D projection",
