@@ -10,7 +10,9 @@ void Text_renderer::render(int width, int height)
     for(auto& t : text_array_)
     {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(width, height));
+    ImGui::SetNextWindowSize(ImVec2(
+        static_cast<float>(width),
+        static_cast<float>(height)));
     ImGui::Begin(
        "BCKGND",
        0,

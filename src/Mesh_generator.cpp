@@ -273,7 +273,7 @@ void Mesh_generator::sphere(
     {
         for(unsigned int j = 0; j < rings + 1; ++j)
         {
-            float alpha = static_cast<float>(2 * PI * i / segments);
+            float alpha = static_cast<float>(PI * i / segments);
             float betta = static_cast<float>(2 * PI * j / rings);
 
             glm::vec3 vert;
@@ -287,10 +287,10 @@ void Mesh_generator::sphere(
     }
 
     auto vert_index = [&](unsigned int i, unsigned int j) {
-        return (first_vert + i * (segments + 1) + j);
+        return (first_vert + i * (rings + 1) + j);
     };
     auto norm_index = [&](unsigned int i, unsigned int j) {
-        return (first_norm + i * (segments + 1) + j);
+        return (first_norm + i * (rings + 1) + j);
     };
 
     Mesh::Object object;
