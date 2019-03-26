@@ -79,7 +79,6 @@ private:
                                                    front_geometry_;
     std::unique_ptr<Screen_shader::Screen_geometry> screen_geometry_;
 
-    bool optimize_performance_;
     int visibility_mask_;
     const int number_of_animations_;
 

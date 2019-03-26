@@ -39,7 +39,7 @@ public:
     float xy_rot, yz_rot, zx_rot, xw_rot, yw_rot, zw_rot;
     float fov_y;
 
-    std::shared_ptr<Curve> curve, simple_curve;
+    std::shared_ptr<Curve> curve;
     std::shared_ptr<Curve_selection> curve_selection;
 
     std::shared_ptr<Tesseract> tesseract;

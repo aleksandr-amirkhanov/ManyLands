@@ -322,8 +322,7 @@ void mainloop()
                                    30.f * static_cast<float>(DEG_TO_RAD) },
                      fog_dist = 10.f,
                      fog_range = 2.f,
-                     curve_min_rad(0.075f),
-                     simple_curve_min_rad(0.09f);
+                     curve_max_deviation(0.8f);
 
 
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
@@ -375,8 +374,7 @@ void mainloop()
             if(!filename.empty())
                 Scene_objs.load_ode(
                     filename,
-                    curve_min_rad,
-                    simple_curve_min_rad);
+                    curve_max_deviation);
 #endif
         }
         ImGui::SameLine();
@@ -410,8 +408,7 @@ void mainloop()
 
         if (ImGui::CollapsingHeader("Curve simplification"))
         {
-            ImGui::SliderFloat("High-detailed curve", &curve_min_rad, 0.001f, 0.2f);
-            ImGui::SliderFloat("Low-detailed curve", &simple_curve_min_rad, 0.001f, 0.2f);            
+            ImGui::SliderFloat("Max. deviation", &curve_max_deviation, 0.f, 3.f);
         }
 
         if (ImGui::CollapsingHeader("Rendering"))

@@ -27,7 +27,6 @@ Scene_renderer::Scene_renderer(std::shared_ptr<Scene_state> state)
     , curve_thickness_(1.f)
     , sphere_diameter_(1.f)
     , number_of_animations_(6)
-    , optimize_performance_(false)
     , visibility_mask_(0)
     , track_mouse_(false)
     , filter_arrow_annotations_(true)
@@ -148,18 +147,9 @@ void Scene_renderer::render()
     // Array of curves used to project into 3D spaces
     std::vector<Curve> curves_3D;
 
-    if(!optimize_performance_)
-    {
-        projected_c = *state_->curve.get();
-        for(int i = 0; i < 8; ++i)
-            curves_3D.push_back(*state_->curve.get());
-    }
-    else
-    {
-        projected_c = *state_->simple_curve.get();
-        for(int i = 0; i < 8; ++i)
-            curves_3D.push_back(*state_->simple_curve.get());
-    }
+    projected_c = *state_->curve.get();
+    for(int i = 0; i < 8; ++i)
+        curves_3D.push_back(*state_->curve.get());    
 
     // Project curves from 4D to 3D
     project_to_3D(projected_c.get_vertices(), rot_m);

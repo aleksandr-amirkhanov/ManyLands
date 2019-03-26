@@ -153,6 +153,8 @@ void Curve::get_boundaries(
 // get_simpified_curve
 //******************************************************************************
 
+/* TODO: old method, delete?
+
 Curve Curve::get_simpified_curve(const float min_radius)
 {
     std::list<size_t> points_to_use;
@@ -203,7 +205,7 @@ Curve Curve::get_simpified_curve(const float min_radius)
         simple_curve.add_point(vertices()[i], time_stamp()[i]);
     
     return simple_curve;
-}
+}*/
 
 Curve Curve::get_simpified_curve_RDP(const float max_deviation)
 {
