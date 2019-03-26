@@ -895,9 +895,10 @@ Timeline_renderer::get_compases_state(const Region& region)
     // Find preliminary positions of compases
 
     float required_width =
-        pictogram_num * pictogram_size_ + pictogram_spacing_;
+        pictogram_num * (pictogram_size_ + pictogram_spacing_);
 
-    float x_pos = region.left() + 0.5f * ( region.width() - required_width);
+    float x_pos = region.left() +
+        0.5f * ( region.width() - required_width + pictogram_size_);
     
     std::vector<Compas_state> pos_and_scale;
     for(int i = 0; i < pictogram_num; ++i)
