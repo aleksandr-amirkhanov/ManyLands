@@ -96,7 +96,7 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     Scene_wireframe_vertex origin, size;
     curve->get_boundaries(origin, size);
 
-    const int tesseract_scale_mode = 0;
+    const int tesseract_scale_mode = 1;
     if(tesseract_scale_mode == 0)
     {
         size_t max_ind = longest_axis_ind(curve.get());

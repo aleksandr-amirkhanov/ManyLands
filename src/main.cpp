@@ -347,6 +347,8 @@ void mainloop()
             ImGui::SameLine();
             ImGui::Checkbox("Legend##visibility", &State->show_legend);
 
+            ImGui::Checkbox("Simple Dali", &State->use_simple_dali_cross);
+
             ImGui::SliderFloat4(
                 "Tesseract size", State->tesseract_size.data(), 1.f, 500.f);
 
