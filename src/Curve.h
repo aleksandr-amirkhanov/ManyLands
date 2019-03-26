@@ -29,6 +29,7 @@ public:
     void get_boundaries(Scene_wireframe_vertex& origin,
                         Scene_wireframe_vertex& size) const;
     Curve get_simpified_curve(const float min_radius);
+    Curve get_simpified_curve_RDP(const float max_deviation);
 
     void update_stats();
     const Curve_stats& get_stats();

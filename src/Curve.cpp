@@ -8,6 +8,10 @@
 #include <list>
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
+// VVV needed for boost::geometry::simplify VVV
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/point.hpp>
 
 const Color Curve::default_color_ = Color(0, 0, 0, 255);
 
@@ -198,6 +202,44 @@ Curve Curve::get_simpified_curve(const float min_radius)
     for(auto i: points_to_use)
         simple_curve.add_point(vertices()[i], time_stamp()[i]);
     
+    return simple_curve;
+}
+
+Curve Curve::get_simpified_curve_RDP(const float max_deviation)
+{
+    typedef boost::geometry::model::
+        point<float, 4, boost::geometry::cs::cartesian>
+            pt4d_t;
+    typedef boost::geometry::model::linestring<pt4d_t> linestring4d_t;
+    linestring4d_t line;
+
+    auto to_boost = [](const Scene_wireframe_vertex& v) -> pt4d_t {
+        pt4d_t out;
+        out.set<0>(v(0));
+        out.set<1>(v(1));
+        out.set<2>(v(2));
+        out.set<3>(v(3));
+        return out;
+    };
+    for(auto v : vertices_)
+        boost::geometry::append(line, to_boost(v));
+
+    linestring4d_t simplified;
+    boost::geometry::simplify(line, simplified, max_deviation);
+
+    Curve simple_curve;
+    size_t i = 0;
+    auto is_equal = [](const pt4d_t& p,
+                       const Scene_wireframe_vertex& v) -> bool {
+        return p.get<0>() == v(0) && p.get<1>() == v(1) && p.get<2>() == v(2) &&
+               p.get<3>() == v(3);
+    };
+    for(const auto& p4d : simplified)
+    {
+        while(!is_equal(p4d, vertices()[i]))
+            ++i;
+        simple_curve.add_point(vertices()[i], time_stamp()[i]);
+    }
     return simple_curve;
 }
 
