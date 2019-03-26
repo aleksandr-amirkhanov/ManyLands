@@ -894,7 +894,8 @@ void Scene_renderer::move_curves_to_2D_plots(
         v(1) = v(1) + coeff * (-state_->tesseract_size[1] / 2 - v(1));
     // Curve 6
     for(auto& v : curves[5].get_vertices())
-        v(0) = v(0) + coeff * (state_->tesseract_size[3] - v(0));
+        v(0) = v(0) + coeff *
+        (0.5f * state_->tesseract_size[0] + state_->tesseract_size[3] - v(0));
 }
 
 //******************************************************************************

@@ -631,7 +631,11 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
             screen_t.v3 = glm::vec2(cdt.vertices[t.vertices[2]].pos.x,
                                     cdt.vertices[t.vertices[2]].pos.y);
 
-            screen_t.color = glm::vec4(1.f, 0.f, 0.f, 0.5f);
+            screen_t.color = glm::vec4(
+                0.39f + speed * 0.51f,
+                0.39f + speed * 0.51f,
+                0.39f + speed * 0.51f,
+                1.f);
 
             screen_shader_->append_to_geometry(*screen_geom_, screen_t);
         }
