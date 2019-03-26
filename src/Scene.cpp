@@ -20,7 +20,10 @@ Scene::Scene(std::shared_ptr<Scene_state> state)
 // load_ode
 //******************************************************************************
 
-void Scene::load_ode(std::string filename)
+void Scene::load_ode(
+    std::string filename,
+    float cuve_min_rad,
+    float simple_curve_min_rad)
 {
     assert(state_);
     if(state_ == nullptr)
@@ -29,11 +32,12 @@ void Scene::load_ode(std::string filename)
     // Load curve from the file and calculate statistics for the curve
     auto original = load_curve(filename);
  
-    state_->curve = std::make_shared<Curve>(original->get_simpified_curve(150.f)); //load_curve(filename);
+    // Calculate normal curve
+    state_->curve = std::make_shared<Curve>(original->get_simpified_curve(cuve_min_rad));
     state_->curve->update_stats();
 
-    // Simplify the curve and calculate statistics for the simplified curve
-    state_->simple_curve = std::make_shared<Curve>(original->get_simpified_curve(150.f));
+    // Calculate simple curve
+    state_->simple_curve = std::make_shared<Curve>(original->get_simpified_curve(simple_curve_min_rad));
     state_->simple_curve->update_stats();
 }
 

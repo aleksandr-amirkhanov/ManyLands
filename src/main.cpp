@@ -321,7 +321,10 @@ void mainloop()
                                    30.f * static_cast<float>(DEG_TO_RAD),
                                    30.f * static_cast<float>(DEG_TO_RAD) },
                      fog_dist = 10.f,
-                     fog_range = 2.f;
+                     fog_range = 2.f,
+                     curve_min_rad(0.075f),
+                     simple_curve_min_rad(0.09f);
+
 
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
                                         static_cast<float>(height)));
@@ -370,7 +373,10 @@ void mainloop()
             const std::string filename = "assets/model2-default.txt";
 #endif
             if(!filename.empty())
-                Scene_objs.load_ode(filename);
+                Scene_objs.load_ode(
+                    filename,
+                    curve_min_rad,
+                    simple_curve_min_rad);
 #endif
         }
         ImGui::SameLine();
@@ -400,6 +406,12 @@ void mainloop()
 
             ImGui::SliderFloat("Time", &State->timeplayer_pos, 0.f, 1.f);
             ImGui::SliderFloat("Speed", &Player_speed, 0.f, 0.5f);
+        }
+
+        if (ImGui::CollapsingHeader("Curve simplification"))
+        {
+            ImGui::SliderFloat("High-detailed curve", &curve_min_rad, 0.001f, 0.2f);
+            ImGui::SliderFloat("Low-detailed curve", &simple_curve_min_rad, 0.001f, 0.2f);            
         }
 
         if (ImGui::CollapsingHeader("Rendering"))

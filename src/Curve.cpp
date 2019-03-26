@@ -185,7 +185,7 @@ Curve Curve::get_simpified_curve(const float min_radius)
 
             float r = std::sqrt((p - a) * (p - b) * (p - c) / p);
 
-            if(r < 0.075f)
+            if(r < min_radius)
             {
                 num_removed_verts++;
                 points_to_use.remove(*iter);
