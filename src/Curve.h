@@ -28,7 +28,7 @@ public:
     void shift_to_origin(Scene_wireframe_vertex& out_shift);
     void get_boundaries(Scene_wireframe_vertex& origin,
                         Scene_wireframe_vertex& size) const;
-    Curve get_simpified_curve(const float spacing);
+    Curve get_simpified_curve(const float min_radius);
 
     void update_stats();
     const Curve_stats& get_stats();

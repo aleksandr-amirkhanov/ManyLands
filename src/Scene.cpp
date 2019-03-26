@@ -27,13 +27,13 @@ void Scene::load_ode(std::string filename)
         return;
 
     // Load curve from the file and calculate statistics for the curve
-    state_->curve = load_curve(filename);
+    auto original = load_curve(filename);
+ 
+    state_->curve = std::make_shared<Curve>(original->get_simpified_curve(150.f)); //load_curve(filename);
     state_->curve->update_stats();
 
     // Simplify the curve and calculate statistics for the simplified curve
-    state_->simple_curve = std::shared_ptr<Curve>(
-        new Curve(state_->curve->get_simpified_curve(10.f))
-        );
+    state_->simple_curve = std::make_shared<Curve>(original->get_simpified_curve(150.f));
     state_->simple_curve->update_stats();
 
     //gui_.TimeLine->set_model(tesseract_, curve_, tesseract_size_);

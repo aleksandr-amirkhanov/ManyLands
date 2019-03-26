@@ -5,6 +5,7 @@
 // std
 #include <algorithm>
 #include <cmath>
+#include <list>
 // boost
 #include <boost/numeric/ublas/assignment.hpp>
 
@@ -148,9 +149,71 @@ void Curve::get_boundaries(
 // get_simpified_curve
 //******************************************************************************
 
-Curve Curve::get_simpified_curve(const float spacing)
+Curve Curve::get_simpified_curve(const float min_radius)
 {
-    Curve simplified_curve;
+    std::list<size_t> points_to_use;
+    for(size_t i = 0; i < vertices().size(); ++i)
+        points_to_use.push_back(i);
+
+    auto get_distance = [](const Scene_wireframe_vertex& v1,
+                           const Scene_wireframe_vertex& v2)
+    {
+        auto d = v2 - v1;
+        return std::sqrt(
+            d(0) * d(0) + d(1) * d(1) + d(2) * d(2) + d(3) * d(3));
+    };
+
+    size_t num_removed_verts = 1;
+    while(num_removed_verts != 0)
+    {
+        num_removed_verts = 0;
+        if(points_to_use.size() < 3)
+            continue;
+
+        auto first = std::next(points_to_use.begin());
+        auto last = std::prev(points_to_use.end());
+        for(auto iter = first; iter != last; ++iter)
+        {
+            auto& a_vert = vertices()[*std::prev(iter)];
+            auto& b_vert = vertices()[*iter           ];
+            auto& c_vert = vertices()[*std::next(iter)];
+            
+            auto a = get_distance(b_vert, c_vert);
+            auto b = get_distance(a_vert, c_vert);
+            auto c = get_distance(a_vert, b_vert);
+            auto p = 0.5f * (a + b + c);
+
+            const auto epsilon(0.001f);
+
+            auto divider = (4 * std::sqrt(p * (p - a) * (p - b) * (p - c)));
+            float r;
+
+            if(divider < epsilon)
+                r = std::numeric_limits<float>::max();
+            else
+                r = (a * b * c) / divider;
+
+            auto coeff = (2.f * r) / b;
+            if(coeff < 2.f)
+            {
+                num_removed_verts++;
+                points_to_use.remove(*iter);
+                break;
+            }
+        }
+    }
+
+    Curve simple_curve;
+    for(auto i: points_to_use)
+    {
+        simple_curve.add_point(vertices()[i], time_stamp()[i]);
+    }
+    return simple_curve;
+
+
+
+
+    /*Curve simplified_curve;
 
     const size_t num_verts = get_vertices().size();
     // We always add the first points
@@ -189,7 +252,7 @@ Curve Curve::get_simpified_curve(const float spacing)
             get_vertices()[num_verts - 1], time_stamp()[num_verts - 1]);
     }
 
-    return simplified_curve;
+    return simplified_curve;*/
 }
 
 //******************************************************************************
