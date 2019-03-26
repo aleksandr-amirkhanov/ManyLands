@@ -27,6 +27,7 @@ Scene_state::Scene_state()
     , fov_y(0.f)
     , is_timeplayer_active(true)
     , timeplayer_pos(0.f)
+    , scale_tesseract(true)
 {
 }
 

@@ -96,8 +96,18 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     Scene_wireframe_vertex origin, size;
     curve->get_boundaries(origin, size);
 
-    const int tesseract_scale_mode = 1;
-    if(tesseract_scale_mode == 0)
+    if(state_->scale_tesseract)
+    {
+        Scene_wireframe_vertex scale(5);
+        scale[0] = state_->tesseract_size[0] / size[0];
+        scale[1] = state_->tesseract_size[0] / size[1];
+        scale[2] = state_->tesseract_size[0] / size[2];
+        scale[3] = state_->tesseract_size[0] / size[3];
+        scale[4] = 1;
+        curve->scale_vertices(scale);
+        curve->shift_to_origin(shift);
+    }
+    else
     {
         size_t max_ind = longest_axis_ind(curve.get());
         auto vert_scale = state_->tesseract_size[max_ind] / size[max_ind];
@@ -109,17 +119,6 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
                 state_->tesseract_size[max_ind] * size[i] / size[max_ind];
         }
 
-    }
-    else if(tesseract_scale_mode == 1)
-    {
-        Scene_wireframe_vertex scale(5);
-        scale[0] = state_->tesseract_size[0] / size[0];
-        scale[1] = state_->tesseract_size[0] / size[1];
-        scale[2] = state_->tesseract_size[0] / size[2];
-        scale[3] = state_->tesseract_size[0] / size[3];
-        scale[4] = 1;
-        curve->scale_vertices(scale);
-        curve->shift_to_origin(shift);
     }
 
     // Save curve origin and size to the class members

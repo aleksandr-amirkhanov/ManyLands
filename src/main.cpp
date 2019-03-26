@@ -349,8 +349,7 @@ void mainloop()
 
             ImGui::Checkbox("Simple Dali", &State->use_simple_dali_cross);
 
-            ImGui::SliderFloat4(
-                "Tesseract size", State->tesseract_size.data(), 1.f, 500.f);
+            ImGui::Checkbox("Scale tesseract", &State->scale_tesseract);
 
             ImGui::Separator();
 
