@@ -108,6 +108,8 @@ std::chrono::time_point<std::chrono::system_clock> Last_timepoint;
 auto Is_player_active(false);
 auto Player_speed(0.1f);
 
+auto Curve_max_deviation(0.8f);
+
 //******************************************************************************
 // Color_to_ImVec4
 //******************************************************************************
@@ -321,9 +323,7 @@ void mainloop()
                                    30.f * static_cast<float>(DEG_TO_RAD),
                                    30.f * static_cast<float>(DEG_TO_RAD) },
                      fog_dist = 10.f,
-                     fog_range = 2.f,
-                     curve_max_deviation(0.8f);
-
+                     fog_range = 2.f;
 
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
                                         static_cast<float>(height)));
@@ -335,7 +335,8 @@ void mainloop()
         ImGui::Begin(
             "Control panel",
             0,
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoResize);
 
         ImGui::Text("%.1f FPS", io.Framerate);
 
@@ -374,7 +375,7 @@ void mainloop()
             if(!filename.empty())
                 Scene_objs.load_ode(
                     filename,
-                    curve_max_deviation);
+                    Curve_max_deviation);
 #endif
         }
         ImGui::SameLine();
@@ -408,7 +409,7 @@ void mainloop()
 
         if (ImGui::CollapsingHeader("Curve simplification"))
         {
-            ImGui::SliderFloat("Max. deviation", &curve_max_deviation, 0.f, 3.f);
+            ImGui::SliderFloat("Max. deviation", &Curve_max_deviation, 0.f, 3.f);
         }
 
         if (ImGui::CollapsingHeader("Rendering"))
@@ -682,7 +683,7 @@ extern "C"
 void js_load_ode()
 {
     const std::string filename = "user_ode.txt";
-    Scene_objs.load_ode(filename);
+    Scene_objs.load_ode(filename, Curve_max_deviation);
 
     // The file has to removed to be able to load a new file with the same name
     remove(filename.c_str());
