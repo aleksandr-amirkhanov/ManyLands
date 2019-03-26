@@ -72,28 +72,43 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     }
 
     Scene_wireframe_vertex shift;
-    curve->shift_to_origin(state_->tesseract_size[0], shift);
+    curve->shift_to_origin(shift);
 
-    auto longest_axis_length = [](Curve* c) {
+    auto longest_axis_ind = [](Curve* c)
+    {
         Scene_wireframe_vertex origin, size;
         c->get_boundaries(origin, size);
 
+        size_t ind = 0;
         float max_size = size[0];
-        for(int i = 1; i < 4; ++i)
+        for(char i = 1; i < 4; ++i)
+        {
             if(size[i] > max_size)
+            {
+                ind = i;
                 max_size = size[i];
+            }
+        }
 
-        return max_size;
+        return ind;
     };
 
     Scene_wireframe_vertex origin, size;
     curve->get_boundaries(origin, size);
 
-    const int tesseract_scale_mode = 1;
+    const int tesseract_scale_mode = 0;
     if(tesseract_scale_mode == 0)
     {
-        auto max_size = longest_axis_length(curve.get());
-        curve->scale_vertices(state_->tesseract_size[0] / max_size);
+        size_t max_ind = longest_axis_ind(curve.get());
+        auto vert_scale = state_->tesseract_size[max_ind] / size[max_ind];
+        curve->scale_vertices(vert_scale);
+
+        for(char i = 0; i < 4; ++i)
+        {
+            state_->tesseract_size[i] =
+                state_->tesseract_size[max_ind] * size[i] / size[max_ind];
+        }
+
     }
     else if(tesseract_scale_mode == 1)
     {
@@ -104,7 +119,7 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
         scale[3] = state_->tesseract_size[0] / size[3];
         scale[4] = 1;
         curve->scale_vertices(scale);
-        curve->shift_to_origin(state_->tesseract_size[0], shift);
+        curve->shift_to_origin(shift);
     }
 
     // Save curve origin and size to the class members
@@ -115,22 +130,6 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     state_->curve_selection = std::make_unique<Curve_selection>();
     state_->curve_selection->t_start = curve->t_min();
     state_->curve_selection->t_end = curve->t_max();
-
-    if(curve->time_stamp().size() > 2)
-    {
-        // Set UI
-        float min = state_->curve_selection->t_start;
-        float max = state_->curve_selection->t_end;
-
-        //gui_.outTMin->setText(QString::number(min, 'f', 2));
-        //gui_.outTMax->setText(QString::number(max, 'f', 2));
-
-        //gui_.tIntervalStart->setMinimum(min);
-        //gui_.tIntervalStart->setMaximum(max);
-
-        //gui_.tIntervalEnd->setMinimum(min);
-        //gui_.tIntervalEnd->setMaximum(max);
-    }
 
     return curve;
 }
@@ -146,8 +145,7 @@ void Scene::create_tesseract(Scene_wireframe_vertex shift,
     if(state_ == nullptr)
         return;
 
-    Scene_wireframe_vertex origin(4);
-    Scene_wireframe_vertex size(4);
+    Scene_wireframe_vertex origin(4), size(4);
     curve.get_boundaries(origin, size);
 
     state_->tesseract = std::make_unique<Tesseract>(

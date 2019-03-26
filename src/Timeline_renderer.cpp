@@ -327,8 +327,8 @@ void Timeline_renderer::draw_axes(const Region& region)
 
 void Timeline_renderer::draw_curve(const Region& region)
 {
-    const float t_min = state_->simple_curve->t_min();
-    const float t_max = state_->simple_curve->t_max();
+    const float t_min = state_->curve->t_min();
+    const float t_max = state_->curve->t_max();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
@@ -344,19 +344,19 @@ void Timeline_renderer::draw_curve(const Region& region)
         Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
-        const float t_min  = state_->simple_curve->t_min();
+        const float t_min  = state_->curve->t_min();
 
         const float min_delta_t = width * t_duration / region.width();
         float prev_t = -min_delta_t;
 
-        for(size_t i = 0; i < state_->simple_curve->get_vertices().size(); i++)
+        for(size_t i = 0; i < state_->curve->get_vertices().size(); i++)
         {
-            const float t_curr = state_->simple_curve->time_stamp()[i];
+            const float t_curr = state_->curve->time_stamp()[i];
             if(t_curr < prev_t + min_delta_t)
                 continue;
 
             const float val = static_cast<float>(
-                state_->simple_curve->get_vertices()[i](dim_ind));
+                state_->curve->get_vertices()[i](dim_ind));
             const float x_point =
                 region.left() + region.width() * (t_curr - t_min) / t_duration;
             const float y_point =
@@ -403,7 +403,14 @@ void Timeline_renderer::draw_curve(const Region& region)
     //QPen defocused = pen;
     glm::vec4 defocused = glm::vec4(0.9f, 0.9f, 0.9f, 1.f);
 
-    for(size_t i = 0; i < 4; ++i)
+    float max_tesseract_size = state_->tesseract_size[0];
+    for(char i = 1; i < 4; ++i)
+    {
+        if(state_->tesseract_size[i] > max_tesseract_size)
+            max_tesseract_size = state_->tesseract_size[i];
+    }
+
+    for(char i = 0; i < 4; ++i)
     {
         //pen.setColor(colors[i]);
         //pen.setWidthF(2.5);
@@ -411,7 +418,7 @@ void Timeline_renderer::draw_curve(const Region& region)
         auto strip = get_strip(region,
                                i,
                                t_duration,
-                               state_->tesseract_size[0],
+                               max_tesseract_size,
                                colors[i],
                                defocused);
 
@@ -788,8 +795,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         // Draw a cube
         project_point_array(
             cube->get_vertices(),
-            size,
-            state_->tesseract_size[0]);
+            size);
         fill_wireframe_obj(*cube.get(), get_curve_speed(*state_->curve.get()));
         // draw_wireframe_obj(*cube.get());
     }
@@ -798,8 +804,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         // Draw a plain
         project_point_array(
             square->get_vertices(),
-            size,
-            state_->tesseract_size[0]);
+            size);
         fill_wireframe_obj(
             *square.get(),
             get_curve_speed(*state_->curve.get()));
@@ -811,8 +816,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         // Draw a tesseract
         project_point_array(
             tesseract->get_vertices(),
-            size,
-            state_->tesseract_size[0]);
+            size);
         fill_wireframe_obj(
             *tesseract.get(),
             get_curve_speed(*state_->curve.get()));
@@ -824,15 +828,15 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     painter.setPen(pen);*/
 
     Tesseract t = *state_->tesseract.get();
-    project_point_array(t.get_vertices(), size, state_->tesseract_size[0]);
+    project_point_array(t.get_vertices(), size);
     draw_wireframe_obj(t);
 
     /*pen.setColor(QColor("#000000"));
     pen.setWidthF(1.5);
     painter.setPen(pen);*/
 
-    Curve c = *state_->simple_curve.get();
-    project_point_array(c.get_vertices(), size, state_->tesseract_size[0]);
+    Curve c = *state_->curve.get();
+    project_point_array(c.get_vertices(), size);
     draw_curve(c);
 }
 
@@ -1050,8 +1054,7 @@ void Timeline_renderer::calculate_switch_points(
 
 void Timeline_renderer::project_point(
     Scene_wireframe_vertex& point,
-    float size,
-    float tesseract_size)
+    float size)
 {
     if(point.size() < 4)
         return;
@@ -1071,15 +1074,15 @@ void Timeline_renderer::project_point(
     const auto cos_45 = std::cos(static_cast<float>(PI / 4));
 
     // X-axis
-    point(0) = origin(0) + axis_size * (0.5f + copy_p(0) / tesseract_size);
+    point(0) = origin(0) + axis_size * (0.5f + copy_p(0) / state_->tesseract_size[0]);
     // Y-axis
-    point(1) = origin(1) - axis_size * (0.5f + copy_p(1) / tesseract_size);
+    point(1) = origin(1) - axis_size * (0.5f + copy_p(1) / state_->tesseract_size[1]);
     // Z -axis
-    point(0) += axis_size * (0.5f + copy_p(2) / tesseract_size) * cos_45;
-    point(1) += axis_size * (0.5f + copy_p(2) / tesseract_size) * sin_45;
+    point(0) += axis_size * (0.5f + copy_p(2) / state_->tesseract_size[2]) * cos_45;
+    point(1) += axis_size * (0.5f + copy_p(2) / state_->tesseract_size[2]) * sin_45;
     // W-axis
-    point(0) -= axis_size * (0.5f + copy_p(3) / tesseract_size) * cos_45;
-    point(1) += axis_size * (0.5f + copy_p(3) / tesseract_size) * sin_45;
+    point(0) -= axis_size * (0.5f + copy_p(3) / state_->tesseract_size[3]) * cos_45;
+    point(1) += axis_size * (0.5f + copy_p(3) / state_->tesseract_size[3]) * sin_45;
 }
 
 //******************************************************************************
@@ -1088,11 +1091,10 @@ void Timeline_renderer::project_point(
 
 void Timeline_renderer::project_point_array(
     std::vector<Scene_wireframe_vertex>& points,
-    float size,
-    float tesseract_size)
+    float size)
 {
     for(auto& p : points)
-        project_point(p, size, tesseract_size);
+        project_point(p, size);
 }
 
 //******************************************************************************

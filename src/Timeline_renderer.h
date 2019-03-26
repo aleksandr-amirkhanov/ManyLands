@@ -84,12 +84,10 @@ private:
 
     void project_point(
         Scene_wireframe_vertex& point,
-        float size,
-        float tesseract_size);
+        float size);
     void project_point_array(
         std::vector<Scene_wireframe_vertex>& points,
-        float size,
-        float tesseract_size);
+        float size);
 
     void update_regions();
 

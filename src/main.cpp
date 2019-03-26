@@ -243,8 +243,7 @@ void mainloop()
 
     // ImGui windows start
     {
-        static float tesseract_size[4] = { 200.f, 200.f, 200.f, 200.f },
-                     tesseract_thickness = 3.f,
+        static float tesseract_thickness = 3.f,
                      curve_thickness = 3.f,
                      sphere_diameter = 3.f,
                      camera_3D_dist  = 3.f,
@@ -349,7 +348,7 @@ void mainloop()
             ImGui::Checkbox("Legend##visibility", &State->show_legend);
 
             ImGui::SliderFloat4(
-                "Tesseract size", tesseract_size, 1.f, 500.f);
+                "Tesseract size", State->tesseract_size.data(), 1.f, 500.f);
 
             ImGui::Separator();
 
@@ -510,11 +509,6 @@ void mainloop()
         State->update_color(Curve_low_speed,  ImVec4_to_Color(Low_speed_color));
         State->update_color(
             Curve_high_speed, ImVec4_to_Color(High_speed_color));
-
-        std::copy(std::begin(
-                  tesseract_size),
-                  std::end(tesseract_size),
-                  std::begin(State->tesseract_size));
 
         Renderer.set_line_thickness(tesseract_thickness, curve_thickness);
         Renderer.set_sphere_diameter(sphere_diameter);

@@ -25,8 +25,7 @@ public:
     float t_max() const;
     float t_duration() const;
 
-    void shift_to_origin(float max_edge_length,
-                         Scene_wireframe_vertex& out_shift);
+    void shift_to_origin(Scene_wireframe_vertex& out_shift);
     void get_boundaries(Scene_wireframe_vertex& origin,
                         Scene_wireframe_vertex& size) const;
     Curve get_simpified_curve(const float spacing);

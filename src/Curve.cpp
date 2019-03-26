@@ -102,10 +102,9 @@ float Curve::t_duration() const
 // shift_to_origin
 //******************************************************************************
 
-void Curve::shift_to_origin(float max_edge_length, Scene_wireframe_vertex& out_shift)
+void Curve::shift_to_origin(Scene_wireframe_vertex& out_shift)
 {
-    Scene_wireframe_vertex origin(5);
-    Scene_wireframe_vertex size(5);
+    Scene_wireframe_vertex origin(5), size(5);
     get_boundaries(origin, size);
 
     translate_vertices(-0.5f * size - origin);
@@ -115,7 +114,9 @@ void Curve::shift_to_origin(float max_edge_length, Scene_wireframe_vertex& out_s
 // get_boundaries
 //******************************************************************************
 
-void Curve::get_boundaries(Scene_wireframe_vertex& origin, Scene_wireframe_vertex& size) const
+void Curve::get_boundaries(
+    Scene_wireframe_vertex& origin,
+    Scene_wireframe_vertex& size) const
 {
     // Finding minimum and maximum values of the curve
     Scene_wireframe_vertex min(5);

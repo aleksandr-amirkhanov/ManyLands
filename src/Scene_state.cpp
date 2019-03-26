@@ -12,7 +12,7 @@ Scene_state::Scene_state()
     , projection_3D(glm::mat4(1.f))
     , camera_4D(5)
     , projection_4D(5, 5)
-    , tesseract_size{1.f, 1.f, 1.f, 1.f}
+    , tesseract_size{200.f, 200.f, 200.f, 200.f}
     , unfolding_anim(0.f)
     , show_tesseract(true)
     , show_curve(true)
@@ -28,8 +28,6 @@ Scene_state::Scene_state()
     , is_timeplayer_active(true)
     , timeplayer_pos(0.f)
 {
-    tesseract_size[0] = tesseract_size[1] = tesseract_size[2] =
-        tesseract_size[3] = 1;
 }
 
 //******************************************************************************
