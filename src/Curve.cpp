@@ -183,18 +183,9 @@ Curve Curve::get_simpified_curve(const float min_radius)
             auto c = get_distance(a_vert, b_vert);
             auto p = 0.5f * (a + b + c);
 
-            const auto epsilon(0.001f);
+            float r = std::sqrt((p - a) * (p - b) * (p - c) / p);
 
-            auto divider = (4 * std::sqrt(p * (p - a) * (p - b) * (p - c)));
-            float r;
-
-            if(divider < epsilon)
-                r = std::numeric_limits<float>::max();
-            else
-                r = (a * b * c) / divider;
-
-            auto coeff = (2.f * r) / b;
-            if(coeff < 2.f)
+            if(r < 0.075f)
             {
                 num_removed_verts++;
                 points_to_use.remove(*iter);
@@ -205,54 +196,9 @@ Curve Curve::get_simpified_curve(const float min_radius)
 
     Curve simple_curve;
     for(auto i: points_to_use)
-    {
         simple_curve.add_point(vertices()[i], time_stamp()[i]);
-    }
+    
     return simple_curve;
-
-
-
-
-    /*Curve simplified_curve;
-
-    const size_t num_verts = get_vertices().size();
-    // We always add the first points
-    if(num_verts > 0)
-        simplified_curve.add_point(get_vertices()[0], time_stamp()[0]);
-
-    // Ading points that are the the minimum distance from each other
-    float dist = 0.f; // Distance from the last point of the simplified curve
-    for(size_t i = 1; i < num_verts - 1; ++i)
-    {
-        auto get_distance = [](Scene_wireframe_vertex v1,
-                               Scene_wireframe_vertex v2) {
-            auto d = v2 - v1;
-            return std::sqrt(
-                d(0) * d(0) + d(1) * d(1) + d(2) * d(2) + d(3) * d(3));
-        };
-
-        dist += get_distance(get_vertices()[i - 1], get_vertices()[i]);
-
-        if(dist > spacing)
-        {
-            dist = 0;
-            // Ok, it's time to add a curve point
-            simplified_curve.add_point(get_vertices()[i], time_stamp()[i]);
-        }
-        else
-        {
-            continue;
-        }
-    }
-
-    // We always add the last point
-    if(num_verts > 1)
-    {
-        simplified_curve.add_point(
-            get_vertices()[num_verts - 1], time_stamp()[num_verts - 1]);
-    }
-
-    return simplified_curve;*/
 }
 
 //******************************************************************************

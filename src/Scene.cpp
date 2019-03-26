@@ -35,11 +35,6 @@ void Scene::load_ode(std::string filename)
     // Simplify the curve and calculate statistics for the simplified curve
     state_->simple_curve = std::make_shared<Curve>(original->get_simpified_curve(150.f));
     state_->simple_curve->update_stats();
-
-    //gui_.TimeLine->set_model(tesseract_, curve_, tesseract_size_);
-
-    // update_marker();
-    // update_plot();
 }
 
 //******************************************************************************
