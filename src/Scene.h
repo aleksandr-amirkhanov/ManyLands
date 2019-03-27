@@ -9,8 +9,7 @@ class Scene
 public:
     Scene(std::shared_ptr<Scene_state> state);
     void load_ode(
-        std::string filename,
-        std::string filename2,
+        const std::vector<std::string>& fnames,
         float cuve_min_rad);
 
 private:

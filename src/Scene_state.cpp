@@ -48,3 +48,15 @@ void Scene_state::update_color(int color_id, const Color& color)
 {
     colors_[color_id] = color;
 }
+
+//******************************************************************************
+// selected_curve
+//******************************************************************************
+
+std::shared_ptr<Curve> Scene_state::selected_curve()
+{
+    if(curves.empty())
+        return nullptr;
+    else
+        return curves.front();
+}

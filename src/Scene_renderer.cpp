@@ -67,9 +67,9 @@ void Scene_renderer::render()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
     
-    if(state_                == nullptr ||
-       state_->tesseract     == nullptr ||
-       state_->curves.size() == 0)
+    if(state_            == nullptr ||
+       state_->tesseract == nullptr ||
+       state_->curves.empty())
     {
         return;
     }
@@ -145,23 +145,21 @@ void Scene_renderer::render()
     std::vector<Curve> projected_c;
 
     // Array of curves used to project into 3D spaces
-    typedef std::vector<Curve> curvs3d_t;
-    std::vector<curvs3d_t> curves_3D_arr;
+    typedef std::vector<Curve> curves_3d_t;
+    std::vector<curves_3d_t> curves_3d;
 
-    for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+    for(size_t i = 0; i < state_->curves.size(); ++i)
     {
-        projected_c.push_back(*state_->curves[ci].get());
+        projected_c.push_back(*state_->curves[i].get());
     
-        curvs3d_t curves_3D;
+        curves_3d_t curves;
         for(int i = 0; i < 8; ++i)
-            curves_3D.push_back(*state_->curves[ci].get());
-        curves_3D_arr.push_back(curves_3D);
+            curves.push_back(*state_->curves[i].get());
+        curves_3d.push_back(curves);
 
         // Project curves from 4D to 3D
-        project_to_3D(projected_c[ci].get_vertices(), rot_m);
+        project_to_3D(projected_c[i].get_vertices(), rot_m);
     }
-
-   
 
     // Animation unfolding the tesseract to the Dali-cross
     if(state_->unfolding_anim == 0)
@@ -173,10 +171,10 @@ void Scene_renderer::render()
         // Draw 4D curve
         if(state_->show_curve)
         {
-            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            for(auto& c : projected_c)
             {
-                draw_curve(projected_c[ci], 1.);
-                draw_annotations(projected_c[ci], mvp_mat);
+                draw_curve(c, 1.);
+                draw_annotations(c, mvp_mat);
             }
         }
     }
@@ -184,13 +182,11 @@ void Scene_renderer::render()
     {
         std::vector<Cube> plots_3D = state_->tesseract->split();
 
-        for(size_t ci = 0; ci < state_->curves.size(); ++ci)
-        {
-            move_curves_to_3D_plots(project_curve_4D, curves_3D_arr[ci]);
+        for(auto& c: curves_3d)
+            move_curves_to_3D_plots(project_curve_4D, c);
 
-            if(unfold_4D > 0)
-                tesseract_unfolding(unfold_4D, plots_3D, curves_3D_arr[ci]);
-        }
+        if(unfold_4D > 0)
+            tesseract_unfolding(unfold_4D, plots_3D, curves_3d);
 
         // Project 3D plots from 4D to 3D
         auto rot = get_rotation_matrix(unfold_4D);
@@ -232,13 +228,13 @@ void Scene_renderer::render()
                 }
             }
 
-            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            for(auto& c3d: curves_3d)
             {
                 // Draw curves
                 if(state_->show_curve)
                 {
                     // for(auto& c : curves_3D)
-                    for(size_t i = 0; i < curves_3D_arr[ci].size(); ++i)
+                    for(size_t i = 0; i < c3d.size(); ++i)
                     {
                         if(state_->use_simple_dali_cross && i != 1 &&
                            i != 2 && i != 5 && i != 7)
@@ -246,7 +242,7 @@ void Scene_renderer::render()
                             continue;
                         }
 
-                        auto c = curves_3D_arr[ci][i];
+                        auto c = c3d[i];
                         project_to_3D(c.get_vertices(), rot);
 
                         draw_curve(c, visibility_coeff(i) * (1.f - hide_3D));
@@ -263,35 +259,31 @@ void Scene_renderer::render()
             // Get the source plots
             std::vector<Square> plots_2D = Cube::split(plots_3D);
 
-            typedef std::vector<Curve> curvs2D_t;
-            std::vector<curvs2D_t> curves_2D_arr;
+            typedef std::vector<Curve> curvs_2d_t;
+            std::vector<curvs_2d_t> curves_2d;
 
-            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            for(auto& c3d : curves_3d)
             {
-                std::vector<Curve> curves_2D;
-                curves_2D.push_back(curves_3D_arr[ci][5]);
-                curves_2D.push_back(curves_3D_arr[ci][1]);
-                curves_2D.push_back(curves_3D_arr[ci][7]);
-                curves_2D.push_back(curves_3D_arr[ci][1]);
-                curves_2D.push_back(curves_3D_arr[ci][7]);
-                curves_2D.push_back(curves_3D_arr[ci][7]);
+                std::vector<Curve> curves;
+                curves.push_back(c3d[5]);
+                curves.push_back(c3d[1]);
+                curves.push_back(c3d[7]);
+                curves.push_back(c3d[1]);
+                curves.push_back(c3d[7]);
+                curves.push_back(c3d[7]);
 
-                curves_2D_arr.push_back(curves_2D);
-
-                move_curves_to_2D_plots(project_curve_3D, curves_2D_arr[ci]);
-
+                move_curves_to_2D_plots(project_curve_3D, curves);
+                curves_2d.push_back(curves);
             }
 
-            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            for(auto& c2d : curves_2d)
             {
-                for(auto& c : curves_2D_arr[ci])
+                for(auto& c : c2d)
                 {
                     project_to_3D(c.get_vertices(), rot);
                 }
-
-                plots_unfolding(unfold_3D, plots_2D, curves_2D_arr[ci]);
             }
-
+            plots_unfolding(unfold_3D, plots_2D, curves_2d);
 
             // Draw 2D plots
             if(state_->show_tesseract)
@@ -304,16 +296,12 @@ void Scene_renderer::render()
             label_points_.push_back(plots_2D[3].get_vertices()[0]);
             label_points_.push_back(plots_2D[5].get_vertices()[1]);
 
-            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            // Draw 2D curves
+            if(state_->show_curve)
             {
-                // Draw 2D curves
-                if(state_->show_curve)
+                for(auto& c2d : curves_2d)
                 {
-                    // TODO: uncomment lines below (rewrite it first ;) )!
-                    /*if(unfold_3D == 1.)
-                        gui_.Renderer->show_labels(true);*/
-
-                    for(auto& c : curves_2D_arr[ci])
+                    for(auto& c : c2d)
                     {
                         draw_curve(c, 1.);
                         draw_annotations(c, mvp_mat);
@@ -988,7 +976,7 @@ void Scene_renderer::move_curves_to_2D_plots(
 void Scene_renderer::tesseract_unfolding(
     float coeff,
     std::vector<Cube>& plots_3D,
-    std::vector<Curve>& curves_3D)
+    std::vector<std::vector<Curve>>& curves_3D)
 {
     auto transform_3D_plot =
         [](Scene_wireframe_object& c,
@@ -1027,10 +1015,13 @@ void Scene_renderer::tesseract_unfolding(
 
         transform_3D_plot(plots_3D[0], rot, disp2);
 
-        transform_3D_plot(curves_3D[4], rot, disp1);
+        for(auto& c: curves_3D)
+        {
+            transform_3D_plot(c[4], rot, disp1);
 
-        transform_3D_plot(curves_3D[0], rot, disp1);
-        transform_3D_plot(curves_3D[0], rot, disp2);
+            transform_3D_plot(c[0], rot, disp1);
+            transform_3D_plot(c[0], rot, disp2);
+        }
     }
     // Cube and curve 3
     {
@@ -1044,8 +1035,9 @@ void Scene_renderer::tesseract_unfolding(
                  0;
 
         transform_3D_plot(plots_3D[2], rot, disp);
-
-        transform_3D_plot(curves_3D[2], rot, disp);
+        
+        for(auto& c: curves_3D)
+            transform_3D_plot(c[2], rot, disp);
     }
     // Cube and curve 4
     {
@@ -1060,7 +1052,8 @@ void Scene_renderer::tesseract_unfolding(
 
         transform_3D_plot(plots_3D[3], rot, disp);
 
-        transform_3D_plot(curves_3D[3], rot, disp);
+        for(auto& c: curves_3D)
+            transform_3D_plot(c[3], rot, disp);
     }
     // Cube and curve 6
     {
@@ -1075,7 +1068,8 @@ void Scene_renderer::tesseract_unfolding(
 
         transform_3D_plot(plots_3D[5], rot, disp);
 
-        transform_3D_plot(curves_3D[5], rot, disp);
+        for(auto& c: curves_3D)
+            transform_3D_plot(c[5], rot, disp);
     }
     // Cube and curve 7
     {
@@ -1090,7 +1084,8 @@ void Scene_renderer::tesseract_unfolding(
 
         transform_3D_plot(plots_3D[6], rot, disp);
 
-        transform_3D_plot(curves_3D[6], rot, disp);
+        for(auto& c: curves_3D)
+            transform_3D_plot(c[6], rot, disp);
     }
     // Cube and curve 8
     {
@@ -1105,7 +1100,8 @@ void Scene_renderer::tesseract_unfolding(
 
         transform_3D_plot(plots_3D[7], rot, disp);
 
-        transform_3D_plot(curves_3D[7], rot, disp);
+        for(auto& c: curves_3D)
+            transform_3D_plot(c[7], rot, disp);
     }
 }
 
@@ -1215,7 +1211,7 @@ void Scene_renderer::draw_2D_plot(Scene_wireframe_object& plot)
 void Scene_renderer::plots_unfolding(
     float coeff,
     std::vector<Square>& plots_2D,
-    std::vector<Curve>& curves_2D)
+    std::vector<std::vector<Curve>>& curves_2D)
 {
     auto transform_3D_plot =
         [](Scene_wireframe_object& c,
@@ -1257,9 +1253,12 @@ void Scene_renderer::plots_unfolding(
         transform_3D_plot(plots_2D[4], rot, disp);
         transform_3D_plot(plots_2D[5], rot, disp);
 
-        transform_3D_plot(curves_2D[3], rot, disp);
-        transform_3D_plot(curves_2D[4], rot, disp);
-        transform_3D_plot(curves_2D[5], rot, disp);
+        for(auto& c: curves_2D)
+        {
+            transform_3D_plot(c[3], rot, disp);
+            transform_3D_plot(c[4], rot, disp);
+            transform_3D_plot(c[5], rot, disp);
+        }
     }
     {
         auto anchor = plots_2D[2].get_vertices()[1];
@@ -1275,7 +1274,8 @@ void Scene_renderer::plots_unfolding(
 
         transform_3D_plot(plots_2D[5], rot, disp);
 
-        transform_3D_plot(curves_2D[5], rot, disp);
+        for(auto& c: curves_2D)
+            transform_3D_plot(c[5], rot, disp);
     }
 }
 

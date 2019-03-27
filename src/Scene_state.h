@@ -28,6 +28,11 @@ class Scene_state
 {
 public:
     Scene_state();
+    
+    const Color& get_color(int color_id);
+    void update_color(int color_id, const Color& color);
+
+    std::shared_ptr<Curve> selected_curve();
 
     glm::mat4 projection_3D;
     glm::quat rotation_3D;
@@ -43,9 +48,6 @@ public:
     std::shared_ptr<Curve_selection> curve_selection;
 
     std::shared_ptr<Tesseract> tesseract;
-
-    const Color& get_color(int color_id);
-    void update_color(int color_id, const Color& color);
 
     float unfolding_anim;
 

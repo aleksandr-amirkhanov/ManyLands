@@ -348,7 +348,7 @@ void mainloop()
             );
 #else
 #ifdef _WIN32
-            std::string filename, filename2;
+            std::vector<std::string> fnames;
             char fn[MAX_PATH];
 
             SDL_SysWMinfo wm_info;
@@ -380,25 +380,28 @@ void mainloop()
             }
 
             if(out_dialog_data.size() == 1)
-                filename = std::string(out_dialog_data.front());
-            if(out_dialog_data.size() == 3)
             {
-                filename = std::string(
-                    out_dialog_data[0] + "\\" + out_dialog_data[1]);
-                filename2 = std::string(
-                    out_dialog_data[0] + "\\" + out_dialog_data[2]);
+                fnames.emplace_back(out_dialog_data.front());
+            }
+            else if(out_dialog_data.size() >= 3)
+            {
+                // If two of more files are opened, then the first elemens
+                // always indicates the directory of the files
+                for(size_t i = 1; i < out_dialog_data.size(); ++i)
+                {
+                    fnames.emplace_back(
+                        out_dialog_data[0] + "\\" + out_dialog_data[i]);
+                }
             }
 #else
             const std::string filename = "assets/model2-default.txt";
 #endif
-            if(!filename.empty())
+            if(!fnames.empty())
             {
                 Scene_objs.load_ode(
-                    filename,
-                    filename2,
+                    fnames,
                     Curve_max_deviation);
             }
-
 #endif
         }
         ImGui::SameLine();

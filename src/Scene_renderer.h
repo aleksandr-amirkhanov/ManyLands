@@ -49,7 +49,7 @@ private:
     void tesseract_unfolding(
         float coeff,
         std::vector<Cube>& plots_3D,
-        std::vector<Curve>& curves_3D);
+        std::vector<std::vector<Curve>>& curves_3D);
     boost::numeric::ublas::matrix<float> get_rotation_matrix();
     boost::numeric::ublas::matrix<float>
     get_rotation_matrix(float view_straightening);
@@ -58,7 +58,7 @@ private:
     void plots_unfolding(
         float coeff,
         std::vector<Square>& plots_2D,
-        std::vector<Curve>& curves_2D);
+        std::vector<std::vector<Curve>>& curves_2D);
     void draw_labels_in_2D(const glm::mat4& projection);
 
     std::vector<float> split_animation(float animation_pos, int sections);

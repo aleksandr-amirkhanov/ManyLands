@@ -21,26 +21,25 @@ Scene::Scene(std::shared_ptr<Scene_state> state)
 //******************************************************************************
 
 void Scene::load_ode(
-    std::string filename,
-    std::string filename2,
+    const std::vector<std::string>& fnames,
     float cuve_min_rad)
 {
     assert(state_);
     if(state_ == nullptr)
         return;
 
-    // Load curve from the file and calculate statistics for the curve
-    auto original  = load_curve(filename ),
-         original2 = load_curve(filename2);
- 
-    // Calculate normal curve
-    state_->curves.emplace_back(std::make_shared<Curve>(
-        original->get_simpified_curve_RDP(cuve_min_rad)));
-    state_->curves.back()->update_stats();
+    // Load curves from files and calculate statistics
+    for(auto& fn: fnames)
+    {
+        auto original = load_curve(fn);
 
-    state_->curves.emplace_back(std::make_shared<Curve>(
-        original2->get_simpified_curve_RDP(cuve_min_rad)));
-    state_->curves.back()->update_stats();
+        // Calculate normal curve
+        auto curve = std::make_shared<Curve>(
+            original->get_simpified_curve_RDP(cuve_min_rad));
+        curve->update_stats();
+
+        state_->curves.emplace_back(std::move(curve));
+    }
 }
 
 //******************************************************************************
