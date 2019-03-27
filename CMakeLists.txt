@@ -7,6 +7,10 @@ if(WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 endif()
 
+if (MSVC)
+    add_definitions("/MP")
+endif()
+
 find_package(Boost REQUIRED)
 if(NOT EMSCRIPTEN)
     find_package(OpenGL REQUIRED)
