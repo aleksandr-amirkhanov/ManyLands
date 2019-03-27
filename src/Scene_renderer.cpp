@@ -1097,13 +1097,16 @@ boost::numeric::ublas::matrix<float> Scene_renderer::get_rotation_matrix()
 boost::numeric::ublas::matrix<float>
 Scene_renderer::get_rotation_matrix(float view_straightening)
 {
-    float angle_xw = (1 - view_straightening) * state_->xw_rot;
-    float angle_yw = (1 - view_straightening) * state_->yw_rot;
-    float angle_zw = (1 - view_straightening) * state_->zw_rot;
+    auto angle_xy = (1 - view_straightening) * state_->xy_rot,
+         angle_yz = (1 - view_straightening) * state_->yz_rot,
+         angle_zx = (1 - view_straightening) * state_->zx_rot,
+         angle_xw = (1 - view_straightening) * state_->xw_rot,
+         angle_yw = (1 - view_straightening) * state_->yw_rot,
+         angle_zw = (1 - view_straightening) * state_->zw_rot;
 
-    auto m = Matrix_lib_f::getXYRotationMatrix(state_->xy_rot);
-    m = prod(m, Matrix_lib_f::getYZRotationMatrix(state_->yz_rot));
-    m = prod(m, Matrix_lib_f::getZXRotationMatrix(state_->zx_rot));
+    auto m = Matrix_lib_f::getXYRotationMatrix(angle_xy);
+    m = prod(m, Matrix_lib_f::getYZRotationMatrix(angle_yz));
+    m = prod(m, Matrix_lib_f::getZXRotationMatrix(angle_zx));
     m = prod(m, Matrix_lib_f::getXWRotationMatrix(angle_xw));
     m = prod(m, Matrix_lib_f::getYWRotationMatrix(angle_yw));
     m = prod(m, Matrix_lib_f::getZWRotationMatrix(angle_zw));
