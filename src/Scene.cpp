@@ -28,6 +28,8 @@ void Scene::load_ode(
     if(state_ == nullptr)
         return;
 
+    state_->curves.clear();
+
     // Load curves from files and calculate statistics
     for(auto& fn: fnames)
     {

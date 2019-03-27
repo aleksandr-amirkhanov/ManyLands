@@ -11,7 +11,7 @@ const mediump vec3 specColor = vec3(0.3, 0.3, 0.3);
 void main()
 {
     mediump vec3 ambientColor = 0.5 * col.xyz;
-    mediump float diffuseColorCoeff = 0.5 * col.xyz;
+    mediump vec3 diffuseColor = 0.5 * col.xyz;
 
     mediump vec3 normal = normalize(vertNormal);
     mediump vec3 lightDir = normalize(lightPos - vert);

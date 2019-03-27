@@ -394,7 +394,8 @@ void mainloop()
                 }
             }
 #else
-            const std::string filename = "assets/model2-default.txt";
+            std::vector<std::string> fnames;
+            fnames.push_back("assets/model2-default.txt");
 #endif
             if(!fnames.empty())
             {
@@ -724,11 +725,13 @@ extern "C"
 //******************************************************************************
 void js_load_ode()
 {
-    const std::string filename = "user_ode.txt";
-    Scene_objs.load_ode(filename, Curve_max_deviation);
+    std::vector<std::string> fnames;
+    fnames.push_back("user_ode.txt");
+    Scene_objs.load_ode(fnames, Curve_max_deviation);
 
     // The file has to removed to be able to load a new file with the same name
-    remove(filename.c_str());
+    for(auto& fn: fnames)
+        remove(fn.c_str());
 }
 }
 #endif

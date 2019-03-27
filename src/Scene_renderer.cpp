@@ -148,17 +148,17 @@ void Scene_renderer::render()
     typedef std::vector<Curve> curves_3d_t;
     std::vector<curves_3d_t> curves_3d;
 
-    for(size_t i = 0; i < state_->curves.size(); ++i)
+    for(size_t ci = 0; ci < state_->curves.size(); ++ci)
     {
-        projected_c.push_back(*state_->curves[i].get());
+        projected_c.push_back(*state_->curves[ci].get());
     
         curves_3d_t curves;
         for(int i = 0; i < 8; ++i)
-            curves.push_back(*state_->curves[i].get());
+            curves.push_back(*state_->curves[ci].get());
         curves_3d.push_back(curves);
 
         // Project curves from 4D to 3D
-        project_to_3D(projected_c[i].get_vertices(), rot_m);
+        project_to_3D(projected_c[ci].get_vertices(), rot_m);
     }
 
     // Animation unfolding the tesseract to the Dali-cross
