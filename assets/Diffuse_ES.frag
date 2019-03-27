@@ -1,26 +1,42 @@
-varying highp vec3 vert;
-varying highp vec3 vertNormal;
-varying highp vec4 col;
-varying highp vec4 viewSpace;
+varying mediump vec3 vert;
+varying mediump vec3 vertNormal;
+varying mediump vec4 col;
+varying mediump vec4 viewSpace;
 
-uniform highp vec3 lightPos;
-uniform highp vec2 fogRange;
+uniform mediump vec3 lightPos;
+uniform mediump vec2 fogRange;
+
+const mediump vec3 specColor = vec3(0.3, 0.3, 0.3);
 
 void main()
 {
-    const highp float color_blending = 0.8;
+    mediump vec3 ambientColor = 0.5 * col.xyz;
+    mediump float diffuseColorCoeff = 0.5 * col.xyz;
 
-    highp vec3 L = normalize(lightPos - vert);
-    highp float NL = max(dot(normalize(vertNormal), L), 0.0);
-    highp vec4 c = clamp(color_blending * col + (1.0 - color_blending) * col * NL,
-        0.0, 1.0);
+    mediump vec3 normal = normalize(vertNormal);
+    mediump vec3 lightDir = normalize(lightPos - vert);
+    
+    mediump float lambertian = max(dot(lightDir, normal), 0.0);
+    mediump float specular = 0.0;
 
-    highp float dist = abs(viewSpace.z);
-    highp float fogFactor = (fogRange[1] - dist)/(fogRange[1] - fogRange[0]);
-    fogFactor             = clamp(fogFactor, 0.0, 1.0);
+    if(lambertian > 0.0)
+    {
+        mediump vec3 reflectDir = reflect(-lightDir, normal);        
+        mediump vec3 viewDir = lightDir;
+
+        mediump float specAngle = max(dot(reflectDir, viewDir), 0.0);
+        specular = pow(specAngle, 4.0);
+    }
+
+    mediump vec4 fragColor = vec4(ambientColor + lambertian * diffuseColor + specular * specColor, col.w);
+
+    // Fog
+    mediump float dist      = abs(viewSpace.z);
+    mediump float fogFactor = (fogRange[1] - dist)/(fogRange[1] - fogRange[0]);
+    fogFactor       = clamp(fogFactor, 0.0, 1.0);
 
     if(fogRange[0] < fogRange[1])
-        gl_FragColor = vec4(mix(vec3(1), c.xyz, fogFactor), c.w);
+        gl_FragColor = vec4(mix(vec3(1), fragColor.xyz, fogFactor), fragColor.w);
     else
-        gl_FragColor = c;
+        gl_FragColor = fragColor;
 }
