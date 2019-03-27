@@ -11,12 +11,11 @@ uniform highp vec3 lightPos;
 uniform highp vec2 fogRange;
 
 const highp vec3 specColor = vec3(0.3, 0.3, 0.3);
+const highp float ambientCoef = 0.3;
+const highp float shininess = 4.0;
 
 void main()
 {
-    vec3 ambientColor = 0.5 * col.xyz;
-    vec3 diffuseColor = 0.5 * col.xyz;
-
     highp vec3 normal = normalize(vertNormal);
     highp vec3 lightDir = normalize(lightPos - vert);
     
@@ -29,10 +28,10 @@ void main()
         highp vec3 viewDir = lightDir;
 
         float specAngle = max(dot(reflectDir, viewDir), 0.0);
-        specular = pow(specAngle, 4.0);
+        specular = pow(specAngle, shininess);
     }
 
-    fragColor = vec4(ambientColor + lambertian * diffuseColor + specular * specColor, col.w);
+    fragColor = vec4((ambientCoef + lambertian) * col.xyz + specular * specColor, col.w);
 
     // Fog
     float dist      = abs(viewSpace.z);
