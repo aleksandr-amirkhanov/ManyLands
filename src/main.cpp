@@ -168,7 +168,9 @@ void process_mouse_input(const SDL_Event& event)
                      event.type == SDL_MOUSEBUTTONDOWN);
     io.mouse_up = (event.type == SDL_MOUSEBUTTONUP);
     io.mouse_wheel = (event.type == SDL_MOUSEWHEEL);
-    io.mouse_wheel_y = static_cast<float>(event.wheel.y);
+    io.mouse_wheel_y = 0;
+    if(io.mouse_wheel)
+        io.mouse_wheel_y = event.wheel.y > 0.f ? 3.f : -3.f;
 
     if(event.type == SDL_KEYDOWN)
     {
@@ -250,7 +252,7 @@ void update_timer()
     auto current = std::chrono::system_clock::now();
     std::chrono::duration<double> delta_t = current - Last_timepoint;
     Last_timepoint = current;
- 
+
     if(Is_player_active)
     {
         State->timeplayer_pos = std::fmod(
@@ -304,7 +306,7 @@ void mainloop()
                  pictograms_size = 50.f,
                  pictogram_scale = 1.5f,
                  splitter        = 0.5f;
-    
+
     static int pictogram_region = 4;
 
     // ImGui windows start
@@ -397,7 +399,7 @@ void mainloop()
                 {
                     Is_player_active = false;
                 }
-            
+
             }
             ImGui::SameLine();
             ImGui::Checkbox("Show timepoint", &State->is_timeplayer_active);
@@ -473,7 +475,7 @@ void mainloop()
             if(ImGui::Button("Bright")) set_bright_theme();
             ImGui::SameLine();
             if(ImGui::Button("Dark"))   set_dark_theme();
-            
+
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
             ImGui::ColorEdit3("Y-axis", (float*)&Y_axis_color);
@@ -642,7 +644,7 @@ void mainloop()
     Timeline.set_redering_region(Timeline_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
-    
+
     Renderer.set_text_renderer(Text_ren);
     Timeline.set_text_renderer(Text_ren);
 
@@ -798,7 +800,7 @@ int main(int, char**)
 
     // Disable saving the ini-file
     io.IniFilename = NULL;
-    
+
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
