@@ -10,6 +10,7 @@ public:
     Scene(std::shared_ptr<Scene_state> state);
     void load_ode(
         std::string filename,
+        std::string filename2,
         float cuve_min_rad);
 
 private:

@@ -348,7 +348,7 @@ void mainloop()
             );
 #else
 #ifdef _WIN32
-            std::string filename;
+            std::string filename, filename2;
             char fn[MAX_PATH];
 
             SDL_SysWMinfo wm_info;
@@ -364,18 +364,41 @@ void mainloop()
             ofn.lpstrFile    = fn;
             ofn.nMaxFile     = MAX_PATH;
             ofn.lpstrTitle   = "Select an ODE";
-            ofn.Flags        = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+            ofn.Flags        = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST |
+                               OFN_ALLOWMULTISELECT | OFN_EXPLORER;
 
             GetOpenFileNameA(&ofn);
 
-            filename = std::string(fn);
+            std::vector<std::string> out_dialog_data;
+            char* str = fn;
+            out_dialog_data.emplace_back(str);
+            str += out_dialog_data.back().length() + 1;
+            while(*str)
+            {
+                out_dialog_data.emplace_back(str);
+                str += out_dialog_data.back().length() + 1;
+            }
+
+            if(out_dialog_data.size() == 1)
+                filename = std::string(out_dialog_data.front());
+            if(out_dialog_data.size() == 3)
+            {
+                filename = std::string(
+                    out_dialog_data[0] + "\\" + out_dialog_data[1]);
+                filename2 = std::string(
+                    out_dialog_data[0] + "\\" + out_dialog_data[2]);
+            }
 #else
             const std::string filename = "assets/model2-default.txt";
 #endif
             if(!filename.empty())
+            {
                 Scene_objs.load_ode(
                     filename,
+                    filename2,
                     Curve_max_deviation);
+            }
+
 #endif
         }
         ImGui::SameLine();

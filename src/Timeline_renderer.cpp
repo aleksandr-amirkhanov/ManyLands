@@ -61,7 +61,7 @@ void Timeline_renderer::set_text_renderer(
 
 void Timeline_renderer::render()
 {
-    if(!state_->curve)
+    if(!state_->curves.size() > 0)
         return;
 
     screen_geom_ = std::make_unique<Screen_shader::Screen_geometry>();
@@ -168,39 +168,39 @@ void Timeline_renderer::process_input(const Renderer_io& io)
         }
 
         std::string view;
-        if(pictog_ind == state_->curve->get_stats().switches_inds.size())
+        if(pictog_ind == state_->curves.front()->get_stats().switches_inds.size())
         {
-            view = state_->curve->get_stats().dimensionality.back();
+            view = state_->curves.front()->get_stats().dimensionality.back();
         }
         else
         {
             auto vert_ind =
-                state_->curve->get_stats().switches_inds[pictog_ind] - 1;
-            view = state_->curve->get_stats().dimensionality[vert_ind];
+                state_->curves.front()->get_stats().switches_inds[pictog_ind] - 1;
+            view = state_->curves.front()->get_stats().dimensionality[vert_ind];
         }
 
         Curve_selection selection;
         if(pictog_ind == 0)
         {
-            selection.t_start = state_->curve->t_min();
+            selection.t_start = state_->curves.front()->t_min();
             selection.t_end =
-                state_->curve->time_stamp()[state_->curve->get_stats()
+                state_->curves.front()->time_stamp()[state_->curves.front()->get_stats()
                                              .switches_inds.front()];
         }
-        else if(pictog_ind == state_->curve->get_stats().switches_inds.size())
+        else if(pictog_ind == state_->curves.front()->get_stats().switches_inds.size())
         {
             selection.t_start =
-                state_->curve->time_stamp()[state_->curve->get_stats()
+                state_->curves.front()->time_stamp()[state_->curves.front()->get_stats()
                                              .switches_inds.back()];
-            selection.t_end = state_->curve->t_max();
+            selection.t_end = state_->curves.front()->t_max();
         }
         else
         {
             selection.t_start =
-                state_->curve->time_stamp()[state_->curve->get_stats()
+                state_->curves.front()->time_stamp()[state_->curves.front()->get_stats()
                                              .switches_inds[pictog_ind - 1]];
             selection.t_end =
-                state_->curve->time_stamp()[state_->curve->get_stats()
+                state_->curves.front()->time_stamp()[state_->curves.front()->get_stats()
                                              .switches_inds[pictog_ind]];
         }
 
@@ -288,8 +288,8 @@ void Timeline_renderer::draw_axes(const Region& region)
     draw_line(glm::vec2(region.left(),  region.bottom()),
               glm::vec2(region.left(),  region.top()));
 
-    const float t_min = state_->curve->t_min();
-    const float t_max = state_->curve->t_max();
+    const float t_min = state_->curves.front()->t_min();
+    const float t_max = state_->curves.front()->t_max();
     const float t_durr = t_max - t_min;
 
     float dist = region.width() / num_section;
@@ -337,8 +337,8 @@ void Timeline_renderer::draw_axes(const Region& region)
 
 void Timeline_renderer::draw_curve(const Region& region)
 {
-    const float t_min = state_->curve->t_min();
-    const float t_max = state_->curve->t_max();
+    const float t_min = state_->curves.front()->t_min();
+    const float t_max = state_->curves.front()->t_max();
     const float t_duration = t_max - t_min;
 
     auto get_strip = [this](
@@ -354,19 +354,19 @@ void Timeline_renderer::draw_curve(const Region& region)
         Screen_shader::Line_strip strip;
 
         glm::vec2 prev_pnt;
-        const float t_min  = state_->curve->t_min();
+        const float t_min  = state_->curves.front()->t_min();
 
         const float min_delta_t = width * t_duration / region.width();
         float prev_t = -min_delta_t;
 
-        for(size_t i = 0; i < state_->curve->get_vertices().size(); i++)
+        for(size_t i = 0; i < state_->curves.front()->get_vertices().size(); i++)
         {
-            const float t_curr = state_->curve->time_stamp()[i];
+            const float t_curr = state_->curves.front()->time_stamp()[i];
             if(t_curr < prev_t + min_delta_t)
                 continue;
 
             const float val = static_cast<float>(
-                state_->curve->get_vertices()[i](dim_ind));
+                state_->curves.front()->get_vertices()[i](dim_ind));
             const float x_point =
                 region.left() + region.width() * (t_curr - t_min) / t_duration;
             const float y_point =
@@ -510,7 +510,7 @@ void Timeline_renderer::draw_selection(const Region& region,
     else
     {
         auto width_ratio = (region.right() - region.left()) /
-            state_->curve->t_duration();
+            state_->curves.front()->t_duration();
         auto left = region.left() +
             state_->curve_selection->t_start * width_ratio;
         auto right = region.left() +
@@ -545,46 +545,46 @@ void Timeline_renderer::draw_pictograms(
     const Region& region,
     const std::vector<Compas_state>& compases_state)
 {
-    if(state_->curve->get_stats().switches_inds.size() == 0)
+    if(state_->curves.front()->get_stats().switches_inds.size() == 0)
         return;
     
     // Draw pictograms
-    size_t pictogram_num = state_->curve->get_stats().switches_inds.size() + 1;
+    size_t pictogram_num = state_->curves.front()->get_stats().switches_inds.size() + 1;
 
     // Draw pictograms
     for(int i = 0; i < pictogram_num; ++i)
     {
         Curve_selection selection;
         std::string dim;
-        Curve_stats::Range range = state_->curve->get_stats().range[i];
+        Curve_stats::Range range = state_->curves.front()->get_stats().range[i];
         if(i == 0)
         {
-            selection.t_start = state_->curve->t_min();
+            selection.t_start = state_->curves.front()->t_min();
             selection.t_end =
-                state_->curve->time_stamp()[state_->curve->get_stats()
+                state_->curves.front()->time_stamp()[state_->curves.front()->get_stats()
                                                 .switches_inds[i]];
 
-            dim = state_->curve->get_stats().dimensionality.front();
+            dim = state_->curves.front()->get_stats().dimensionality.front();
         }
         else if(i == pictogram_num - 1)
         {
-            size_t ind = state_->curve->get_stats().switches_inds[i - 1];
+            size_t ind = state_->curves.front()->get_stats().switches_inds[i - 1];
 
-            selection.t_start = state_->curve->time_stamp()[ind];
-            selection.t_end = state_->curve->t_max();
+            selection.t_start = state_->curves.front()->time_stamp()[ind];
+            selection.t_end = state_->curves.front()->t_max();
 
-            dim = state_->curve->get_stats().dimensionality[ind];
+            dim = state_->curves.front()->get_stats().dimensionality[ind];
         }
         else
         {
-            size_t ind = state_->curve->get_stats().switches_inds[i - 1];
+            size_t ind = state_->curves.front()->get_stats().switches_inds[i - 1];
 
-            selection.t_start = state_->curve->time_stamp()[ind];
+            selection.t_start = state_->curves.front()->time_stamp()[ind];
             selection.t_end =
-                state_->curve->time_stamp()[state_->curve->get_stats()
+                state_->curves.front()->time_stamp()[state_->curves.front()->get_stats()
                                                 .switches_inds[i]];
 
-            dim = state_->curve->get_stats().dimensionality[ind];
+            dim = state_->curves.front()->get_stats().dimensionality[ind];
         }
 
         draw_pictogram(
@@ -810,7 +810,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         project_point_array(
             cube->get_vertices(),
             size);
-        fill_wireframe_obj(*cube.get(), get_curve_speed(*state_->curve.get()));
+        fill_wireframe_obj(*cube.get(), get_curve_speed(*state_->curves.front().get()));
         // draw_wireframe_obj(*cube.get());
     }
     else if(square)
@@ -821,7 +821,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
             size);
         fill_wireframe_obj(
             *square.get(),
-            get_curve_speed(*state_->curve.get()));
+            get_curve_speed(*state_->curves.front().get()));
         // draw_wireframe_obj(*square.get());
     }
 
@@ -833,7 +833,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
             size);
         fill_wireframe_obj(
             *tesseract.get(),
-            get_curve_speed(*state_->curve.get()));
+            get_curve_speed(*state_->curves.front().get()));
         // draw_wireframe_obj(*tesseract.get());
     }
 
@@ -849,7 +849,7 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     pen.setWidthF(1.5);
     painter.setPen(pen);*/
 
-    Curve c = *state_->curve.get();
+    Curve c = *state_->curves.front().get();
     project_point_array(c.get_vertices(), size);
     draw_curve(c);
 }
@@ -900,7 +900,7 @@ void Timeline_renderer::highlight_hovered_region(
 std::vector<Timeline_renderer::Compas_state>
 Timeline_renderer::get_compases_state(const Region& region)
 {
-    size_t pictogram_num = state_->curve->get_stats().switches_inds.size() + 1;
+    size_t pictogram_num = state_->curves.front()->get_stats().switches_inds.size() + 1;
 
     // Find preliminary positions of compases
 
@@ -994,7 +994,7 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
 {
     const float mouse_epsilon = 3.5f;
 
-    if(state_->curve == nullptr)
+    if(state_->curves.front() == nullptr)
         return;
 
     // Measuring the distance between start and the end point is helpful for
@@ -1004,8 +1004,8 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
         // Reset selection
         state_->curve_selection = std::make_unique<Curve_selection>();
         state_->curve_selection->t_start =
-            state_->curve->t_min();
-        state_->curve_selection->t_end = state_->curve->t_max();
+            state_->curves.front()->t_min();
+        state_->curve_selection->t_end = state_->curves.front()->t_max();
         return;
     }
 
@@ -1028,8 +1028,8 @@ void Timeline_renderer::make_selection(const Mouse_selection& s)
         x_max = get_local_coord(s.start_pnt.x);
     }
 
-    auto t_start  = state_->curve->t_min();
-    auto t_end    = state_->curve->t_max();
+    auto t_start  = state_->curves.front()->t_min();
+    auto t_end    = state_->curves.front()->t_max();
     auto t_length = t_end - t_start;
 
     // FIXME: the current approach works only if the curve is defined by points
@@ -1047,17 +1047,17 @@ void Timeline_renderer::calculate_switch_points(
     std::vector<float>& out_points,
     const Region& region)
 {
-    if(state_->curve->time_stamp().size() == 0)
+    if(state_->curves.front()->time_stamp().size() == 0)
         return;
 
-    float t_min = state_->curve->t_min();
-    float t_max = state_->curve->t_max();
+    float t_min = state_->curves.front()->t_min();
+    float t_max = state_->curves.front()->t_max();
     float t_duration = t_max - t_min;
 
-    for(auto s : state_->curve->get_stats().switches_inds)
+    for(auto s : state_->curves.front()->get_stats().switches_inds)
     {
         float x_pos = region.left() +
-                      region.width() * state_->curve->time_stamp()[s] /
+                      region.width() * state_->curves.front()->time_stamp()[s] /
                       t_duration;
         out_points.push_back(x_pos);
     }

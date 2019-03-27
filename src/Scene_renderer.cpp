@@ -67,9 +67,9 @@ void Scene_renderer::render()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
     
-    if(state_            == nullptr ||
-       state_->tesseract == nullptr ||
-       state_->curve     == nullptr)
+    if(state_                == nullptr ||
+       state_->tesseract     == nullptr ||
+       state_->curves.size() == 0)
     {
         return;
     }
@@ -142,17 +142,26 @@ void Scene_renderer::render()
     project_to_3D(projected_t.get_vertices(), rot_m);
 
     // Choosing the high-resolution or the low-resolution curve
-    Curve projected_c;
+    std::vector<Curve> projected_c;
 
     // Array of curves used to project into 3D spaces
-    std::vector<Curve> curves_3D;
+    typedef std::vector<Curve> curvs3d_t;
+    std::vector<curvs3d_t> curves_3D_arr;
 
-    projected_c = *state_->curve.get();
-    for(int i = 0; i < 8; ++i)
-        curves_3D.push_back(*state_->curve.get());    
+    for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+    {
+        projected_c.push_back(*state_->curves[ci].get());
+    
+        curvs3d_t curves_3D;
+        for(int i = 0; i < 8; ++i)
+            curves_3D.push_back(*state_->curves[ci].get());
+        curves_3D_arr.push_back(curves_3D);
 
-    // Project curves from 4D to 3D
-    project_to_3D(projected_c.get_vertices(), rot_m);
+        // Project curves from 4D to 3D
+        project_to_3D(projected_c[ci].get_vertices(), rot_m);
+    }
+
+   
 
     // Animation unfolding the tesseract to the Dali-cross
     if(state_->unfolding_anim == 0)
@@ -164,18 +173,24 @@ void Scene_renderer::render()
         // Draw 4D curve
         if(state_->show_curve)
         {
-            draw_curve(projected_c, 1.);
-            draw_annotations(projected_c, mvp_mat);
+            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            {
+                draw_curve(projected_c[ci], 1.);
+                draw_annotations(projected_c[ci], mvp_mat);
+            }
         }
     }
     else
     {
         std::vector<Cube> plots_3D = state_->tesseract->split();
 
-        move_curves_to_3D_plots(project_curve_4D, curves_3D);
+        for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+        {
+            move_curves_to_3D_plots(project_curve_4D, curves_3D_arr[ci]);
 
-        if(unfold_4D > 0)
-            tesseract_unfolding(unfold_4D, plots_3D, curves_3D);
+            if(unfold_4D > 0)
+                tesseract_unfolding(unfold_4D, plots_3D, curves_3D_arr[ci]);
+        }
 
         // Project 3D plots from 4D to 3D
         auto rot = get_rotation_matrix(unfold_4D);
@@ -217,24 +232,27 @@ void Scene_renderer::render()
                 }
             }
 
-            // Draw curves
-            if(state_->show_curve)
+            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
             {
-                // for(auto& c : curves_3D)
-                for(size_t i = 0; i < curves_3D.size(); ++i)
+                // Draw curves
+                if(state_->show_curve)
                 {
-                    if(state_->use_simple_dali_cross && i != 1 &&
-                       i != 2 && i != 5 && i != 7)
+                    // for(auto& c : curves_3D)
+                    for(size_t i = 0; i < curves_3D_arr[ci].size(); ++i)
                     {
-                        continue;
+                        if(state_->use_simple_dali_cross && i != 1 &&
+                           i != 2 && i != 5 && i != 7)
+                        {
+                            continue;
+                        }
+
+                        auto c = curves_3D_arr[ci][i];
+                        project_to_3D(c.get_vertices(), rot);
+
+                        draw_curve(c, visibility_coeff(i) * (1.f - hide_3D));
+                        if(visibility_coeff(i) == 1. && hide_3D < 0.5)
+                            draw_annotations(c, mvp_mat);
                     }
-
-                    auto c = curves_3D[i];
-                    project_to_3D(c.get_vertices(), rot);
-
-                    draw_curve(c, visibility_coeff(i) * (1.f - hide_3D));
-                    if(visibility_coeff(i) == 1. && hide_3D < 0.5)
-                        draw_annotations(c, mvp_mat);
                 }
             }
         }
@@ -245,21 +263,35 @@ void Scene_renderer::render()
             // Get the source plots
             std::vector<Square> plots_2D = Cube::split(plots_3D);
 
-            std::vector<Curve> curves_2D;
-            curves_2D.push_back(curves_3D[5]);
-            curves_2D.push_back(curves_3D[1]);
-            curves_2D.push_back(curves_3D[7]);
-            curves_2D.push_back(curves_3D[1]);
-            curves_2D.push_back(curves_3D[7]);
-            curves_2D.push_back(curves_3D[7]);
+            typedef std::vector<Curve> curvs2D_t;
+            std::vector<curvs2D_t> curves_2D_arr;
 
-            move_curves_to_2D_plots(project_curve_3D, curves_2D);
-            for(auto& c : curves_2D)
+            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
             {
-                project_to_3D(c.get_vertices(), rot);
+                std::vector<Curve> curves_2D;
+                curves_2D.push_back(curves_3D_arr[ci][5]);
+                curves_2D.push_back(curves_3D_arr[ci][1]);
+                curves_2D.push_back(curves_3D_arr[ci][7]);
+                curves_2D.push_back(curves_3D_arr[ci][1]);
+                curves_2D.push_back(curves_3D_arr[ci][7]);
+                curves_2D.push_back(curves_3D_arr[ci][7]);
+
+                curves_2D_arr.push_back(curves_2D);
+
+                move_curves_to_2D_plots(project_curve_3D, curves_2D_arr[ci]);
+
             }
 
-            plots_unfolding(unfold_3D, plots_2D, curves_2D);
+            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
+            {
+                for(auto& c : curves_2D_arr[ci])
+                {
+                    project_to_3D(c.get_vertices(), rot);
+                }
+
+                plots_unfolding(unfold_3D, plots_2D, curves_2D_arr[ci]);
+            }
+
 
             // Draw 2D plots
             if(state_->show_tesseract)
@@ -272,17 +304,20 @@ void Scene_renderer::render()
             label_points_.push_back(plots_2D[3].get_vertices()[0]);
             label_points_.push_back(plots_2D[5].get_vertices()[1]);
 
-            // Draw 2D curves
-            if(state_->show_curve)
+            for(size_t ci = 0; ci < state_->curves.size(); ++ci)
             {
-                // TODO: uncomment lines below (rewrite it first ;) )!
-                /*if(unfold_3D == 1.)
-                    gui_.Renderer->show_labels(true);*/
-
-                for(auto& c : curves_2D)
+                // Draw 2D curves
+                if(state_->show_curve)
                 {
-                    draw_curve(c, 1.);
-                    draw_annotations(c, mvp_mat);
+                    // TODO: uncomment lines below (rewrite it first ;) )!
+                    /*if(unfold_3D == 1.)
+                        gui_.Renderer->show_labels(true);*/
+
+                    for(auto& c : curves_2D_arr[ci])
+                    {
+                        draw_curve(c, 1.);
+                        draw_annotations(c, mvp_mat);
+                    }
                 }
             }
         }
@@ -303,7 +338,7 @@ void Scene_renderer::render()
 
     glUseProgram(screen_shader_->program_id);
 
-    glViewport(static_cast<GLint>  (display_scale_x_ * region_.left()   ),
+    glViewport(static_cast<GLint>(  display_scale_x_ * region_.left()   ),
                static_cast<GLint>(  display_scale_y_ * region_.bottom() ),
                static_cast<GLsizei>(display_scale_x_ * region_.width()  ),
                static_cast<GLsizei>(display_scale_y_ * region_.height()));
