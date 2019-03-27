@@ -1318,7 +1318,7 @@ void Scene_renderer::draw_labels_in_2D(const glm::mat4& projection)
         glm::vec2(
             points[3].x,
             points[3].y),
-        std::string("Z"));
+        std::string("-Z"));
 
     text_renderer_->add_text(
         region_,
