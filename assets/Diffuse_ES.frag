@@ -6,13 +6,12 @@ varying mediump vec4 viewSpace;
 uniform mediump vec3 lightPos;
 uniform mediump vec2 fogRange;
 
-const mediump vec3 specColor = vec3(0.3, 0.3, 0.3);
+const mediump vec3 specColor = 0.3*vec3(1.0, 1.0, 1.0);
+const mediump float ambientCoef = 0.3;
+const mediump float shininess = 4.0;
 
 void main()
 {
-    mediump vec3 ambientColor = 0.5 * col.xyz;
-    mediump vec3 diffuseColor = 0.5 * col.xyz;
-
     mediump vec3 normal = normalize(vertNormal);
     mediump vec3 lightDir = normalize(lightPos - vert);
     
@@ -25,10 +24,10 @@ void main()
         mediump vec3 viewDir = lightDir;
 
         mediump float specAngle = max(dot(reflectDir, viewDir), 0.0);
-        specular = pow(specAngle, 4.0);
+        specular = pow(specAngle, shininess);
     }
 
-    mediump vec4 fragColor = vec4(ambientColor + lambertian * diffuseColor + specular * specColor, col.w);
+    mediump vec4 fragColor = vec4((ambientCoef + lambertian) * col.xyz + specular * specColor, col.w);
 
     // Fog
     mediump float dist      = abs(viewSpace.z);
