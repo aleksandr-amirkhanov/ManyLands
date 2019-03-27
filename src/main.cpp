@@ -412,6 +412,10 @@ void mainloop()
             ImGui::SliderFloat("Max. deviation", &Curve_max_deviation, 0.f, 3.f);
         }
 
+        // We cannot use std::vector<bool> becase it is impossible to get
+        // a reference from such structure and pass it to ImGui (mistake in std)
+        static bool show_x(true), show_y(true), show_z(true), show_w(true);
+
         if (ImGui::CollapsingHeader("Rendering"))
         {
             ImGui::Text("Visibility:");
@@ -442,6 +446,16 @@ void mainloop()
                 "Timeline", &timeline_height, 10.f, 1000.0f);
             ImGui::SliderFloat(
                 "Pictograms", &pictograms_size, 10.f, 100.0f);
+
+            ImGui::Separator();
+            ImGui::Text("Show axes:");
+            ImGui::Checkbox("X##line", &show_x);
+            ImGui::SameLine();
+            ImGui::Checkbox("Y##line", &show_y);
+            ImGui::SameLine();
+            ImGui::Checkbox("Z##line", &show_z);
+            ImGui::SameLine();
+            ImGui::Checkbox("W##line", &show_w);
 
             ImGui::Separator();
             ImGui::Text("Pictogram magnification:");
@@ -479,6 +493,8 @@ void mainloop()
             ImGui::SliderFloat("Distance##fog", &fog_dist,  0.1f, 10.f);
             ImGui::SliderFloat("Range##fog",    &fog_range, 0.1f, 10.f);
         }
+
+        Timeline.show_axes(std::vector<bool> {show_x, show_y, show_z, show_w});
 
         if (ImGui::CollapsingHeader("4D projection"))
         {

@@ -47,6 +47,8 @@ public:
     void render() override;
     void process_input(const Renderer_io& io) override;
 
+    void show_axes(std::vector<bool> show);
+
     virtual void set_redering_region(Region region,
                                      float scale_x,
                                      float scale_y) override;
@@ -111,4 +113,6 @@ private:
 
     Region plot_region_, pictogram_region_;    
     float splitter_;
+
+    std::vector<bool> show_axes_;
 };

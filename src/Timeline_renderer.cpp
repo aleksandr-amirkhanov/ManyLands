@@ -31,6 +31,7 @@ Timeline_renderer::Timeline_renderer(std::shared_ptr<Scene_state> state)
     , mouse_pos_(0.f, 0.f)
     , is_mouse_inside_(false)
     , track_mouse_(false)
+    , show_axes_(4, true)
 {
     set_state(state);
 }
@@ -205,6 +206,15 @@ void Timeline_renderer::process_input(const Renderer_io& io)
 
         state_->curve_selection = std::make_unique<Curve_selection>(selection);
     }
+}
+
+//******************************************************************************
+// show_x
+//******************************************************************************
+
+void Timeline_renderer::show_axes(std::vector<bool> show)
+{
+    show_axes_ = show;
 }
 
 //******************************************************************************
@@ -412,17 +422,17 @@ void Timeline_renderer::draw_curve(const Region& region)
 
     for(char i = 0; i < 4; ++i)
     {
-        //pen.setColor(colors[i]);
-        //pen.setWidthF(2.5);
+        if(show_axes_[i])
+        {
+            auto strip = get_strip(region,
+                                   i,
+                                   t_duration,
+                                   max_tesseract_size,
+                                   colors[i],
+                                   defocused);
 
-        auto strip = get_strip(region,
-                               i,
-                               t_duration,
-                               max_tesseract_size,
-                               colors[i],
-                               defocused);
-
-        screen_shader_->append_to_geometry(*screen_geom_, strip);
+            screen_shader_->append_to_geometry(*screen_geom_, strip);
+        }
     }
 }
 
