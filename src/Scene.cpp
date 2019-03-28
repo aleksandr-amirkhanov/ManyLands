@@ -64,6 +64,13 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     std::string line;
     while(getline(stream, line))
     {
+        // Remove some characters to make it easier to load files we get from
+        // Wolfram Mathematica
+        boost::erase_all(line, "\"{");
+        boost::erase_all(line, "}\"");
+        boost::replace_all(line, ", ", " ");
+        boost::replace_all(line, "*^", "e");
+
         std::vector<std::string> vals;
         boost::split(vals, line, boost::is_any_of("\t, "));
         if(vals.size() == 5)
