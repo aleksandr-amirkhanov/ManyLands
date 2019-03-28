@@ -32,7 +32,10 @@ public:
     Curve get_simpified_curve(const float min_radius);*/
     Curve get_simpified_curve_RDP(const float max_deviation);
 
-    void update_stats();
+    void update_stats(
+        float kernel_size,
+        float max_movement,
+        float max_value);
     const Curve_stats& get_stats();
 
     std::vector<Curve_annotations> get_arrows(const Curve_selection& selection);
@@ -43,7 +46,10 @@ public:
     void scale_vertices(const Scene_wireframe_vertex& scale_factor);
 
 private:
-    void calculate_general_stats();
+    void calculate_general_stats(
+        float kernel_size,
+        float max_movement,
+        float max_value);
     void calculate_annotations();
 
     std::vector<float> time_stamp_;

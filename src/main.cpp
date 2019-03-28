@@ -113,6 +113,12 @@ auto Player_speed(0.1f);
 
 auto Curve_max_deviation(0.8f);
 
+// Statistics
+
+auto Stat_kernel_size(0.01f),
+     Stat_max_movement(0.01f),
+     Stat_max_value(0.01f);
+
 //******************************************************************************
 // Color_to_ImVec4
 //******************************************************************************
@@ -305,10 +311,10 @@ void mainloop()
     int width = (int)io.DisplaySize.x;
     int height = (int)io.DisplaySize.y;
 
-    static float timeline_height = 200.f,
-                 pictograms_size = 50.f,
-                 pictogram_scale = 1.5f,
-                 splitter        = 0.5f;
+    static float timeline_height(200.f),
+                 pictograms_size(50.f),
+                 pictogram_scale(1.5f),
+                 splitter(0.5f);
 
     static int pictogram_region = 4;
 
@@ -407,6 +413,10 @@ void mainloop()
                 Scene_objs.load_ode(
                     fnames,
                     Curve_max_deviation);
+                for(auto& c : State->curves)
+                {
+                    c->update_stats(Stat_kernel_size, Stat_max_movement, Stat_max_value);
+                }
             }
 #endif
         }
@@ -591,6 +601,22 @@ void mainloop()
             }
         }
 
+        if (ImGui::CollapsingHeader("Switch detection"))
+        {
+            ImGui::SliderFloat("Kernel size", &Stat_kernel_size, 0.f, 0.1f);
+            ImGui::SliderFloat("Max movement", &Stat_max_movement, 0.f, 0.05f);
+            ImGui::SliderFloat("Value threshold",
+                &Stat_max_value, 0.f, 0.1f);
+            if(ImGui::Button("Update"))
+            {
+                for(auto& c: State->curves)
+                {
+                    c->update_stats(
+                        Stat_kernel_size, Stat_max_movement, Stat_max_value);
+                }
+            }
+        }
+
         State->rotation_3D = glm::eulerAngleXYZ(euler[0],
                                                 euler[1],
                                                 euler[2]);
@@ -747,6 +773,10 @@ void js_load_ode()
     }
 
     Scene_objs.load_ode(fnames, Curve_max_deviation);
+    for(auto& c : State->curves)
+    {
+        c->update_stats(Stat_kernel_size, Stat_max_movement, Stat_max_value);
+    }
 
     // The file has to removed to be able to load a new file with the same name
     for(auto& fn: fnames)

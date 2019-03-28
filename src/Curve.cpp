@@ -249,9 +249,9 @@ Curve Curve::get_simpified_curve_RDP(const float max_deviation)
 // update_stats
 //******************************************************************************
 
-void Curve::update_stats()
+void Curve::update_stats(float kernel_size, float max_movement, float max_value)
 {
-    calculate_general_stats();
+    calculate_general_stats(kernel_size, max_movement, max_value);
     calculate_annotations();
 }
 
@@ -268,11 +268,11 @@ const Curve_stats& Curve::get_stats()
 // calculate_general_stats
 //******************************************************************************
 
-void Curve::calculate_general_stats()
+void Curve::calculate_general_stats(
+    float kernel_size,
+    float max_movement,
+    float max_value)
 {
-    float kernel_size = 10.f;
-    float epsilon = 10.f;
-
     stats_ = Curve_stats();
 
     // Fill with default values
@@ -305,6 +305,11 @@ void Curve::calculate_general_stats()
     stats_.min_speed = min_speed;
     stats_.max_speed = max_speed;
 
+    Scene_wireframe_vertex origin, size;
+    get_boundaries(origin, size);
+    auto abs_max_movement = max_movement * size;
+    auto abs_max_value = origin + max_value * size;
+
     // Find how many dimension curve segments have
     Scene_wireframe_vertex min(5), max(5);
     float start_t = 0.f, end_t = 0.f;
@@ -326,7 +331,8 @@ void Curve::calculate_general_stats()
             {
                 bool activeness[4];
                 for(int k = 0; k < 4; ++k)
-                    activeness[k] = (max(k) - min(k)) > epsilon;
+                    activeness[k] = (max(k) - min(k)) > abs_max_movement(k) ||
+                                    max(k) > abs_max_value(k);
 
                 std::string dim = "";
                 dim += activeness[0] ? "x" : "";
