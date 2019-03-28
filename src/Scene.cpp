@@ -22,13 +22,18 @@ Scene::Scene(std::shared_ptr<Scene_state> state)
 
 void Scene::load_ode(
     const std::vector<std::string>& fnames,
-    float cuve_min_rad)
+    float cuve_min_rad,
+    float tesseract_size/* = 200.f*/)
 {
     assert(state_);
     if(state_ == nullptr)
         return;
 
+    // Remove all previous curves
     state_->curves.clear();
+    // Reset size of the tesseract
+    for(auto& s : state_->tesseract_size)
+        s = tesseract_size;
 
     // Load curves from files and calculate statistics
     for(auto& fn: fnames)

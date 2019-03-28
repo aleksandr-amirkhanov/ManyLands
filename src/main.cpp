@@ -20,6 +20,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
+#ifdef __EMSCRIPTEN__
+#include <fstream>
+#endif
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -728,7 +731,17 @@ extern "C"
 void js_load_ode()
 {
     std::vector<std::string> fnames;
-    fnames.push_back("user_ode.txt");
+    
+    for(size_t i = 0; i < 100; ++i)
+    {
+        std::string fn("user_ode" + std::to_string(i) + ".txt");
+        std::ifstream f(fn);
+        if(f.good())
+            fnames.push_back(fn);
+        else
+            break;
+    }
+
     Scene_objs.load_ode(fnames, Curve_max_deviation);
 
     // The file has to removed to be able to load a new file with the same name

@@ -71,28 +71,39 @@
       function uploadFile() {
         var input = document.createElement('input');
         input.type = 'file';
-        input.onchange = e => {
-          var file = e.target.files[0];
-          var textType = /text.*/;
-          if (file.type.match(textType)) {
-            var reader = new FileReader();
-            reader.onload = function () {
-              Module['FS_createDataFile'](
-                '/',
-                'user_ode.txt',
-                reader.result,
-                true,
-                true);
+        input.setAttribute('multiple','');
 
+        input.onchange = e => {
+          function readSingleFile(index) {
+            if(index >= e.target.files.length) {
               var js_load_ode = Module.cwrap(
-                'js_load_ode',
-                'null',
-                ['null']);
-              js_load_ode();
-            };
-            reader.readAsText(file);
+                  'js_load_ode',
+                  'null',
+                  ['null']);
+                js_load_ode();
+              return;
+            }
+
+            var file = e.target.files[index];
+            var textType = /text.*/;
+            if (file.type.match(textType)) {
+              var reader = new FileReader();
+              reader.onload = function () {
+                Module['FS_createDataFile'](
+                  '/',
+                  'user_ode' + index.toString() + '.txt',
+                  reader.result,
+                  true,
+                  true);
+                readSingleFile(index + 1);
+              };
+              reader.readAsText(file);
+            }
           }
+
+          readSingleFile(0);
         };
+        
         input.click();
       }
 
