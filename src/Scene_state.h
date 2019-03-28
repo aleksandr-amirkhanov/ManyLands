@@ -30,6 +30,7 @@ public:
     Scene_state();
     
     const Color& get_color(int color_id);
+    const Color& get_curve_color(size_t curve_ind);
     void update_color(int color_id, const Color& color);
 
     std::shared_ptr<Curve> selected_curve();
@@ -65,4 +66,5 @@ public:
 
 private:
     std::map<std::int32_t, Color> colors_;
+    std::vector<Color> curve_colors_;
 };

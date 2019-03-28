@@ -29,6 +29,14 @@ Scene_state::Scene_state()
     , timeplayer_pos(0.f)
     , scale_tesseract(true)
 {
+    curve_colors_.emplace_back(Color(228,  26,  28));
+    curve_colors_.emplace_back(Color( 55, 126, 184));
+    curve_colors_.emplace_back(Color( 77, 175,  74));
+    curve_colors_.emplace_back(Color(152,  78, 163));
+    curve_colors_.emplace_back(Color(255, 127,   0));
+    curve_colors_.emplace_back(Color(255, 255,  51));
+    curve_colors_.emplace_back(Color(166,  86,  40));
+    curve_colors_.emplace_back(Color(247, 129, 191));
 }
 
 //******************************************************************************
@@ -38,6 +46,16 @@ Scene_state::Scene_state()
 const Color &Scene_state::get_color(int color_id)
 {
     return colors_[color_id];
+}
+
+
+//******************************************************************************
+// get_curve_color
+//******************************************************************************
+
+const Color &Scene_state::get_curve_color(size_t curve_ind)
+{
+    return curve_colors_[curve_ind % curve_colors_.size()];
 }
 
 //******************************************************************************
