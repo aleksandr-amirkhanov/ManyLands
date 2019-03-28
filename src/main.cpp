@@ -506,6 +506,10 @@ void mainloop()
             ImGui::SameLine();
             if(ImGui::Button("Dark"))   set_dark_theme();
 
+            ImGui::Checkbox(
+                "Use unique curve colors",
+                &State->use_unique_curve_colors);
+
             ImGui::ColorEdit3("Background", (float*)&Clear_color);
             ImGui::ColorEdit3("X-axis", (float*)&X_axis_color);
             ImGui::ColorEdit3("Y-axis", (float*)&Y_axis_color);

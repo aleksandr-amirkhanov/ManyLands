@@ -28,6 +28,7 @@ Scene_state::Scene_state()
     , is_timeplayer_active(true)
     , timeplayer_pos(0.f)
     , scale_tesseract(true)
+    , use_unique_curve_colors(false)
 {
     curve_colors_.emplace_back(Color(228,  26,  28));
     curve_colors_.emplace_back(Color( 55, 126, 184));

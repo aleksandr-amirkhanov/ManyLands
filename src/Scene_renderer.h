@@ -40,7 +40,12 @@ private:
         const boost::numeric::ublas::matrix<float>& rot_mat);
 
     void draw_tesseract(Scene_wireframe_object& t);
-    void draw_curve(Curve& c, float opacity, size_t color_ind);
+    void draw_curve(Curve& c, float opacity, const Color& color);
+    void draw_curve(
+        Curve& c,
+        float opacity,
+        const Color& slow_c,
+        const Color& fast_c);
     void draw_annotations(Curve& c, const glm::mat4& projection);
     void draw_legend(const Region& region);
 

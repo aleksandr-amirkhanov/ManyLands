@@ -60,7 +60,8 @@ public:
          show_curve,
          show_legend,
          use_simple_dali_cross,
-         scale_tesseract;
+         scale_tesseract,
+         use_unique_curve_colors;
 
     std::array<float, 4> tesseract_size;
 

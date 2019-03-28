@@ -171,10 +171,23 @@ void Scene_renderer::render()
         // Draw 4D curve
         if(state_->show_curve)
         {
-            //for(auto& c : projected_c)
             for(size_t ci = 0; ci < projected_c.size(); ++ci)
             {
-                draw_curve(projected_c[ci], 1., ci);
+                if(state_->use_unique_curve_colors)
+                {
+                    draw_curve(
+                        projected_c[ci],
+                        1.,
+                        state_->get_curve_color(ci));
+                }
+                else
+                {
+                    draw_curve(
+                        projected_c[ci],
+                        1.,
+                        state_->get_color(Curve_low_speed),
+                        state_->get_color(Curve_high_speed));
+                }
                 draw_annotations(projected_c[ci], mvp_mat);
             }
         }
@@ -229,13 +242,11 @@ void Scene_renderer::render()
                 }
             }
 
-            //for(auto& c3d: curves_3d)
             for(size_t ci = 0; ci < curves_3d.size(); ++ci)
             {
                 // Draw curves
                 if(state_->show_curve)
                 {
-                    // for(auto& c : curves_3D)
                     for(size_t i = 0; i < curves_3d[ci].size(); ++i)
                     {
                         if(state_->use_simple_dali_cross && i != 1 &&
@@ -247,7 +258,21 @@ void Scene_renderer::render()
                         auto c = curves_3d[ci][i];
                         project_to_3D(c.get_vertices(), rot);
 
-                        draw_curve(c, visibility_coeff(i) * (1.f - hide_3D), ci);
+                        if(state_->use_unique_curve_colors)
+                        {
+                            draw_curve(
+                                c,
+                                visibility_coeff(i) * (1.f - hide_3D),
+                                state_->get_curve_color(ci));
+                        }
+                        else
+                        {
+                            draw_curve(
+                                c,
+                                visibility_coeff(i) * (1.f - hide_3D),
+                                state_->get_color(Curve_low_speed),
+                                state_->get_color(Curve_high_speed));
+                        }
                         if(visibility_coeff(i) == 1. && hide_3D < 0.5)
                             draw_annotations(c, mvp_mat);
                     }
@@ -305,7 +330,19 @@ void Scene_renderer::render()
                 {
                     for(auto& c : curves_2d[ci])
                     {
-                        draw_curve(c, 1., ci);
+                        if(state_->use_unique_curve_colors)
+                        {
+                            draw_curve(c, 1., state_->get_curve_color(ci));
+                        }
+                        else
+                        {
+                            draw_curve(
+                                c,
+                                1.,
+                                state_->get_color(Curve_low_speed),
+                                state_->get_color(Curve_high_speed));
+                        }
+
                         draw_annotations(c, mvp_mat);
                     }
                 }
@@ -547,7 +584,20 @@ void Scene_renderer::draw_tesseract(Scene_wireframe_object& t)
 // draw_curve
 //******************************************************************************
 
-void Scene_renderer::draw_curve(Curve& c, float opacity, size_t color_ind)
+void Scene_renderer::draw_curve(Curve& c, float opacity, const Color& color)
+{
+    draw_curve(c, opacity, color, color);
+}
+
+//******************************************************************************
+// draw_curve
+//******************************************************************************
+
+void Scene_renderer::draw_curve(
+    Curve& c,
+    float opacity,
+    const Color& slow_c,
+    const Color& fast_c)
 {
     const float marker_size = 8.f; //gui_.markerSize->value();
 
@@ -556,15 +606,15 @@ void Scene_renderer::draw_curve(Curve& c, float opacity, size_t color_ind)
     };
 
     auto get_speed_color =
-        [&opacity, &log_speed, &color_ind, this](float normalized_speed) {
+        [&opacity, &log_speed, &slow_c, &fast_c, this](float normalized_speed) {
             float speed = log_speed(normalized_speed);
             return glm::vec4(
-                (1 - speed) * state_->get_curve_color(color_ind).r_norm() +
-                    speed * state_->get_curve_color(color_ind).r_norm(),
-                (1 - speed) * state_->get_curve_color(color_ind).g_norm() +
-                    speed * state_->get_curve_color(color_ind).g_norm(),
-                (1 - speed) * state_->get_curve_color(color_ind).b_norm() +
-                    speed * state_->get_curve_color(color_ind).b_norm(),
+                (1 - speed) * slow_c.r_norm() +
+                    speed * fast_c.r_norm(),
+                (1 - speed) * slow_c.g_norm() +
+                    speed * fast_c.g_norm(),
+                (1 - speed) * slow_c.b_norm() +
+                    speed * fast_c.b_norm(),
                 opacity);
         };
 
