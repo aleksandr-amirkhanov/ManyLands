@@ -113,12 +113,6 @@ auto Player_speed(0.1f);
 
 auto Curve_max_deviation(0.8f);
 
-// Statistics
-
-auto Stat_kernel_size(0.01f),
-     Stat_max_movement(0.01f),
-     Stat_max_value(0.01f);
-
 //******************************************************************************
 // Color_to_ImVec4
 //******************************************************************************
@@ -413,10 +407,6 @@ void mainloop()
                 Scene_objs.load_ode(
                     fnames,
                     Curve_max_deviation);
-                for(auto& c : State->curves)
-                {
-                    c->update_stats(Stat_kernel_size, Stat_max_movement, Stat_max_value);
-                }
             }
 #endif
         }
@@ -603,16 +593,20 @@ void mainloop()
 
         if (ImGui::CollapsingHeader("Switch detection"))
         {
-            ImGui::SliderFloat("Kernel size", &Stat_kernel_size, 0.f, 0.1f);
-            ImGui::SliderFloat("Max movement", &Stat_max_movement, 0.f, 0.05f);
-            ImGui::SliderFloat("Value threshold",
-                &Stat_max_value, 0.f, 0.1f);
+            ImGui::SliderFloat(
+                "Kernel size", &State->stat_kernel_size, 0.f, 0.1f);
+            ImGui::SliderFloat(
+                "Max movement", &State->stat_max_movement, 0.f, 0.05f);
+            ImGui::SliderFloat(
+                "Value threshold", &State->stat_max_value, 0.f, 0.1f);
             if(ImGui::Button("Update"))
             {
                 for(auto& c: State->curves)
                 {
                     c->update_stats(
-                        Stat_kernel_size, Stat_max_movement, Stat_max_value);
+                        State->stat_kernel_size,
+                        State->stat_max_movement,
+                        State->stat_max_value);
                 }
             }
         }
@@ -773,10 +767,6 @@ void js_load_ode()
     }
 
     Scene_objs.load_ode(fnames, Curve_max_deviation);
-    for(auto& c : State->curves)
-    {
-        c->update_stats(Stat_kernel_size, Stat_max_movement, Stat_max_value);
-    }
 
     // The file has to removed to be able to load a new file with the same name
     for(auto& fn: fnames)

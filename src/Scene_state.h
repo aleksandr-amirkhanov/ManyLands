@@ -63,6 +63,10 @@ public:
          scale_tesseract,
          use_unique_curve_colors;
 
+    float stat_kernel_size,
+          stat_max_movement,
+          stat_max_value;
+
     std::array<float, 4> tesseract_size;
 
 private:

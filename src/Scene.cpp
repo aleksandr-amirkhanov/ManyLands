@@ -43,6 +43,10 @@ void Scene::load_ode(
         // Calculate normal curve
         auto curve = std::make_shared<Curve>(
             original->get_simpified_curve_RDP(cuve_min_rad));
+        curve->update_stats(
+            state_->stat_kernel_size,
+            state_->stat_max_movement,
+            state_->stat_max_value);
 
         state_->curves.emplace_back(std::move(curve));
     }
