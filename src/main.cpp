@@ -376,12 +376,15 @@ void mainloop()
 
             std::vector<std::string> out_dialog_data;
             char* str = fn;
-            out_dialog_data.emplace_back(str);
-            str += out_dialog_data.back().length() + 1;
-            while(*str)
+            if(*str)
             {
                 out_dialog_data.emplace_back(str);
                 str += out_dialog_data.back().length() + 1;
+                while(*str)
+                {
+                    out_dialog_data.emplace_back(str);
+                    str += out_dialog_data.back().length() + 1;
+                }
             }
 
             if(out_dialog_data.size() == 1)

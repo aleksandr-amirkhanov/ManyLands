@@ -36,13 +36,30 @@ void Scene::load_ode(
         s = tesseract_size;
 
     // Load curves from files and calculate statistics
+    std::vector<Curve> orig_curves;
     for(auto& fn: fnames)
     {
-        auto original = load_curve(fn);
-
+        orig_curves.push_back(*load_curve(fn).get());
         // Calculate normal curve
-        auto curve = std::make_shared<Curve>(
+        /*auto curve = std::make_shared<Curve>(
             original->get_simpified_curve_RDP(cuve_min_rad));
+        curve->update_stats(
+            state_->stat_kernel_size,
+            state_->stat_max_movement,
+            state_->stat_max_value);
+
+        state_->curves.emplace_back(std::move(curve));*/
+    }
+
+    if(orig_curves.empty())
+        return;
+
+    normalize_curves(orig_curves);
+
+    for(auto& c: orig_curves)
+    {
+        auto curve = std::make_shared<Curve>(
+            c.get_simpified_curve_RDP(cuve_min_rad));
         curve->update_stats(
             state_->stat_kernel_size,
             state_->stat_max_movement,
@@ -50,6 +67,19 @@ void Scene::load_ode(
 
         state_->curves.emplace_back(std::move(curve));
     }
+
+    // Create tesseract
+
+    auto& first_curve = orig_curves.front();
+    Scene_wireframe_vertex shift;
+    first_curve.shift_to_origin(shift);
+    // Save curve origin and size to the class members
+    create_tesseract(shift, first_curve);
+
+    // Set selection
+    state_->curve_selection = std::make_unique<Curve_selection>();
+    state_->curve_selection->t_start = first_curve.t_min();
+    state_->curve_selection->t_end = first_curve.t_max();
 }
 
 //******************************************************************************
@@ -88,8 +118,28 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
         }
     }
 
+    return curve;
+}
+
+//******************************************************************************
+// normalize_curves
+//******************************************************************************
+
+void Scene::normalize_curves(std::vector<Curve>& curves)
+{
+    if(curves.empty())
+        return;
+
+    // Normalize to the first curve
+    auto& first_curve = curves.front();
+
+
     Scene_wireframe_vertex shift;
-    curve->shift_to_origin(shift);
+    {
+        Scene_wireframe_vertex origin(5), size(5);
+        first_curve.get_boundaries(origin, size);
+        shift = -0.5f * size - origin;
+    }
 
     auto longest_axis_ind = [](Curve* c)
     {
@@ -111,43 +161,35 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
     };
 
     Scene_wireframe_vertex origin, size;
-    curve->get_boundaries(origin, size);
+    first_curve.get_boundaries(origin, size);
 
-    if(state_->scale_tesseract)
+    for(auto& c : curves)
     {
-        Scene_wireframe_vertex scale(5);
-        scale[0] = state_->tesseract_size[0] / size[0];
-        scale[1] = state_->tesseract_size[0] / size[1];
-        scale[2] = state_->tesseract_size[0] / size[2];
-        scale[3] = state_->tesseract_size[0] / size[3];
-        scale[4] = 1;
-        curve->scale_vertices(scale);
-        curve->shift_to_origin(shift);
-    }
-    else
-    {
-        size_t max_ind = longest_axis_ind(curve.get());
-        auto vert_scale = state_->tesseract_size[max_ind] / size[max_ind];
-        curve->scale_vertices(vert_scale);
-
-        for(char i = 0; i < 4; ++i)
+        if(state_->scale_tesseract)
         {
-            state_->tesseract_size[i] =
-                state_->tesseract_size[max_ind] * size[i] / size[max_ind];
+            Scene_wireframe_vertex scale(5);
+            scale[0] = state_->tesseract_size[0] / size[0];
+            scale[1] = state_->tesseract_size[0] / size[1];
+            scale[2] = state_->tesseract_size[0] / size[2];
+            scale[3] = state_->tesseract_size[0] / size[3];
+            scale[4] = 1;
+            c.translate_vertices(shift);
+            c.scale_vertices(scale);
+            //c.shift_to_origin(shift);
         }
+        else
+        {
+            size_t max_ind = longest_axis_ind(&c);
+            auto vert_scale = state_->tesseract_size[max_ind] / size[max_ind];
+            c.scale_vertices(vert_scale);
 
+            for(char i = 0; i < 4; ++i)
+            {
+                state_->tesseract_size[i] =
+                    state_->tesseract_size[max_ind] * size[i] / size[max_ind];
+            }
+        }
     }
-
-    // Save curve origin and size to the class members
-    curve->get_boundaries(c_origin, c_size);
-    create_tesseract(shift, *curve.get());
-
-    // Set selection
-    state_->curve_selection = std::make_unique<Curve_selection>();
-    state_->curve_selection->t_start = curve->t_min();
-    state_->curve_selection->t_end = curve->t_max();
-
-    return curve;
 }
 
 //******************************************************************************
