@@ -104,18 +104,6 @@ float Curve::t_duration() const
 }
 
 //******************************************************************************
-// shift_to_origin
-//******************************************************************************
-
-void Curve::shift_to_origin(Scene_wireframe_vertex& out_shift)
-{
-    Scene_wireframe_vertex origin(5), size(5);
-    get_boundaries(origin, size);
-
-    translate_vertices(-0.5f * size - origin);
-}
-
-//******************************************************************************
 // get_boundaries
 //******************************************************************************
 

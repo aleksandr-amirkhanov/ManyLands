@@ -25,7 +25,6 @@ public:
     float t_max() const;
     float t_duration() const;
 
-    void shift_to_origin(Scene_wireframe_vertex& out_shift);
     void get_boundaries(Scene_wireframe_vertex& origin,
                         Scene_wireframe_vertex& size) const;
     /* TODO: old method, delete?

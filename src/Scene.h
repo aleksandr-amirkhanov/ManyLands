@@ -15,11 +15,8 @@ public:
 
 private:
     std::shared_ptr<Curve> load_curve(std::string filename);
-    void normalize_curves(std::vector<Curve>& curves);
-
-    void create_tesseract(
-        Scene_wireframe_vertex shift,
-        const Curve& curve);
+    void normalize_curve(Curve& curve);
+    void create_tesseract();
 
     std::shared_ptr<Scene_state> state_;
     Scene_wireframe_vertex c_origin;
