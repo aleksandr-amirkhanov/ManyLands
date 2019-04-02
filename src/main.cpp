@@ -635,6 +635,21 @@ void mainloop()
             ImGuiWindowFlags_NoResize);
         ImGui::PushItemWidth(-1);
         ImGui::SliderFloat("##label", &State->unfolding_anim, 0.f, 1.f);
+        static bool was_unfolding_slider_active = false;
+        if(was_unfolding_slider_active && !ImGui::IsItemActive())
+        {
+            const float epsilon(0.01f);
+
+            std::vector<float> milestones;
+            for(char i = 0; i <= 6; ++i) milestones.push_back(i / 6.f);
+
+            for(auto mstone : milestones)
+            {
+                if(std::abs(State->unfolding_anim - mstone) < epsilon)
+                    State->unfolding_anim = mstone;
+            }
+        }
+        was_unfolding_slider_active = ImGui::IsItemActive();
         ImGui::End();
 
         State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(

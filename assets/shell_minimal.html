@@ -74,8 +74,13 @@
         input.setAttribute('multiple','');
 
         input.onchange = e => {
+          var files = Array();
+          for (var i = 0; i < e.target.files.length; i++) {
+            files.push(e.target.files[i]);
+          }
+
           function readSingleFile(index) {
-            if(index >= e.target.files.length) {
+            if(index >= files.length) {
               var js_load_ode = Module.cwrap(
                   'js_load_ode',
                   'null',
@@ -84,7 +89,7 @@
               return;
             }
 
-            var file = e.target.files[index];
+            var file = files[index];
             var textType = /text.*/;
             if (file.type.match(textType)) {
               var reader = new FileReader();
