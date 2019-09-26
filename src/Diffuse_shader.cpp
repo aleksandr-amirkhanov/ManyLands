@@ -145,9 +145,7 @@ void Diffuse_shader::draw_geometry(
                    GL_UNSIGNED_INT,
                    0);
 
-     auto err = glGetError();
-
-    //glDisableVertexAttribArray(vertex_attrib_id);
-    //glDisableVertexAttribArray(normal_attrib_id);
-    //glDisableVertexAttribArray(color_attrib_id );
+    glDisableVertexAttribArray(vertex_attrib_id);
+    glDisableVertexAttribArray(normal_attrib_id);
+    glDisableVertexAttribArray(color_attrib_id );
 }

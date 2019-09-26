@@ -264,6 +264,23 @@ void update_timer()
     }
 }
 
+const char* Message = "";
+
+void MessageCallback(GLenum source,
+                 GLenum type,
+                 GLuint id,
+                 GLenum severity,
+                 GLsizei length,
+                 const GLchar* message,
+                 const void* userParam )
+{
+  //fprintf( stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+  //         ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
+  //          type, severity, message );
+
+  Message = message;
+}
+
 //******************************************************************************
 // mainloop
 //******************************************************************************
@@ -294,9 +311,6 @@ void mainloop()
             process_mouse_input(event);
         }
     }
-
-    GLenum error;
-    error = glGetError();
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
@@ -333,6 +347,13 @@ void mainloop()
                      fog_dist = 10.f,
                      fog_range = 2.f;
 
+        ImGui::SetNextWindowPos(ImVec2(400, 0));
+        ImGui::Begin("Debug output");
+        ImGui::Text((char*)glGetString(GL_VERSION));
+        ImGui::Text("OpenGL error: %d", glGetError());
+        ImGui::Text(Message);
+        ImGui::End();
+
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
                                         static_cast<float>(height)));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -345,8 +366,6 @@ void mainloop()
             0,
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoResize);
-
-        ImGui::Text((char*)glGetString(GL_VERSION));
 
         ImGui::Text("%.1f FPS", io.Framerate);
 
@@ -657,9 +676,6 @@ void mainloop()
         was_unfolding_slider_active = ImGui::IsItemActive();
         ImGui::End();
 
-        error = glGetError();
-
-
         State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(
             fov_4d[0], fov_4d[1], fov_4d[2], 1.f, 10.f);
 
@@ -718,8 +734,6 @@ void mainloop()
         static_cast<float>(width),
         static_cast<float>(height));
 
-    error = glGetError();
-
     Renderer.set_redering_region(Scene_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
@@ -732,58 +746,40 @@ void mainloop()
 
     Timeline.set_splitter(splitter);
 
-    error = glGetError();
-
     Timeline.set_pictogram_size(pictograms_size);
     Timeline.set_pictogram_magnification(pictogram_scale, pictogram_region);
-
-    error = glGetError();
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(width),
                                       0.f,
                                       static_cast<float>(height));
-    error = glGetError();
     glUseProgram(Screen_shad->program_id);
     glUniformMatrix4fv(Screen_shad->proj_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(proj_ortho));
-
-    error = glGetError();
-
     Screen_shader::Screen_geometry separator;
-    error = glGetError();
     Screen_shader::Line_strip line;
-    error = glGetError();
     line.emplace_back(Screen_shader::Line_point(
         glm::vec2(Left_panel_size, timeline_height),
         4.f,
         glm::vec4(0.f, 0.f, 0.f, 0.15f)));
-    error = glGetError();
     line.emplace_back(Screen_shader::Line_point
     (glm::vec2(width, timeline_height),
         4.f,
         glm::vec4(0.f, 0.f, 0.f, 0.15f)));
-    error = glGetError();
     Screen_shad->append_to_geometry(separator, line);
 
-    error = glGetError();
-
     separator.init_buffers();
-    error = glGetError();
     glUseProgram(Screen_shad->program_id);
     Screen_shad->draw_geometry(separator);
-    error = glGetError();
 
     Text_ren->clear();
 
-    error = glGetError();
     glUseProgram(Diffuse_shad->program_id);
     Renderer.render();
     glUseProgram(Screen_shad->program_id);
     Timeline.render();
-    error = glGetError();
 
     Text_ren->render(width, height);
     ImGui::Render();
@@ -864,7 +860,7 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
                         SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #endif
 
     // Create window with graphics context
@@ -907,8 +903,6 @@ int main(int, char**)
     }
 #endif
 
-     auto error = glGetError();
-
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -944,6 +938,10 @@ int main(int, char**)
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);
 #else
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback, 0);
+
 
     Last_timepoint = std::chrono::system_clock::now();
     // Main loop
