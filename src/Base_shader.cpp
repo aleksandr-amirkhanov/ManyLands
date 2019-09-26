@@ -80,6 +80,7 @@ GLuint Base_shader::load_shaders(const char* vertex_file_path,
         std::vector<char> VertexShaderErrorMessage(info_log_length + 1);
         glGetShaderInfoLog(vertex_shader_id, info_log_length, NULL, &VertexShaderErrorMessage[0]);
         printf("%s\n", &VertexShaderErrorMessage[0]);
+        auto message = &VertexShaderErrorMessage[0];
     }
 
 
@@ -97,6 +98,7 @@ GLuint Base_shader::load_shaders(const char* vertex_file_path,
         std::vector<char> fragment_shader_error_message(info_log_length+1);
         glGetShaderInfoLog(fragment_shader_id, info_log_length, NULL, &fragment_shader_error_message[0]);
         printf("%s\n", &fragment_shader_error_message[0]);
+        auto message = &fragment_shader_error_message[0];
     }
 
 
@@ -115,6 +117,7 @@ GLuint Base_shader::load_shaders(const char* vertex_file_path,
         std::vector<char> program_error_message(info_log_length+1);
         glGetProgramInfoLog(program_id, info_log_length, NULL, &program_error_message[0]);
         printf("%s\n", &program_error_message[0]);
+        auto message = &program_error_message[0];
     }
 
     

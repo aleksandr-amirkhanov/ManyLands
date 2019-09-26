@@ -295,6 +295,9 @@ void mainloop()
         }
     }
 
+    GLenum error;
+    error = glGetError();
+
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(MainWindow);
@@ -342,6 +345,8 @@ void mainloop()
             0,
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoResize);
+
+        ImGui::Text((char*)glGetString(GL_VERSION));
 
         ImGui::Text("%.1f FPS", io.Framerate);
 
@@ -652,6 +657,9 @@ void mainloop()
         was_unfolding_slider_active = ImGui::IsItemActive();
         ImGui::End();
 
+        error = glGetError();
+
+
         State->projection_4D = Matrix_lib_f::get4DProjectionMatrix(
             fov_4d[0], fov_4d[1], fov_4d[2], 1.f, 10.f);
 
@@ -710,6 +718,8 @@ void mainloop()
         static_cast<float>(width),
         static_cast<float>(height));
 
+    error = glGetError();
+
     Renderer.set_redering_region(Scene_region,
                                  io.DisplayFramebufferScale.x,
                                  io.DisplayFramebufferScale.y);
@@ -722,36 +732,58 @@ void mainloop()
 
     Timeline.set_splitter(splitter);
 
+    error = glGetError();
+
     Timeline.set_pictogram_size(pictograms_size);
     Timeline.set_pictogram_magnification(pictogram_scale, pictogram_region);
+
+    error = glGetError();
 
     glm::mat4 proj_ortho = glm::ortho(0.f,
                                       static_cast<float>(width),
                                       0.f,
                                       static_cast<float>(height));
+    error = glGetError();
+    glUseProgram(Screen_shad->program_id);
     glUniformMatrix4fv(Screen_shad->proj_mat_id,
                        1,
                        GL_FALSE,
                        glm::value_ptr(proj_ortho));
+
+    error = glGetError();
+
     Screen_shader::Screen_geometry separator;
+    error = glGetError();
     Screen_shader::Line_strip line;
+    error = glGetError();
     line.emplace_back(Screen_shader::Line_point(
         glm::vec2(Left_panel_size, timeline_height),
         4.f,
         glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    error = glGetError();
     line.emplace_back(Screen_shader::Line_point
     (glm::vec2(width, timeline_height),
         4.f,
         glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+    error = glGetError();
     Screen_shad->append_to_geometry(separator, line);
 
+    error = glGetError();
+
     separator.init_buffers();
+    error = glGetError();
+    glUseProgram(Screen_shad->program_id);
     Screen_shad->draw_geometry(separator);
+    error = glGetError();
 
     Text_ren->clear();
 
+    error = glGetError();
+    glUseProgram(Diffuse_shad->program_id);
     Renderer.render();
+    glUseProgram(Screen_shad->program_id);
     Timeline.render();
+    error = glGetError();
 
     Text_ren->render(width, height);
     ImGui::Render();
@@ -801,7 +833,7 @@ void js_load_ode()
 int main(int, char**)
 {
     // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0)
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
         return EXIT_FAILURE;
@@ -827,12 +859,12 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #else
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+    const char* glsl_version = "#version 150";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
                         SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 #endif
 
     // Create window with graphics context
@@ -874,6 +906,8 @@ int main(int, char**)
         return 1;
     }
 #endif
+
+     auto error = glGetError();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();

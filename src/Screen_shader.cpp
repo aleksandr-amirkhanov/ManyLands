@@ -20,11 +20,14 @@ void Screen_shader::initialize()
                               "assets/Diffuse_paint.frag");
 #endif  
 
-    //glUseProgram(program_id);
+    glUseProgram(program_id);
     proj_mat_id = glGetUniformLocation(program_id, "projMatrix");
 
     vertex_attrib_id = glGetAttribLocation(program_id, "vertex");
     color_attrib_id  = glGetAttribLocation(program_id,  "color");
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 }
 
 //******************************************************************************
@@ -153,31 +156,41 @@ void Screen_shader::append_to_geometry(Screen_geometry& geom,
 
 void Screen_shader::draw_geometry(const Screen_geometry& geom)
 {
+    glBindVertexArray(vao);
+    GLenum error;
+    error = glGetError();
     glBindBuffer(GL_ARRAY_BUFFER, geom.array_buff_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom.index_buff_id);
+    error = glGetError();
 
     glEnableVertexAttribArray(vertex_attrib_id);
     glEnableVertexAttribArray(color_attrib_id );
+    error = glGetError();
 
     GLsizei stride = sizeof(Data_array);
     void* ptr = reinterpret_cast<void*>(2 * sizeof(GLfloat));
+    error = glGetError();
     glVertexAttribPointer(vertex_attrib_id,
                           2,
                           GL_FLOAT,
                           GL_FALSE,
                           stride,
                           0);
+    error = glGetError();
     glVertexAttribPointer(color_attrib_id,
                           4,
                           GL_FLOAT,
                           GL_FALSE,
                           stride,
                           ptr);
+    error = glGetError();
 
     glDrawElements(GL_TRIANGLES,
                    static_cast<GLsizei>(geom.indices.size()),
                    GL_UNSIGNED_INT, 0);
+    error = glGetError();
 
     glDisableVertexAttribArray(vertex_attrib_id);
     glDisableVertexAttribArray(color_attrib_id );
+    error = glGetError();
 }

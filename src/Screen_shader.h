@@ -86,4 +86,6 @@ public:
            proj_mat_id,
            vertex_attrib_id,
            color_attrib_id;
+
+    GLuint vao;
 };
