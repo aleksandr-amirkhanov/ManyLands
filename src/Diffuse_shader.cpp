@@ -18,7 +18,7 @@ void Diffuse_shader::initialize()
         "assets/Diffuse.frag");
 #endif
 
-    glUseProgram(program_id);
+    //glUseProgram(program_id);
     proj_mat_id   = glGetUniformLocation(program_id,  "projMatrix");
     mv_mat_id     = glGetUniformLocation(program_id,    "mvMatrix");
     normal_mat_id = glGetUniformLocation(program_id,"normalMatrix");
@@ -113,6 +113,7 @@ void Diffuse_shader::append_to_geometry(Mesh_geometry& geom, const Mesh& m)
 void Diffuse_shader::draw_geometry(
     const std::unique_ptr<Mesh_geometry>& geom)
 {
+    glBindVertexArray(geom->vao);
     glBindBuffer(GL_ARRAY_BUFFER, geom->array_buff_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buff_id);
 

@@ -31,11 +31,16 @@ public:
 
     GLuint array_buff_id;
     GLuint index_buff_id;
+    GLuint vao;
 };
 
 template<class TArray_data>
 Geometry_engine<TArray_data>::Geometry_engine()
 {
+    // Generate vertex array object
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
     // Generating buffers
     glGenBuffers(1, &array_buff_id);
     glGenBuffers(1, &index_buff_id);

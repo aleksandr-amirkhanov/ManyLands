@@ -46,6 +46,8 @@
 // Boost
 #include <boost/numeric/ublas/assignment.hpp>
 
+//#define DEBUG
+
 #if defined(USE_GL_ES3)
 #include <GLES3/gl3.h>  // Use GL ES 3
 #else
@@ -264,23 +266,6 @@ void update_timer()
     }
 }
 
-const char* Message = "";
-
-void MessageCallback(GLenum source,
-                 GLenum type,
-                 GLuint id,
-                 GLenum severity,
-                 GLsizei length,
-                 const GLchar* message,
-                 const void* userParam )
-{
-  //fprintf( stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-  //         ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
-  //          type, severity, message );
-
-  Message = message;
-}
-
 //******************************************************************************
 // mainloop
 //******************************************************************************
@@ -347,13 +332,6 @@ void mainloop()
                      fog_dist = 10.f,
                      fog_range = 2.f;
 
-        ImGui::SetNextWindowPos(ImVec2(400, 0));
-        ImGui::Begin("Debug output");
-        ImGui::Text((char*)glGetString(GL_VERSION));
-        ImGui::Text("OpenGL error: %d", glGetError());
-        ImGui::Text(Message);
-        ImGui::End();
-
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(Left_panel_size),
                                         static_cast<float>(height)));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -368,6 +346,10 @@ void mainloop()
             ImGuiWindowFlags_NoResize);
 
         ImGui::Text("%.1f FPS", io.Framerate);
+#ifdef DEBUG
+        ImGui::Text((char*)glGetString(GL_VERSION));
+        ImGui::Text("OpenGL error: %d", glGetError());
+#endif // DEBUG
 
         if(ImGui::Button("Load ODE"))
         {
@@ -753,6 +735,8 @@ void mainloop()
                                       static_cast<float>(width),
                                       0.f,
                                       static_cast<float>(height));
+
+    // Draw separator
     glUseProgram(Screen_shad->program_id);
     glUniformMatrix4fv(Screen_shad->proj_mat_id,
                        1,
@@ -771,14 +755,12 @@ void mainloop()
     Screen_shad->append_to_geometry(separator, line);
 
     separator.init_buffers();
-    glUseProgram(Screen_shad->program_id);
     Screen_shad->draw_geometry(separator);
 
+    // Draw other objects
     Text_ren->clear();
 
-    glUseProgram(Diffuse_shad->program_id);
     Renderer.render();
-    glUseProgram(Screen_shad->program_id);
     Timeline.render();
 
     Text_ren->render(width, height);
@@ -863,9 +845,10 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #endif
 
-    // Create window with graphics context
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    // Create window with graphics context\
+    // Warning: thu number of multisamples might not be supported by the
+    // current hardware
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -939,10 +922,6 @@ int main(int, char**)
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(mainloop, 0, 0);
 #else
-
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(MessageCallback, 0);
-
 
     Last_timepoint = std::chrono::system_clock::now();
     // Main loop

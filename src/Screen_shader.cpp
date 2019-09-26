@@ -20,14 +20,11 @@ void Screen_shader::initialize()
                               "assets/Diffuse_paint.frag");
 #endif  
 
-    glUseProgram(program_id);
+    //glUseProgram(program_id);
     proj_mat_id = glGetUniformLocation(program_id, "projMatrix");
 
     vertex_attrib_id = glGetAttribLocation(program_id, "vertex");
     color_attrib_id  = glGetAttribLocation(program_id,  "color");
-
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
 }
 
 //******************************************************************************
@@ -156,8 +153,7 @@ void Screen_shader::append_to_geometry(Screen_geometry& geom,
 
 void Screen_shader::draw_geometry(const Screen_geometry& geom)
 {
-    glBindVertexArray(vao);
-
+    glBindVertexArray(geom.vao);
     glBindBuffer(GL_ARRAY_BUFFER, geom.array_buff_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom.index_buff_id);
 
