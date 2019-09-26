@@ -747,11 +747,11 @@ void mainloop()
     line.emplace_back(Screen_shader::Line_point(
         glm::vec2(Left_panel_size, timeline_height),
         4.f,
-        glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+        glm::vec4(0.85f, 0.85f, 0.85f, 1.f)));
     line.emplace_back(Screen_shader::Line_point
     (glm::vec2(width, timeline_height),
         4.f,
-        glm::vec4(0.f, 0.f, 0.f, 0.15f)));
+        glm::vec4(0.85f, 0.85f, 0.85f, 1.f)));
     Screen_shad->append_to_geometry(separator, line);
 
     separator.init_buffers();
