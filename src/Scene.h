@@ -14,11 +14,11 @@ public:
         float tesseract_size = 200.f);
 
 private:
-    std::shared_ptr<Curve> load_curve(std::string filename);
+    std::shared_ptr<Curve> load_curve(std::string fname);
     void normalize_curve(Curve& curve);
     void create_tesseract();
 
     std::shared_ptr<Scene_state> state_;
-    Scene_wireframe_vertex c_origin;
-    Scene_wireframe_vertex c_size;
+    Scene_vertex_t c_origin;
+    Scene_vertex_t c_size;
 };

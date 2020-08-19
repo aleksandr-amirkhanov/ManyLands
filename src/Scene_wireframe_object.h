@@ -1,10 +1,8 @@
 #pragma once
-
+// Local
 #include "Wireframe_object.h"
-
-#include <boost/numeric/ublas/vector.hpp>
-
-typedef boost::numeric::ublas::vector<float> Scene_wireframe_vertex;
+#include "Color.h"
+#include "Scene_vertex_t.h"
 
 struct Scene_wireframe_edge
 {
@@ -22,5 +20,5 @@ struct Scene_wireframe_edge
     Color color;
 };
 
-typedef Wireframe_object<Scene_wireframe_vertex, Scene_wireframe_edge>
+typedef Wireframe_object<Scene_vertex_t, Scene_wireframe_edge>
     Scene_wireframe_object;

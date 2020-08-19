@@ -1,4 +1,6 @@
 #include "Scene.h"
+// local
+#include "Mesh.h"
 // std
 #include <fstream>
 // boost
@@ -36,7 +38,7 @@ void Scene::load_ode(
         s = tesseract_size;
 
     // The aggregative origin and size for all curves
-    Scene_wireframe_vertex total_origin(5), total_size(5);
+    Scene_vertex_t total_origin(5), total_size(5);
     for(char i = 0; i < 5; ++i)
     {
         total_origin(i) = std::numeric_limits<float>::max();
@@ -53,7 +55,7 @@ void Scene::load_ode(
         if(!curve)
             continue;
 
-        Scene_wireframe_vertex origin, size;
+        Scene_vertex_t origin, size;
         curve->get_boundaries(origin, size);
 
         for(char i = 0; i < 5; ++i)
@@ -80,7 +82,7 @@ void Scene::load_ode(
         }
     }
 
-    Scene_wireframe_vertex scale(5);
+    Scene_vertex_t scale(5);
     scale[0] = state_->tesseract_size[0] / total_size[0];
     scale[1] = state_->tesseract_size[1] / total_size[1];
     scale[2] = state_->tesseract_size[2] / total_size[2];
@@ -93,7 +95,7 @@ void Scene::load_ode(
         c->scale_vertices(scale);
 
         auto curve = std::make_shared<Curve>(
-            c->get_simpified_curve_RDP(cuve_min_rad));
+            c->get_simpified_curve(cuve_min_rad));
         curve->update_stats(
             state_->stat_kernel_size,
             state_->stat_max_movement,
@@ -104,21 +106,24 @@ void Scene::load_ode(
     // Save curve origin and size to the class members
     create_tesseract();
 
-    // Set selection (currently we take the range of the first curve, but this
-    // behaviour can be reconsidered in the future)
-    auto& first_curve = state_->curves.front();
-    state_->curve_selection = std::make_unique<Curve_selection>();
-    state_->curve_selection->t_start = first_curve->t_min();
-    state_->curve_selection->t_end = first_curve->t_max();
+    if(state_->curves.size() > 0)
+    {
+        // Set selection (currently we take the range of the first curve, but
+        // this behaviour can be reconsidered in the future)
+        auto& first_curve = state_->curves.front();
+        state_->curve_selection = std::make_unique<Curve_selection>();
+        state_->curve_selection->t_start = first_curve->t_min();
+        state_->curve_selection->t_end = first_curve->t_max();
+    }
 }
 
 //******************************************************************************
 // load_curve
 //******************************************************************************
 
-std::shared_ptr<Curve> Scene::load_curve(std::string filename)
+std::shared_ptr<Curve> Scene::load_curve(std::string fname)
 {
-    std::ifstream stream(filename);
+    std::ifstream stream(fname);
     if(!stream.is_open())
         return nullptr;
 
@@ -138,9 +143,8 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
         boost::split(vals, line, boost::is_any_of("\t, "));
         if(vals.size() == 5)
         {
-            size_t size = vals.size();
             float t = std::stof(vals[0]);
-            Scene_wireframe_vertex p(5);
+            Scene_vertex_t p(5);
             p <<= std::stof(vals[1]), std::stof(vals[2]), std::stof(vals[3]),
                 std::stof(vals[4]), 1;
 
@@ -157,10 +161,10 @@ std::shared_ptr<Curve> Scene::load_curve(std::string filename)
 
 void Scene::normalize_curve(Curve& curve)
 {
-    Scene_wireframe_vertex origin, size;
+    Scene_vertex_t origin, size;
     curve.get_boundaries(origin, size);
 
-    Scene_wireframe_vertex scale(5);
+    Scene_vertex_t scale(5);
     scale[0] = state_->tesseract_size[0] / size[0];
     scale[1] = state_->tesseract_size[0] / size[1];
     scale[2] = state_->tesseract_size[0] / size[2];
@@ -179,7 +183,7 @@ void Scene::create_tesseract()
     if(state_ == nullptr)
         return;
 
-    Scene_wireframe_vertex origin(4), size(4);
+    Scene_vertex_t origin(4), size(4);
     for(char i = 0; i < 4; ++i)
     {
         origin(i) = -0.5f * state_->tesseract_size[i];

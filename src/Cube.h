@@ -12,23 +12,23 @@
 class Cube : public Scene_wireframe_object
 {
 public:
-    Cube(Scene_wireframe_vertex v1,
-         Scene_wireframe_vertex v2,
-         Scene_wireframe_vertex v3,
-         Scene_wireframe_vertex v4,
-         Scene_wireframe_vertex v5,
-         Scene_wireframe_vertex v6,
-         Scene_wireframe_vertex v7,
-         Scene_wireframe_vertex v8);
+    Cube(Scene_vertex_t v1,
+         Scene_vertex_t v2,
+         Scene_vertex_t v3,
+         Scene_vertex_t v4,
+         Scene_vertex_t v5,
+         Scene_vertex_t v6,
+         Scene_vertex_t v7,
+         Scene_vertex_t v8);
 
-    Cube(Scene_wireframe_vertex v1,
-         Scene_wireframe_vertex v2,
-         Scene_wireframe_vertex v3,
-         Scene_wireframe_vertex v4,
-         Scene_wireframe_vertex v5,
-         Scene_wireframe_vertex v6,
-         Scene_wireframe_vertex v7,
-         Scene_wireframe_vertex v8,
+    Cube(Scene_vertex_t v1,
+         Scene_vertex_t v2,
+         Scene_vertex_t v3,
+         Scene_vertex_t v4,
+         Scene_vertex_t v5,
+         Scene_vertex_t v6,
+         Scene_vertex_t v7,
+         Scene_vertex_t v8,
          const Color &horiz_col,
          const Color &vert_col,
          const Color &depth_col);

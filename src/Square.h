@@ -10,15 +10,15 @@
 class Square : public Scene_wireframe_object
 {
 public:
-     Square(Scene_wireframe_vertex v1,
-            Scene_wireframe_vertex v2,
-            Scene_wireframe_vertex v3,
-            Scene_wireframe_vertex v4);
+     Square(Scene_vertex_t v1,
+            Scene_vertex_t v2,
+            Scene_vertex_t v3,
+            Scene_vertex_t v4);
 
-    Square(Scene_wireframe_vertex v1,
-           Scene_wireframe_vertex v2,
-           Scene_wireframe_vertex v3,
-           Scene_wireframe_vertex v4,
+    Square(Scene_vertex_t v1,
+           Scene_vertex_t v2,
+           Scene_vertex_t v3,
+           Scene_vertex_t v4,
            const Color &horiz_col,
            const Color &vert_col);
 

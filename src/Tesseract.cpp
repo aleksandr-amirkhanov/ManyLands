@@ -9,8 +9,8 @@
 //******************************************************************************
 
 Tesseract::Tesseract(
-    Scene_wireframe_vertex origin,
-    Scene_wireframe_vertex size,
+    Scene_vertex_t origin,
+    Scene_vertex_t size,
     const Color& x_color,
     const Color& y_color,
     const Color& z_color,
@@ -35,7 +35,7 @@ Tesseract::Tesseract(
             {
                 for(char w = 0; w < 2; ++w)
                 {
-                    Scene_wireframe_vertex v(5);
+                    Scene_vertex_t v(5);
                     v(0) = x == 0 ? origin(0) : origin(0) + size_(0);
                     v(1) = y == 0 ? origin(1) : origin(1) + size_(1);
                     v(2) = z == 0 ? origin(2) : origin(2) + size_(2);
@@ -73,7 +73,7 @@ Tesseract::Tesseract(
 // get_size
 //******************************************************************************
 
-Scene_wireframe_vertex Tesseract::get_size()
+Scene_vertex_t Tesseract::get_size()
 {
     return size_;
 }
@@ -162,7 +162,7 @@ Square Tesseract::get_plain(std::string mask)
         }
     }
 
-    std::vector<Scene_wireframe_vertex> verts;
+    std::vector<Scene_vertex_t> verts;
     for(char x = std::get<0>(limits[0]); x <= std::get<1>(limits[0]); ++x)
     {
         for(char y = std::get<0>(limits[1]); y <= std::get<1>(limits[1]); ++y)

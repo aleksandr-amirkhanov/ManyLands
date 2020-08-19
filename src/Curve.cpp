@@ -19,7 +19,7 @@ const Color Curve::default_color_ = Color(0, 0, 0, 255);
 // add_point
 //******************************************************************************
 
-void Curve::add_point(Scene_wireframe_vertex vertex, float time)
+void Curve::add_point(Scene_vertex_t vertex, float time)
 {
     // Adding vertex
     get_vertices().push_back(vertex);
@@ -38,7 +38,7 @@ void Curve::add_point(Scene_wireframe_vertex vertex, float time)
 // get_point
 //******************************************************************************
 
-Scene_wireframe_vertex Curve::get_point(float time)
+Scene_vertex_t Curve::get_point(float time)
 {
     // We assume that points are already sorted by the time stamp value
     if(time <= time_stamp_.front())
@@ -104,98 +104,12 @@ float Curve::t_duration() const
 }
 
 //******************************************************************************
-// get_boundaries
-//******************************************************************************
-
-void Curve::get_boundaries(
-    Scene_wireframe_vertex& origin,
-    Scene_wireframe_vertex& size) const
-{
-    // Finding minimum and maximum values of the curve
-    Scene_wireframe_vertex min(5);
-    Scene_wireframe_vertex max(5);
-
-    if(vertices().size() > 0)
-    {
-        const auto& first = vertices().at(0);
-        min = first;
-        max = first;
-    }
-
-    for(const auto& v : vertices())
-    {
-        for(unsigned char i = 0; i < 4; ++i)
-        {
-            if(v(i) < min(i))
-                min(i) = v(i);
-            if(v(i) > max(i))
-                max(i) = v(i);
-        }
-    }
-
-    origin = min;
-    size = max - min;
-}
-
-//******************************************************************************
 // get_simpified_curve
+//
+// Provides a simplified curve using the Ramer–Douglas–Peucker algorithm
 //******************************************************************************
 
-/* TODO: old method, delete?
-
-Curve Curve::get_simpified_curve(const float min_radius)
-{
-    std::list<size_t> points_to_use;
-    for(size_t i = 0; i < vertices().size(); ++i)
-        points_to_use.push_back(i);
-
-    auto get_distance = [](const Scene_wireframe_vertex& v1,
-                           const Scene_wireframe_vertex& v2)
-    {
-        auto d = v2 - v1;
-        return std::sqrt(
-            d(0) * d(0) + d(1) * d(1) + d(2) * d(2) + d(3) * d(3));
-    };
-
-    size_t num_removed_verts = 1;
-    while(num_removed_verts != 0)
-    {
-        num_removed_verts = 0;
-        if(points_to_use.size() < 3)
-            continue;
-
-        auto first = std::next(points_to_use.begin());
-        auto last = std::prev(points_to_use.end());
-        for(auto iter = first; iter != last; ++iter)
-        {
-            auto& a_vert = vertices()[*std::prev(iter)];
-            auto& b_vert = vertices()[*iter           ];
-            auto& c_vert = vertices()[*std::next(iter)];
-            
-            auto a = get_distance(b_vert, c_vert);
-            auto b = get_distance(a_vert, c_vert);
-            auto c = get_distance(a_vert, b_vert);
-            auto p = 0.5f * (a + b + c);
-
-            float r = std::sqrt((p - a) * (p - b) * (p - c) / p);
-
-            if(r < min_radius)
-            {
-                num_removed_verts++;
-                points_to_use.remove(*iter);
-                break;
-            }
-        }
-    }
-
-    Curve simple_curve;
-    for(auto i: points_to_use)
-        simple_curve.add_point(vertices()[i], time_stamp()[i]);
-    
-    return simple_curve;
-}*/
-
-Curve Curve::get_simpified_curve_RDP(const float max_deviation)
+Curve Curve::get_simpified_curve(const float max_deviation)
 {
     typedef boost::geometry::model::
         point<float, 4, boost::geometry::cs::cartesian>
@@ -203,7 +117,7 @@ Curve Curve::get_simpified_curve_RDP(const float max_deviation)
     typedef boost::geometry::model::linestring<pt4d_t> linestring4d_t;
     linestring4d_t line;
 
-    auto to_boost = [](const Scene_wireframe_vertex& v) -> pt4d_t {
+    auto to_boost = [](const Scene_vertex_t& v) -> pt4d_t {
         pt4d_t out;
         out.set<0>(v(0));
         out.set<1>(v(1));
@@ -220,7 +134,7 @@ Curve Curve::get_simpified_curve_RDP(const float max_deviation)
     Curve simple_curve;
     size_t i = 0;
     auto is_equal = [](const pt4d_t& p,
-                       const Scene_wireframe_vertex& v) -> bool {
+                       const Scene_vertex_t& v) -> bool {
         return p.get<0>() == v(0) && p.get<1>() == v(1) && p.get<2>() == v(2) &&
                p.get<3>() == v(3);
     };
@@ -293,13 +207,13 @@ void Curve::calculate_general_stats(
     stats_.min_speed = min_speed;
     stats_.max_speed = max_speed;
 
-    Scene_wireframe_vertex origin, size;
+    Scene_vertex_t origin, size;
     get_boundaries(origin, size);
     auto abs_max_movement = max_movement * size;
     auto abs_max_value = origin + max_value * size;
 
     // Find how many dimension curve segments have
-    Scene_wireframe_vertex min(5), max(5);
+    Scene_vertex_t min(5), max(5);
     float start_t = 0.f, end_t = 0.f;
     for(size_t i = 0; i < time_stamp_.size(); ++i)
     {
@@ -390,7 +304,7 @@ void Curve::calculate_annotations()
     auto make_center_point = [&](size_t start, size_t end, std::string dim) {
         const float epsilon = 0.2f;
 
-        Scene_wireframe_vertex center_pnt(5);
+        Scene_vertex_t center_pnt(5);
         center_pnt <<= 0, 0, 0, 0, 0;
 
         auto start_t = time_stamp_[start];
@@ -398,8 +312,8 @@ void Curve::calculate_annotations()
 
         auto avrg_t = 0.5f * (start_t + end_t);
 
-        Scene_wireframe_vertex current_point = get_point(avrg_t);
-        Scene_wireframe_vertex dir = get_point(avrg_t + epsilon);
+        Scene_vertex_t current_point = get_point(avrg_t);
+        Scene_vertex_t dir = get_point(avrg_t + epsilon);
 
         Arrow_type a(avrg_t, static_cast<int>(dim.length()));
         arrows_.push_back(a);
@@ -479,10 +393,10 @@ Curve::get_arrows(const Curve_selection& selection)
 // get_markers
 //******************************************************************************
 
-std::vector<Scene_wireframe_vertex>
+std::vector<Scene_vertex_t>
 Curve::get_markers(const Curve_selection& selection)
 {
-    std::vector<Scene_wireframe_vertex> res;
+    std::vector<Scene_vertex_t> res;
 
     for(auto& m : markers_)
     {
@@ -491,42 +405,4 @@ Curve::get_markers(const Curve_selection& selection)
     }
 
     return res;
-}
-
-//******************************************************************************
-// translate_vertices
-//******************************************************************************
-
-void Curve::translate_vertices(const Scene_wireframe_vertex& translate)
-{
-    for(auto& v : vertices_)
-        v += translate;
-}
-
-//******************************************************************************
-// scale_vertices
-//******************************************************************************
-
-void Curve::scale_vertices(float scale_factor)
-{
-    for(auto& v : vertices_)
-        v *= scale_factor;
-}
-
-//******************************************************************************
-// scale_vertices
-//******************************************************************************
-
-void Curve::scale_vertices(const Scene_wireframe_vertex& scale_factor)
-{
-    for(auto& v : vertices_)
-    {
-        assert(v.size() == scale_factor.size());
-
-        if(v.size() == scale_factor.size())
-        {
-            for(int i = 0; i < v.size(); i++)
-                v[i] *= scale_factor[i];
-        }
-    }
 }

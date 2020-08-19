@@ -33,10 +33,10 @@ public:
 
 private:
     void project_to_3D(
-        Scene_wireframe_vertex& point,
+        Scene_vertex_t& point,
         const boost::numeric::ublas::matrix<float>& rot_mat);
     void project_to_3D(
-        std::vector<Scene_wireframe_vertex>& verts,
+        std::vector<Scene_vertex_t>& verts,
         const boost::numeric::ublas::matrix<float>& rot_mat);
 
     void draw_tesseract(Scene_wireframe_object& t);

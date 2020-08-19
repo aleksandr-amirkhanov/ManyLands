@@ -8,14 +8,14 @@ const Color Cube::default_color_ = Color(0, 0, 0, 255);
 // Cube
 //******************************************************************************
 
-Cube::Cube(Scene_wireframe_vertex v1,
-           Scene_wireframe_vertex v2,
-           Scene_wireframe_vertex v3,
-           Scene_wireframe_vertex v4,
-           Scene_wireframe_vertex v5,
-           Scene_wireframe_vertex v6,
-           Scene_wireframe_vertex v7,
-           Scene_wireframe_vertex v8)
+Cube::Cube(Scene_vertex_t v1,
+           Scene_vertex_t v2,
+           Scene_vertex_t v3,
+           Scene_vertex_t v4,
+           Scene_vertex_t v5,
+           Scene_vertex_t v6,
+           Scene_vertex_t v7,
+           Scene_vertex_t v8)
     : Cube(v1, v2, v3, v4, v5, v6, v7, v8,
         default_color_,
         default_color_,
@@ -27,14 +27,14 @@ Cube::Cube(Scene_wireframe_vertex v1,
 //******************************************************************************
 
 Cube::Cube(
-    Scene_wireframe_vertex v1,
-    Scene_wireframe_vertex v2,
-    Scene_wireframe_vertex v3,
-    Scene_wireframe_vertex v4,
-    Scene_wireframe_vertex v5,
-    Scene_wireframe_vertex v6,
-    Scene_wireframe_vertex v7,
-    Scene_wireframe_vertex v8,
+    Scene_vertex_t v1,
+    Scene_vertex_t v2,
+    Scene_vertex_t v3,
+    Scene_vertex_t v4,
+    Scene_vertex_t v5,
+    Scene_vertex_t v6,
+    Scene_vertex_t v7,
+    Scene_vertex_t v8,
     const Color& horiz_col,
     const Color& vert_col,
     const Color& depth_col)

@@ -40,7 +40,7 @@ public:
     glm::vec3 camera_3D;
 
     boost::numeric::ublas::matrix<float> projection_4D;
-    Scene_wireframe_vertex camera_4D;
+    Scene_vertex_t camera_4D;
 
     float xy_rot, yz_rot, zx_rot, xw_rot, yw_rot, zw_rot;
     float fov_y;

@@ -720,10 +720,6 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
     std::vector<Cube> cubes = state_->tesseract->split();
     std::vector<Square> squares = Cube::split(cubes);
 
-    /*pen.setColor(QColor("#000000"));
-    pen.setWidthF(1.5);
-    painter.setPen(pen);*/
-
     auto average_range = [&range](int i) {
         if(i == 0)
             return 0.5f * (std::get<0>(range.x) + std::get<1>(range.x));
@@ -837,17 +833,9 @@ void Timeline_renderer::draw_pictogram(const glm::vec2& center,
         // draw_wireframe_obj(*tesseract.get());
     }
 
-    /*pen.setColor(QColor(0, 0, 0, 63));
-    pen.setWidthF(1.2);
-    painter.setPen(pen);*/
-
     Tesseract t = *state_->tesseract.get();
     project_point_array(t.get_vertices(), size);
     draw_wireframe_obj(t);
-
-    /*pen.setColor(QColor("#000000"));
-    pen.setWidthF(1.5);
-    painter.setPen(pen);*/
 
     Curve c = *state_->selected_curve().get();
     project_point_array(c.get_vertices(), size);
@@ -1068,7 +1056,7 @@ void Timeline_renderer::calculate_switch_points(
 //******************************************************************************
 
 void Timeline_renderer::project_point(
-    Scene_wireframe_vertex& point,
+    Scene_vertex_t& point,
     float size)
 {
     if(point.size() < 4)
@@ -1078,7 +1066,7 @@ void Timeline_renderer::project_point(
     const auto dist_to_origin =
         0.5f * size - 2 * size * std::pow(static_cast<float>(std::sin(PI / 8)), 2);
 
-    Scene_wireframe_vertex origin(2);
+    Scene_vertex_t origin(2);
     origin(0) = dist_to_origin * std::cos(static_cast<float>(7 * PI / 8));
     origin(1) = -dist_to_origin * std::sin(static_cast<float>(7 * PI / 8));
 
@@ -1105,7 +1093,7 @@ void Timeline_renderer::project_point(
 //******************************************************************************
 
 void Timeline_renderer::project_point_array(
-    std::vector<Scene_wireframe_vertex>& points,
+    std::vector<Scene_vertex_t>& points,
     float size)
 {
     for(auto& p : points)

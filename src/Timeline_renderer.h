@@ -85,10 +85,10 @@ private:
         const Region& region);
 
     void project_point(
-        Scene_wireframe_vertex& point,
+        Scene_vertex_t& point,
         float size);
     void project_point_array(
-        std::vector<Scene_wireframe_vertex>& points,
+        std::vector<Scene_vertex_t>& points,
         float size);
 
     void update_regions();

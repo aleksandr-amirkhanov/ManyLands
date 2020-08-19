@@ -108,7 +108,7 @@ void Scene_renderer::render()
                                            static_cast<float>(unfold_3D)));
     auto norm_mat = glm::transpose(glm::inverse(glm::mat3(world_mat)));
 
-    // Chache the Model-view-projection matrix for arrow drawing
+    // Cache the Model-view-projection matrix for arrow drawing
     auto mvp_mat = proj_mat * camera_mat * world_mat;
 
     glUniformMatrix4fv(diffuse_shader_->proj_mat_id,
@@ -479,10 +479,10 @@ void Scene_renderer::process_input(const Base_renderer::Renderer_io& io)
 //******************************************************************************
 
 void Scene_renderer::project_to_3D(
-    Scene_wireframe_vertex& point,
+    Scene_vertex_t& point,
     const boost::numeric::ublas::matrix<float>& rot_mat)
 {
-    Scene_wireframe_vertex tmp_vert = prod(point, rot_mat);
+    Scene_vertex_t tmp_vert = prod(point, rot_mat);
     tmp_vert = tmp_vert - state_->camera_4D;
     tmp_vert = prod(tmp_vert, state_->projection_4D);
 
@@ -505,10 +505,10 @@ void Scene_renderer::project_to_3D(
 //******************************************************************************
 
 void Scene_renderer::project_to_3D(
-    std::vector<Scene_wireframe_vertex>& verts,
+    std::vector<Scene_vertex_t>& verts,
     const boost::numeric::ublas::matrix<float>& rot_mat)
 {
-    auto project = [&](Scene_wireframe_vertex& v)
+    auto project = [&](Scene_vertex_t& v)
     {
         project_to_3D(v, rot_mat);
     };
@@ -1033,7 +1033,7 @@ void Scene_renderer::tesseract_unfolding(
     auto transform_3D_plot =
         [](Scene_wireframe_object& c,
            boost::numeric::ublas::matrix<float>& rot,
-           Scene_wireframe_vertex disp)
+           Scene_vertex_t disp)
     {
         for(auto& v : c.get_vertices())
         {
@@ -1051,7 +1051,7 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib_f::getYWRotationMatrix(
             static_cast<float>(-coeff * PI / 2));
-        Scene_wireframe_vertex disp1(5);
+        Scene_vertex_t disp1(5);
         disp1 <<= 0,
                   state_->tesseract_size[1] / 2,
                   0,
@@ -1062,7 +1062,7 @@ void Scene_renderer::tesseract_unfolding(
         transform_3D_plot(plots_3D[4], rot, disp1);
 
         const auto vert = plots_3D[4].get_vertices()[0];
-        Scene_wireframe_vertex disp2(5);
+        Scene_vertex_t disp2(5);
         disp2 <<= 0, -vert(1), 0, -vert(3), 0;
 
         transform_3D_plot(plots_3D[0], rot, disp2);
@@ -1079,7 +1079,7 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib_f::getZWRotationMatrix(
             static_cast<float>(coeff * PI / 2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= 0,
                  0,
                  -state_->tesseract_size[2] / 2,
@@ -1095,7 +1095,7 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib_f::getZWRotationMatrix(
             static_cast<float>(-coeff * PI / 2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= 0,
                  0,
                  state_->tesseract_size[2] / 2,
@@ -1111,7 +1111,7 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib_f::getYWRotationMatrix(
             static_cast<float>(coeff * PI / 2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= 0,
                  -state_->tesseract_size[1] / 2,
                  0,
@@ -1127,7 +1127,7 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib_f::getXWRotationMatrix(
             static_cast<float>(coeff * PI / 2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= state_->tesseract_size[0] / 2,
                  0,
                  0,
@@ -1143,7 +1143,7 @@ void Scene_renderer::tesseract_unfolding(
     {
         auto rot = Matrix_lib_f::getXWRotationMatrix(
             static_cast<float>(-coeff * PI / 2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= -state_->tesseract_size[0] / 2,
                   0,
                   0,
@@ -1268,13 +1268,13 @@ void Scene_renderer::plots_unfolding(
     auto transform_3D_plot =
         [](Scene_wireframe_object& c,
            boost::numeric::ublas::matrix<float>& rot,
-           Scene_wireframe_vertex& disp)
+           Scene_vertex_t& disp)
     {
         for(auto& v : c.get_vertices())
         {
             // We have to create a copy vector of the size of four in order
             // to multiype to the 4x4 rotation matrix
-            Scene_wireframe_vertex copy_v(4);
+            Scene_vertex_t copy_v(4);
             copy_v <<= v(0), v(1), v(2), v(3);
 
             for(int i = 0; i < 4; ++i)
@@ -1298,7 +1298,7 @@ void Scene_renderer::plots_unfolding(
             rot_axis(0),
             rot_axis(1),
             rot_axis(2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= -anchor(0), -anchor(1), -anchor(2), 0, 0;
 
         transform_3D_plot(plots_2D[3], rot, disp);
@@ -1321,7 +1321,7 @@ void Scene_renderer::plots_unfolding(
             rot_axis(0),
             rot_axis(1),
             rot_axis(2));
-        Scene_wireframe_vertex disp(5);
+        Scene_vertex_t disp(5);
         disp <<= -anchor(0), -anchor(1), -anchor(2), 0, 0;
 
         transform_3D_plot(plots_2D[5], rot, disp);

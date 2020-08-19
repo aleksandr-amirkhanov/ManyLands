@@ -6,10 +6,10 @@ const Color Square::default_color_ = Color(0, 0, 0, 255);
 // Square
 //******************************************************************************
 
-Square::Square(Scene_wireframe_vertex v1,
-               Scene_wireframe_vertex v2,
-               Scene_wireframe_vertex v3,
-               Scene_wireframe_vertex v4)
+Square::Square(Scene_vertex_t v1,
+               Scene_vertex_t v2,
+               Scene_vertex_t v3,
+               Scene_vertex_t v4)
 {
     vertices_.push_back(v1);
     vertices_.push_back(v2);
@@ -26,10 +26,10 @@ Square::Square(Scene_wireframe_vertex v1,
 // Square
 //******************************************************************************
 
-Square::Square(Scene_wireframe_vertex v1,
-               Scene_wireframe_vertex v2,
-               Scene_wireframe_vertex v3,
-               Scene_wireframe_vertex v4,
+Square::Square(Scene_vertex_t v1,
+               Scene_vertex_t v2,
+               Scene_vertex_t v3,
+               Scene_vertex_t v4,
                const Color& horiz_col,
                const Color& vert_col)
 {

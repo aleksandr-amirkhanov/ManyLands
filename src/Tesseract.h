@@ -12,18 +12,18 @@ class Tesseract : public Scene_wireframe_object
 {
 public:
     Tesseract(
-        Scene_wireframe_vertex origin,
-        Scene_wireframe_vertex size,
+        Scene_vertex_t origin,
+        Scene_vertex_t size,
         const Color& x_color,
         const Color& y_color,
         const Color& z_color,
         const Color& w_color);
 
-    Scene_wireframe_vertex get_size();
+    Scene_vertex_t get_size();
 
     std::vector<Cube> split();
     Square get_plain(std::string mask);
 
 private:
-    Scene_wireframe_vertex size_;
+    Scene_vertex_t size_;
 };
